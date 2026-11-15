@@ -1,5 +1,24 @@
 # Journal des versions
 
+## v0.41 — 15/11/2026
+
+Remarques R102 et R103. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.
+
+**R102 : lancement tout bleu nuit** (#0f1b35, la couleur du bord de l'icône)
+- L'écran gris de la capture était celui d'Android, fabriqué à partir du manifeste (icône sur `background_color` #edf1f5) ;
+  l'app n'avait pas d'écran de lancement à elle : ensuite, la page s'affichait vide et pâle le temps de charger le carnet.
+- Manifeste : background_color #0f1b35. Nouvel écran de lancement interne (#lancement) : bleu nuit plein écran, icône au
+  centre, sans la page derrière ; retiré dès que le carnet est prêt (ou en cas d'erreur, ou de lui-même après 8 s).
+- theme_color (barre du haut, #1f4e79), id, start_url et scope inchangés.
+
+**R103 : contour des cartes de vols** : gris #aab3c2 de 1,5 px et légère ombre 0 2px 6px rgba(20,30,50,.14) (option C) ;
+sombre : #4c5d72 et ombre noire 50 %. 1,5 px = bord 1 px + liseré 0,5 px (Chrome arrondit un bord de 1,5 px à 1 px).
+Vol de simulation : contour rouge gardé. Ombre simple (pas de flou lourd).
+
+**Tests** : `tests/navigateur/v041.mjs` (manifeste, écran de lancement, cartes clair / sombre ; téléphone 390 / 360 px, PC,
+iPad) ; toute la batterie. `v022.mjs` : un contrôle échouait une fois sur deux (déjà en v0.40) quand la demande automatique
+des vols NPF tombait pendant lui ; il ne compte plus les demandes qui partent d'elles-mêmes (6 essais sur 6 réussis).
+
 ## v0.40 — 14/11/2026
 
 Remarque R101. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.

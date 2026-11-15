@@ -750,3 +750,15 @@ svg.ipart{width:20px;height:20px;flex:none;fill:currentColor;stroke:currentColor
 .dm-in .dm-aide{font-size:15px;color:var(--muted)}
 .dm-in .bigbtn{display:flex;align-items:center;justify-content:center;min-height:56px;text-decoration:none;font-size:18px}
 body.est-demenage>*:not(#demenage):not(#toast){display:none!important}
+/* v0.40 (R102) : écran de lancement (#lancement, index.html) : disparaît de lui-même après 8 s si l'app ne l'a pas retiré */
+@keyframes lancement-fin{to{visibility:hidden;opacity:0}}
+#lancement[hidden]{display:none!important}
+/* v0.40 (R103) : cartes des vols : contour gris 1,5 px et légère ombre (option C) ; sombre : contour et ombre adaptés.
+   La carte d'un vol de simulation garde son contour rouge (.flight.sim). Ombre simple, sans flou lourd. */
+:root{--carte-bord:#aab3c2;--carte-ombre:0 2px 6px rgba(20,30,50,.14)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--carte-bord:#4c5d72;--carte-ombre:0 2px 6px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--carte-bord:#4c5d72;--carte-ombre:0 2px 6px rgba(0,0,0,.5)}
+/* Chrome arrondit un contour de 1,5 px à 1 px : contour 1 px + liseré 0,5 px de la même couleur (ombre sans flou) = 1,5 px
+   partout (Chrome, Safari), sans changer la taille des cartes */
+.flight.swfront{box-shadow:var(--carte-ombre)}
+.flight.swfront:not(.sim){border:1px solid var(--carte-bord);box-shadow:0 0 0 .5px var(--carte-bord),var(--carte-ombre)}

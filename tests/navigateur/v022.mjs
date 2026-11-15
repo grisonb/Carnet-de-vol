@@ -95,11 +95,15 @@ try {
   await ouvrirChangement();
   verifier((await p.textContent('#outil')).includes('L\'iPad (NPF-Q400) n\'a rien à changer.'), 'l\'écran dit que l\'iPad n\'a rien à changer');
   verifier(await p.$eval('#cm-ok', e => e.classList.contains('vert')) && await p.$eval('#cm-no', e => e.classList.contains('annuler')), '« Changer » vert, « Annuler » rouge');
-  const avant = nas.requetes.length;
+  // v0.41 : on compte toutes les demandes SAUF celles qui partent d'elles-mêmes (vols NPF « vols-liste », lancée quand
+  // l'adresse du NAS vient d'être enregistrée, et copie automatique « envoyer ») : elles pouvaient tomber pendant ce
+  // contrôle et le faire échouer une fois sur deux (déjà en v0.40), sans rapport avec ce qu'il vérifie
+  const changements = () => nas.requetes.filter(r => r.action !== 'vols-liste' && r.action !== 'envoyer').length;
+  const avant = changements();
   verifier(await changer('court-1') === 'Au moins 12 caractères (7 pour l\'instant).', 'trop court : refusé');
   verifier(await changer('mot-de-passe-éssai') === 'Lettres sans accent, chiffres et signes seulement (pas d\'espace, pas d\'accent).', 'accent : refusé');
   verifier(await changer(NOUVEAU, NOUVEAU + 'x') === 'Les deux mots de passe tapés ne sont pas identiques.', 'deux saisies différentes : refusé');
-  verifier(nas.requetes.length === avant, 'aucune demande au NAS pour une saisie refusée par l\'app');
+  verifier(changements() === avant, 'aucune demande au NAS pour une saisie refusée par l\'app');
   verifier(await changer(ORIGINE_MDP, ORIGINE_MDP) === 'C\'est déjà le mot de passe actuel.', 'identique à l\'actuel : refusé');
   await p.click('#cm-voir');
   verifier(await p.getAttribute('#cm-n1', 'type') === 'text', '« Afficher » montre ce qui est tapé');

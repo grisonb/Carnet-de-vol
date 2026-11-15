@@ -84,6 +84,7 @@ async function demarrer() {
     await Promise.all([charger(), chargerTerrains()]);
   } catch (e) {
     $('#list').innerHTML = `<p class="hint">Impossible d'ouvrir le carnet : ${e.message}</p>`;
+    finLancement();
     return;
   }
   appliquerTypesPerso();
@@ -105,6 +106,7 @@ async function demarrer() {
   initNas();
   initSynchro();
   setTimeout(verifierVolsNpf, 1200); // vols envoyés par NPF-Q400, discrètement
+  finLancement(); // v0.40 (R102) : l'écran de lancement bleu nuit laisse place au carnet
   document.body.dataset.pret = '1';
   setTimeout(lancerArrierePlan, 1500); // traces des 30 derniers jours, discrètement
 }
@@ -130,7 +132,11 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 // v0.39 : « Le carnet a changé d'adresse ». À l'ANCIENNE adresse, si la nouvelle répond : écran plein, plus rien n'est
 // enregistré ici (db.js) et plus rien ne part au NAS (ui/nas.js). Un bouton ouvre la nouvelle adresse ; un autre enregistre
 // une sauvegarde complète (photos comprises), utile sur iPad où la nouvelle icône a sa propre mémoire.
+// v0.40 (R102) : fin de l'écran de lancement
+function finLancement() { const l = document.getElementById('lancement'); if (l) l.hidden = true; }
+
 function demenager() {
+  finLancement();
   if (document.getElementById('demenage').hidden === false) return;
   marquerDemenage();
   const m = $('#demenage');

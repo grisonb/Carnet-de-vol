@@ -16,6 +16,10 @@
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+<!-- v0.40 (R102) : écran de lancement de l'app, bleu nuit #0f1b35 (couleur du bord de l'icône, comme l'écran d'Android
+     tiré du manifeste) ; plein écran, sans la page derrière ; retiré dès que le carnet est prêt (app.js), en cas d'erreur,
+     et de lui-même après 8 s au plus (sécurité). Style écrit ici : visible avant même le chargement de app.css. -->
+<div id="lancement" aria-hidden="true" style="position:fixed;inset:0;z-index:200;background:#0f1b35;display:flex;align-items:center;justify-content:center;animation:lancement-fin 0s 8s forwards"><img src="icones/icon-192.png" alt="" width="160" height="160" style="width:160px;height:160px"></div>
 <!-- v0.39 : à l'ANCIENNE adresse, quand la nouvelle répond : le carnet a déménagé (rien n'est plus enregistré ici) -->
 <div class="demenage" id="demenage" hidden role="alertdialog" aria-modal="true" aria-labelledby="dm-t" aria-describedby="dm-txt"><div class="dm-in">
   <img src="icones/icon-192.png" alt="" width="96" height="96">

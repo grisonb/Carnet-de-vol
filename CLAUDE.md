@@ -151,6 +151,9 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.41 : R102 manifest background_color #0f1b35 ; `#lancement` (index.html, style en ligne) écran de lancement bleu nuit
+  plein écran, retiré par `finLancement()` (app.js : carnet prêt, erreur, déménagement) ou de lui-même après 8 s (CSS).
+  R103 `.flight.swfront` : bord 1 px `--carte-bord` + liseré 0,5 px (box-shadow) + `--carte-ombre` ; `.flight.sim` garde son rouge.
 - v0.40 : R101 nom « Carnet de Vol » (manifest name / short_name, title, apple-mobile-web-app-title, `.pver`) ; id / start_url / scope inchangés.
 - v0.39 : nouvelle adresse /Carnet-de-vol/ et icône du pilote (`icones/icon-192|512.png`, `apple-touch-icon.png`, `favicon-32.png`,
   `favicon.ico`). `js/demenagement.js` : à l'ANCIENNE adresse, si la nouvelle répond (`nouvelleAdresseRepond`, fichier de version
@@ -283,6 +286,7 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v037.mjs` : « att » / « appr » sans point, avion sur une ligne (390 / 360 px, police réduite, « … » à 12 px seulement, boutons inchangés), « Feux » rangé parmi les compteurs (ordre gardé après réouverture, « + » / n° inchangés), iPad.
 - `node tests/navigateur/v038.mjs` : recadrer la photo (fenêtre au chargement, pincer, glisser, molette, curseur, Valider / Annuler, gardé après réouverture, flèche retour) ; cartes des vols R94-R99 (couleurs, contours, même taille, ordre IFR / appr / att nuit, clair / sombre), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
+- `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v024.mjs` : synchro dans les deux sens (passage en modification, conflits et 3 choix, doublon, NPF, hors ligne, >20 suppressions, annuler, mot de passe refusé).
 - `node tests/navigateur/fluidite.mjs` : 4070 vols inventés, processeur ralenti ×6.
 - `node outils/controle-import.mjs ../donnees-privees/flylog-decode-v1.csv ../donnees-privees/totaux-flylog-reference.json` :
