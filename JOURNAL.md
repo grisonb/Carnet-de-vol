@@ -1,5 +1,16 @@
 # Journal des versions
 
+## v0.43 — 15/11/2026
+
+Remarque R106. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.
+
+**R106 : date des cartes de vols remontée de 4 px** vers le bord haut de la carte (décalage visuel seulement). Trajet, ligne
+avion, heures, étiquettes, remarque, pastille du temps et hauteur de la carte gardent exactement leur place (mesuré avant /
+après). Taille et graisse de la date inchangées ; haut des chiffres non coupé (10 px sous le bord de la carte).
+
+**Tests** : `tests/navigateur/v043.mjs` (positions avec et sans la règle ; 390 / 360 px clair / sombre, PC, iPad) ; v042
+adapté (écart date / trajet : 2 + 4 = 6 px à l'écran) ; toute la batterie.
+
 ## v0.42 — 15/11/2026
 
 Remarques R104 et R105. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.

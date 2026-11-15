@@ -770,3 +770,6 @@ body.est-demenage>*:not(#demenage):not(#toast){display:none!important}
 .fl-tete>.fl-route.small{font-size:16px}
 .fl-tete>.fl-route.xsmall{font-size:15px}
 .fl-tete>.fl-bloc{grid-column:2;grid-row:1 / span 2;align-self:start}
+/* v0.43 (R106) : date remontée de 4 px vers le bord haut de la carte ; décalage visuel seulement (position relative) :
+   le trajet, la pastille et tout le reste gardent exactement leur place, la carte garde sa hauteur */
+.fl-tete>.fl-date{position:relative;top:-4px}
