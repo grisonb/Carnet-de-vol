@@ -1,5 +1,21 @@
 # Journal des versions
 
+## v0.42 — 15/11/2026
+
+Remarques R104 et R105. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.
+
+**R104 : interrupteur « Afficher 3, 7 et 30 jours »** dans le menu des heures de l'accueil (toucher la bande sous le TOTAL).
+Éteint : la ligne 3 / 7 / 30 JOURS disparaît sans laisser de place. Allumé par défaut. Réglage de l'appareil seulement
+(`afficherJours`, réglage privé : ni synchro, ni copie NAS, ni sauvegarde ; gardé à la restauration). Calculs inchangés.
+
+**R105 : la date en premier sur les cartes de vols** (maquette « A resserrée ») : 1re ligne la date (23 px, très gras), 2e
+ligne le trajet (18 px gras ; 16 / 15 px avec escales), à 2 px sous la date ; la pastille du temps reste à droite, sur la
+hauteur des deux lignes (un trajet long passe à la ligne sans passer sous elle). Ligne avion sans la date. Reste inchangé.
+
+**Tests** : `tests/navigateur/v042.mjs` (interrupteur, réouverture, réglage privé ; cartes 390 / 360 px clair / sombre,
+trajet long, PC, iPad) ; v011 adapté à la nouvelle place de la date ; v025 : une attente fixe de 0,3 s avant le bandeau de
+conflit (trop courte quand la machine de test est chargée) remplacée par l'attente du bandeau ; toute la batterie.
+
 ## v0.41 — 15/11/2026
 
 Remarques R102 et R103. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.

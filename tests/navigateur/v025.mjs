@@ -168,7 +168,9 @@ try {
   await modifier(T, vc, { remarques: 'TELEPHONE' }); await modifier(I, vc, { remarques: 'IPAD' });
   await tel.ctx.setOffline(false); await sync(T);
   await ipad.ctx.setOffline(false); await sync(I);
-  await onglet(I, 'carnet'); await attendre(I, 300);
+  await onglet(I, 'carnet');
+  // v0.42 : on attend le bandeau (au lieu d'une attente fixe de 0,3 s, trop courte quand la machine de test est chargée)
+  await I.waitForSelector('#conflit-bandeau:not([hidden])', { timeout: 10000 }).catch(() => {});
   verifier(await I.isVisible('#conflit-bandeau') && await I.textContent('#conflit-bandeau') === '1 élément modifié sur les deux appareils › Choisir', 'bandeau orange sur l\'iPad');
   verifier((await volDe(I, vc)).remarques === 'IPAD' && (await volDe(T, vc)).remarques === 'TELEPHONE', 'rien n\'est écrasé avant le choix');
   await I.tap('#conflit-bandeau'); await I.waitForSelector('[data-cf]');

@@ -5,7 +5,7 @@
 // quand on remonte) ; bouton « ↑ Dernier vol » pour revenir en haut en un geste.
 
 import { $, esc, codeAvecDrapeau } from './commun.js';
-import { etat, avionDe, reglage, enregistrerReglage } from '../etat.js';
+import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret } from '../etat.js';
 import { activerGlisser } from './glisser.js';
 import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix } from '../bande.js';
@@ -123,10 +123,10 @@ export function carteVol(v, voir = false) {
     ? `${codeAvecDrapeau(v.dep)} <span class="via">› ${esc0.map(codeAvecDrapeau).join(' › ')} ›</span> ${codeAvecDrapeau(v.arr)}`
     : `${codeAvecDrapeau(v.dep)} → ${codeAvecDrapeau(v.arr)}`;
   const modele = a ? (a.sim ? 'Simulateur' + (a.fstd ? ' ' + a.fstd : '') : (a.modele || a.typeOACI)) : '';
-  // Date en gras, nom de l'avion (couleur Avion), immatriculation, modèle en petit gris coupé par « … » (R32)
+  // Nom de l'avion (couleur Avion), immatriculation, modèle en petit gris coupé par « … » (R32)
+  // v0.42 (R105) : la date n'est plus sur cette ligne : elle est en tête de la carte, en gros
   const id = identiteAvion(a);
-  const ligne = `<b class="fl-date">${esc(dateFr(dateAffichee(v)))}</b>`
-    + (id.nom ? `<b class="fl-nm">${esc(id.nom)}</b>` : '') + (id.immat ? `<b class="fl-reg">${esc(id.immat)}</b>` : '')
+  const ligne = (id.nom ? `<b class="fl-nm">${esc(id.nom)}</b>` : '') + (id.immat ? `<b class="fl-reg">${esc(id.immat)}</b>` : '')
     + (modele ? `<span class="fl-mod">${esc(modele)}</span>` : '');
   const f = FONCTIONS[v.fonction] || FONCTIONS.cdb;
   const autre = v[f.champ];
@@ -161,7 +161,7 @@ export function carteVol(v, voir = false) {
   const couleur = couleurTemps(feu, regles, v); // v0.38 (R94 / R95) : couleur du vol (pastille, barre de la remarque)
   // la carte se glisse vers la gauche pour faire apparaître « Supprimer » (avec confirmation)
   return `<div class="swrow flrow"><button type="button" class="swdel" data-fdel="${esc(v.id)}" tabindex="-1">Supprimer</button><button type="button" class="flight swfront vol-${couleur}${estSimulation(v) ? ' sim' : ''}" data-id="${esc(v.id)}">
-    ${estSimulation(v) ? '<div class="sim-bandeau fl-sim">SIMULATION VOL<small>hors totaux</small></div>' : ''}<div class="fl-top"><span class="fl-route${taille}">${route}</span><span class="fl-bloc t-${couleur}">${hm(duree)}</span></div>
+    ${estSimulation(v) ? '<div class="sim-bandeau fl-sim">SIMULATION VOL<small>hors totaux</small></div>' : ''}<div class="fl-top fl-tete"><b class="fl-date">${esc(dateFr(dateAffichee(v)))}</b><span class="fl-route${taille}">${route}</span><span class="fl-bloc t-${couleur}">${hm(duree)}</span></div>
     <div class="fl-id">${ligne}</div>
     <div class="fl-meta num">${esc(ligneHeures(v))}</div>
     <div class="chips">${puces.join('')}</div>
@@ -288,7 +288,10 @@ function dessinerBande() {
     ? choix.map(v => `<div><b class="num">${esc(v.texte)}</b><span>${esc(v.lib)}</span></div>`).join('')
     : '<div class="empty">Touche ici pour choisir des heures à afficher</div>';
 }
+// v0.42 (R104) : cases 3 / 7 / 30 jours affichées (par défaut oui) ; réglage privé de l'appareil (ni synchro, ni NAS, ni sauvegarde)
+const afficherJours = () => reglage('afficherJours') !== false;
 function rendreChoixBande() {
+  $('#hs-jours').setAttribute('aria-checked', String(afficherJours()));
   const t = totauxCarnet(), coches = reglage('bandeHeures');
   const bouton = c => `<button type="button" data-hs="${esc(c.cle)}" aria-pressed="${coches.includes(c.cle)}">${esc(c.lib)}</button>`;
   // Ordre d'affichage : une ligne par valeur cochée, flèches ↑ ↓ à gauche, valeur à droite
@@ -315,7 +318,8 @@ export function rafraichirCarnet({ haut = false, versVol = null, retour = false 
   rendreBande();
   $('#h-total').textContent = hm(totalHdV(base));
   // v0.31 (R71) : 3 / 7 / 30 jours comptent à partir d'aujourd'hui : masqués pendant une période
-  $('#h-quick').hidden = !!periode;
+  // v0.42 (R104) : et masqués si l'interrupteur « Afficher 3, 7 et 30 jours » est éteint (réglage de cet appareil)
+  $('#h-quick').hidden = !!periode || !afficherJours();
   if (!periode) $('#h-quick').innerHTML = [3, 7, 30].map(n =>
     `<div><span class="lbl">${n} jours</span><b>${hm(heuresDerniersJours(etat.vols, n, auj))}</b></div>`).join('');
   // Une date (06/05/25, 05/2025, 2025…) : les vols de cette date (date affichée sur la carte) ; sinon recherche texte
@@ -403,6 +407,11 @@ export function initCarnet(ouvrir) {
     rendreChoixBande();
   });
   $('#hs-x').addEventListener('click', () => { $('#hs-modal').hidden = true; });
+  $('#hs-jours').addEventListener('click', async () => {
+    await ecrireReglageDiscret('afficherJours', !afficherJours()); // discret : ne lance ni copie NAS ni synchro
+    $('#hs-jours').setAttribute('aria-checked', String(afficherJours()));
+    $('#h-quick').hidden = !!periode || !afficherJours();
+  });
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completer(); }, { rootMargin: '800px' })
     .observe($('#list-fin'));
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completerAvant(); }, { rootMargin: '600px' })

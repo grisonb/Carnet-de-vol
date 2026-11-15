@@ -64,7 +64,8 @@ try {
   const ligneId = await p.$eval('.flight[data-id="v1"] .fl-id', e => ({ coupe: e.scrollWidth > e.clientWidth, ellipse: getComputedStyle(e).textOverflow }));
   verifier(c1.mod.taille < 14 && c1.mod.couleur !== ENCRE && ligneId.coupe && ligneId.ellipse === 'ellipsis', 'modèle en petit gris, coupé par « … » à la fin de la ligne');
   verifier(!c1.tirets, 'plus de tirets « - » entre les éléments');
-  verifier(c1.date.haut === c1.nm.haut || Math.abs(c1.date.haut - c1.nm.haut) < 6, 'date, nom, immatriculation sur la même ligne');
+  // v0.42 (R105) : la date est en tête de la carte (au-dessus du trajet) ; nom et immatriculation restent sur la même ligne
+  verifier(c1.date.haut < c1.route.haut && c1.route.haut < c1.nm.haut && Math.abs(c1.nm.haut - c1.reg.haut) < 6, 'date en tête, puis le trajet, puis nom et immatriculation sur la même ligne');
   verifier(c1.heures.t.includes('UTC') && c1.heures.taille <= 14 && c1.heures.couleur !== ENCRE, 'ligne des heures toujours en petit gris');
   verifier(c1.mission.t === 'ESSAI MISSION COURTE' && c1.mission.gras && c1.mission.taille === 16 && c1.mission.couleur === ENCRE, 'mission en gras, 16 px, en noir (v0.38, R94 ; avant : orange foncé)');
   // v0.38 (R94) : le trait prend la couleur du vol (feu, GAAR, entraînement, IFR ou sable) (avant : orange)

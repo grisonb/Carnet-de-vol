@@ -762,3 +762,11 @@ body.est-demenage>*:not(#demenage):not(#toast){display:none!important}
    partout (Chrome, Safari), sans changer la taille des cartes */
 .flight.swfront{box-shadow:var(--carte-ombre)}
 .flight.swfront:not(.sim){border:1px solid var(--carte-bord);box-shadow:0 0 0 .5px var(--carte-bord),var(--carte-ombre)}
+/* v0.42 (R105) : la DATE en tête de la carte (gros, très gras), le trajet collé dessous (2 px), la pastille du temps à droite
+   sur la hauteur des deux lignes (grille : un trajet long passe à la ligne dans sa colonne, jamais sous la pastille) */
+.flight .fl-top.fl-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:start}
+.fl-tete>.fl-date{grid-column:1;grid-row:1;font-family:var(--f-num);font-size:23px;font-weight:800;line-height:1.15;color:var(--ink);letter-spacing:.02em}
+.fl-tete>.fl-route{grid-column:1;grid-row:2;font-size:18px;font-weight:700;line-height:1.25}
+.fl-tete>.fl-route.small{font-size:16px}
+.fl-tete>.fl-route.xsmall{font-size:15px}
+.fl-tete>.fl-bloc{grid-column:2;grid-row:1 / span 2;align-self:start}
