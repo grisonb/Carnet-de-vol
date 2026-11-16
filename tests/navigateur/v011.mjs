@@ -61,12 +61,13 @@ try {
   verifier(c1.date.police === c1.route.police, '  même police que le trajet');
   verifier(c1.nm.t === 'ZX1' && c1.nm.gras && c1.nm.couleur === COUL_AV, 'nom de l\'avion en gras, couleur du bloc Avion');
   verifier(c1.reg.t === 'F-XZZA' && c1.reg.gras && c1.reg.couleur === ENCRE, 'immatriculation en gras foncé');
-  const ligneId = await p.$eval('.flight[data-id="v1"] .fl-id', e => ({ coupe: e.scrollWidth > e.clientWidth, ellipse: getComputedStyle(e).textOverflow }));
-  verifier(c1.mod.taille < 14 && c1.mod.couleur !== ENCRE && ligneId.coupe && ligneId.ellipse === 'ellipsis', 'modèle en petit gris, coupé par « … » à la fin de la ligne');
+  // v0.45 (R115) : le type (15 px, réduit jusqu'à 13 px s'il ne tient pas) porte lui-même les « … »
+  const ligneId = await p.$eval('.flight[data-id="v1"] .fl-mod', e => ({ coupe: e.scrollWidth > e.clientWidth, ellipse: getComputedStyle(e).textOverflow }));
+  verifier(c1.mod.taille <= 15 && c1.mod.taille >= 13 && c1.mod.couleur !== ENCRE && ligneId.coupe && ligneId.ellipse === 'ellipsis', `modèle en petit gris (${c1.mod.taille} px), coupé par « … » à la fin de la ligne`);
   verifier(!c1.tirets, 'plus de tirets « - » entre les éléments');
   // v0.42 (R105) : la date est en tête de la carte (au-dessus du trajet) ; nom et immatriculation restent sur la même ligne
   verifier(c1.date.haut < c1.route.haut && c1.route.haut < c1.nm.haut && Math.abs(c1.nm.haut - c1.reg.haut) < 6, 'date en tête, puis le trajet, puis nom et immatriculation sur la même ligne');
-  verifier(c1.heures.t.includes('UTC') && c1.heures.taille <= 14 && c1.heures.couleur !== ENCRE, 'ligne des heures toujours en petit gris');
+  verifier(c1.heures.t.includes('UTC') && c1.heures.taille <= 15 && c1.heures.couleur !== ENCRE, 'ligne des heures toujours en gris (15 px depuis la v0.45, R115)');
   verifier(c1.mission.t === 'ESSAI MISSION COURTE' && c1.mission.gras && c1.mission.taille === 16 && c1.mission.couleur === ENCRE, 'mission en gras, 16 px, en noir (v0.38, R94 ; avant : orange foncé)');
   // v0.38 (R94) : le trait prend la couleur du vol (feu, GAAR, entraînement, IFR ou sable) (avant : orange)
   verifier(c1.mission.trait.startsWith('3px') && /rgb\((211, 47, 47|216, 27, 96|200, 101, 15|31, 78, 121|138, 106, 46)\)/.test(c1.mission.trait), `  petit trait vertical à gauche, couleur du vol (${c1.mission.trait})`);

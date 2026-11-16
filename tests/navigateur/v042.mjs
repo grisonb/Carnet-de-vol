@@ -67,7 +67,8 @@ function controler(nom, theme, m) {
       `${nom} ${theme} : ${v.id} : date « ${x.date} » en tête, 23 px très gras, sur la ligne de la pastille`);
     // v0.43 (R106) : la date est remontée de 4 px (décalage visuel) : 2 + 4 = environ 6 px entre la date et le trajet
     // v0.44 (R109) : date dans son contour, trajet collé dessous (0 à 4 px) au lieu de 6 px
-    verifier(x.ecart >= -1 && x.ecart <= 4 && x.grasTrajet >= 700 && (v.escales.length ? x.tailleTrajet <= 18 : x.tailleTrajet === 18) && x.trajetLibre && x.dansCarte,
+    // v0.45 (R114) : trajet descendu de 4 px : 4 à 8 px
+    verifier(x.ecart >= 4 && x.ecart <= 8 && x.grasTrajet >= 700 && (v.escales.length ? x.tailleTrajet <= 18 : x.tailleTrajet === 18) && x.trajetLibre && x.dansCarte,
       `${nom} ${theme} : ${v.id} : trajet ${x.tailleTrajet} px gras, ${Math.round(x.ecart * 10) / 10} px sous la date, jamais sous la pastille${x.lignesTrajet > 1 ? ` (${x.lignesTrajet} lignes)` : ''}`);
     verifier(!x.dateDansLigne && x.ligneAvion.startsWith('M91') && x.ligneAvion.includes('F-XZZA') && !x.ligneAvion.includes(x.date), `${nom} ${theme} : ${v.id} : ligne avion sans la date (« ${x.ligneAvion} »)`);
     verifier(contraste(x.couleurDate, x.fond) >= 7, `${nom} ${theme} : ${v.id} : date lisible (contraste ${contraste(x.couleurDate, x.fond).toFixed(1)})`);

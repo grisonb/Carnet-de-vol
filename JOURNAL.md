@@ -1,5 +1,21 @@
 # Journal des versions
 
+## v0.45 — 16/11/2026
+
+Remarques R114 à R116. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+Dans les trois cas, la date et son contour ne bougent pas (position mesurée avec et sans les règles de la v0.45).
+
+**R114 : plus d'espace sous la date** : le trajet (et le reste de la carte) descend de 4 px. Les tests mesuraient déjà
+environ 6 px entre le contour et le haut du trajet alors que le téléphone en montrait 1 à 2 : choix du pilote, 4 px de plus.
+
+**R115 : ligne avion et heures plus grandes** : nom et immatriculation 17 px, type 15 px, heures 15 px (couleurs et
+graisses inchangées). La ligne avion reste sur une ligne : le type rapetisse d'abord (jusqu'à 13 px), puis « … ».
+
+**R116 : pastille du temps alignée** : le haut de sa bordure est à la hauteur du haut du contour de la date (mesuré au
+pixel : 0,67 px d'écart au plus, Chrome et Safari, 390 / 360 px, clair / sombre).
+
+**Tests** : `tests/navigateur/v045.mjs` ; v011, v042, v044 adaptés ; test rapide.
+
 ## v0.44 — 16/11/2026
 
 Remarques R109 à R113. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

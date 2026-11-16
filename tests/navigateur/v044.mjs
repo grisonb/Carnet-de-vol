@@ -104,7 +104,8 @@ async function controlerDates(nom, p, theme) {
     verifier(s.taille === '23px' && Number(s.gras) >= 800 && s.lh === '23px', `${nom} ${theme} : ${id} : date 23 px très grasse, line-height 1 (taille et graisse inchangées)`);
     const m = await encreDate(p, sel);
     verifier(m.encre && Math.abs(m.haut - m.bas) <= 1, `${nom} ${theme} : ${id} : chiffres centrés dans le contour (mesure au pixel : ${m.haut.toFixed(2)} px en haut, ${m.bas.toFixed(2)} px en bas${s.tb ? ', text-box' : ', repli sans text-box'})`);
-    verifier(s.ecartTrajet >= -1 && s.ecartTrajet <= 4, `${nom} ${theme} : ${id} : trajet collé sous la date (${s.ecartTrajet.toFixed(1)} px)`);
+    verifier(s.ecartTrajet >= 4 && s.ecartTrajet <= 8, // v0.45 (R114) : trajet descendu de 4 px
+      `${nom} ${theme} : ${id} : trajet collé sous la date (${s.ecartTrajet.toFixed(1)} px)`);
     verifier(s.droite >= 4, `${nom} ${theme} : ${id} : pastille à droite (${Math.round(s.droite)} px d'écart)`);
     verifier(s.sousBord >= 4, `${nom} ${theme} : ${id} : contour non coupé (${s.sousBord.toFixed(1)} px sous le bord de la carte)`);
   }

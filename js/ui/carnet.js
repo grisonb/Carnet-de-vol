@@ -181,7 +181,20 @@ function afficherPaquet() {
     html += carteVol(v, enRecherche);
   }
   $('#list').insertAdjacentHTML('beforeend', html);
+  ajusterTypes();
   affiches = fin;
+}
+
+// v0.45 (R115) : ligne avion des cartes sur UNE ligne : si le type (15 px) ne tient pas, il rapetisse par pas de 0,5 px
+// jusqu'à 13 px, puis « … » (style). Seules les cartes pas encore ajustées sont mesurées (tout = après un changement de taille).
+function ajusterTypes(tout = false) {
+  const types = [...document.querySelectorAll(tout ? '#list .fl-mod' : '#list .fl-mod:not([data-aj])')];
+  if (tout) for (const t of types) t.style.removeProperty('--mod');
+  // carnet caché (largeur 0) : rien n'est marqué, l'ajustement se fera quand il réapparaîtra (montrer -> ajusterEntete)
+  const tropLongs = types.filter(t => { if (!t.clientWidth) return false; t.dataset.aj = '1'; return t.scrollWidth > t.clientWidth + 0.5; });
+  for (const t of tropLongs) {
+    for (let k = 14.5; k >= 13; k -= 0.5) { t.style.setProperty('--mod', k + 'px'); if (t.scrollWidth <= t.clientWidth + 0.5) break; }
+  }
 }
 
 const enteteMois = m => `<h3 class="month lbl" data-mois="${m}">${MOIS[Number(m.slice(5)) - 1] || ''} ${m.slice(0, 4)}</h3>`;
@@ -201,6 +214,7 @@ function afficherAvant() {
   const tete = liste.firstElementChild;
   if (tete && tete.matches('h3.month') && tete.dataset.mois === mois) tete.remove(); // même mois : un seul titre
   liste.insertAdjacentHTML('afterbegin', html);
+  ajusterTypes();
   debut = de;
   if (repere) window.scrollBy(0, repere.getBoundingClientRect().top - haut);
   $('#list-debut').hidden = debut <= 0;
@@ -322,6 +336,7 @@ export function ajusterEntete() {
     for (let t = 11.5; deborde(lab) && t > 8; ) { t -= 0.5; lab.style.fontSize = t + 'px'; }
   }
   ajusterLigne($('#h-strip')); ajusterLigne($('#h-quick'));
+  ajusterTypes();
 }
 // « 5432h10 » : le « h » en plus petit (le texte lu reste « 5432h10 »)
 function afficherTotal(texte) {
@@ -457,11 +472,11 @@ export function initCarnet(ouvrir) {
   // v0.44 (R111) : tailles refaites quand la fenêtre change de taille (rotation, PC), quand le carnet réapparaît (app.js,
   // montrer) et quand la police est prête. (Pas de ResizeObserver : Safari signalait une « boucle » ResizeObserver.)
   let ajustementPrevu = false;
-  const prevoirAjustement = () => { if (ajustementPrevu) return; ajustementPrevu = true; requestAnimationFrame(() => { ajustementPrevu = false; ajusterEntete(); }); };
+  const prevoirAjustement = () => { if (ajustementPrevu) return; ajustementPrevu = true; requestAnimationFrame(() => { ajustementPrevu = false; ajusterEntete(); ajusterTypes(true); }); };
   addEventListener('resize', prevoirAjustement);
   addEventListener('orientationchange', prevoirAjustement);
   if (window.visualViewport) visualViewport.addEventListener('resize', prevoirAjustement);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterEntete);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { ajusterEntete(); ajusterTypes(true); });
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completer(); }, { rootMargin: '800px' })
     .observe($('#list-fin'));
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completerAvant(); }, { rootMargin: '600px' })

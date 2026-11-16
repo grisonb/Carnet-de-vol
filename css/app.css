@@ -832,3 +832,18 @@ body.consultation .f-edit{display:none!important}
 #v-saisie.lecture .sec.c-carte,#v-saisie.lecture .tz-groupe,#v-saisie.lecture #ac-fiche,#v-saisie.lecture #ctr-open{pointer-events:auto}
 #v-saisie.lecture input,#v-saisie.lecture textarea{caret-color:transparent}
 body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{display:none!important}
+
+/* v0.45 (R114) : plus d'espace entre le bas du contour de la date et le trajet : le TRAJET descend de 4 px (et le reste de
+   la carte avec lui) ; la date ne bouge pas (mesuré au pixel avant / après). Choix du pilote : 4 px de plus (les tests
+   mesuraient déjà environ 6 px jusqu'aux drapeaux, le téléphone en montrait 1 à 2). */
+.fl-tete>.fl-route{margin-top:2px}
+/* v0.45 (R116) : haut de la bordure de la pastille du temps = haut du contour de la date (date : rangée - 2 px, contour
+   1 px + liseré 0,5 px) : la pastille monte de 2,5 px (décalage visuel seulement, la date ne bouge pas) */
+.fl-tete>.fl-bloc{position:relative;top:-2.5px}
+/* v0.45 (R115) : ligne avion 17 px (type 15 px), ligne des heures 15 px ; couleurs et graisses inchangées. La ligne avion
+   reste sur UNE ligne (R90) : le type rapetisse d'abord (jusqu'à 13 px, ajusterTypes dans carnet.js), puis « … » sur le
+   type seulement ; nom et immatriculation ne sont jamais coupés. */
+.flight .fl-id{display:flex;align-items:baseline;min-width:0}
+.flight .fl-id .fl-nm,.flight .fl-id .fl-reg{font-size:17px;flex:none}
+.flight .fl-id .fl-mod{font-size:var(--mod,15px);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flight .fl-meta{font-size:15px}

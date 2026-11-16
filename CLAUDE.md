@@ -151,6 +151,10 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.45 : R114 `.fl-tete>.fl-route{margin-top:2px}` (trajet descendu de 4 px). R116 `.fl-tete>.fl-bloc{position:relative;
+  top:-2.5px}` (haut de la pastille = haut du contour de la date). R115 `.flight .fl-id` en flex : `.fl-nm` / `.fl-reg` 17 px
+  (flex:none), `.fl-mod` 15 px (`--mod`, « … » sur lui seul), `.fl-meta` 15 px ; `ajusterTypes()` (carnet.js) réduit le type
+  jusqu'à 13 px (cartes nouvelles à chaque paquet ; toutes au changement de taille / police prête).
 - v0.44 : R109 date dans un contour (`--date-cadre`, bord 1 px + liseré 0,5 px, rayon 8, line-height 1, `text-box:trim-both cap
   alphabetic` ; repli `@supports not` : padding 1 / 2 px mesuré au pixel), `top:-2px` + trajet `margin-top:-2px` ; mois
   `#list .month` 18 px 800. R110 `--fond-accueil` (#d4deec) : `body:has(#v-carnet:not([hidden]))` et `--bg` de `#v-carnet`.
@@ -317,6 +321,9 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v045.mjs` : date immobile (avec / sans les règles v0.45), trajet descendu de 4 px, haut de la pastille
+  = haut du contour (mesures AU PIXEL, Chromium et WebKit, 390 / 360 px, clair / sombre), ligne avion 17 / 15 px sur une ligne
+  (cas longs : type 13 px puis « … »), heures 15 px.
 - `node tests/navigateur/v044.mjs` : date dans son contour (MESURE de l'encre au pixel, Chromium et WebKit, 390 / 360 px,
   écrans ×2 et ×3, clair / sombre), mois ; fond de l'accueil ; carte du total et bandes (390 / 360 / 340 px, 1 à 4 cases,
   gros et très gros carnet, « plus grande taille qui tient ») ; vol en lecture seule (chaque champ, chaque bouton, fiche
