@@ -6,7 +6,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -93,13 +93,13 @@ try {
 
   console.log('Carte du vol : point d\'arrivée (hors ligne)');
   await ctx.setOffline(true);
-  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   await p.waitForSelector('#carte-mini:not([hidden]) .carte-terrain', { timeout: 10000 });
   const etiquettes = await p.$$eval('#carte-mini .carte-terrain', l => l.map(x => x.textContent));
   verifier(etiquettes.includes('ZZZZ') && etiquettes.includes('FMEE'), 'point d\'arrivée sur la carte à sa position GPS : ' + etiquettes.join(', '));
   await p.locator('#carte-zone').scrollIntoViewIfNeeded();
   await p.screenshot({ path: join(CAPT, 'v017-02-carte-arrivee.png') });
-  await p.click('#cancel');
+  await fermerFiche(p);
   await ctx.setOffline(false);
 
   console.log('Sans code ni position');

@@ -1,5 +1,38 @@
 # Journal des versions
 
+## v0.44 — 16/11/2026
+
+Remarques R109 à R113. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R109 : date des cartes dans un contour** noir 1,5 px (rayon 8 px, 5 px en haut et en bas, 7 px à gauche et à droite) ;
+taille et graisse inchangées. Chiffres centrés au pixel dans le contour (`text-box`, avec une solution de repli pour les
+navigateurs qui ne l'ont pas) : mesuré sur capture, écart haut / bas de 0 à 0,33 px (Chrome et Safari). Trajet toujours
+collé dessous, pastille à droite. En-têtes de mois : 18 px, noir, très gras. Thème sombre : contour clair (sinon invisible).
+
+**R110 : fond de l'accueil bleu clair** (#d4deec) ; cartes blanches ; les autres écrans et le thème sombre ne changent pas.
+
+**R111 : total dans une carte blanche à bande bleu-blanc-rouge**, entre le bouton de synchro (version au-dessus) et la loupe,
+sur une ligne ; « TOTAL HEURES DE VOL » ; valeur 38 px (le « h » plus petit), qui baisse si le total est très grand. Bande
+d'heures et ligne 3 / 7 / 30 : la plus grande taille qui tient sans retour à la ligne ni coupure (repères 32 / 27 / 22 / 18 px
+pour 1 / 2 / 3 / 4 cases). Toucher la bande ouvre le même menu ; toucher le total ne fait rien, comme avant.
+
+**R112 : un vol s'ouvre en lecture seule** (carnet, recherche, « Voir dans le carnet ») : rien n'est modifiable (champs,
++ et −, interrupteurs, étiquettes, fiche de l'avion sans crayon ni recadrage, flammes figées) ; LF / LOC / UTC restent
+utilisables ; « Fermer » en haut à gauche, titre « Vol » et « du JJ/MM/AAAA · départ › arrivée ». Le crayon en haut à
+droite passe en « Modifier le vol » (« Annuler » revient à la lecture sans rien changer, « Enregistrer les modifications »).
+Nouveau vol et vol NPF à vérifier : directement en modification.
+
+**R113 : tests plus courts** : `npm run test:rapide` (10 min au plus) et `npm run test:complet` (`tests/lancer.mjs`) ; le
+rapide devient complet tout seul si la version touche à la synchro, l'import, la sauvegarde, le format ou le service worker.
+Aucun test supprimé.
+
+**Corrigé en cours de route** : sur Safari (iPad), le premier essai de réajustement des tailles de l'accueil provoquait un
+message « ResizeObserver loop » (trouvé par les tests v025, v034, v037, v038) ; remplacé par le réajustement au changement
+de taille de l'écran et au retour sur le carnet.
+
+**Tests** : `tests/navigateur/v044.mjs` ; tests adaptés à la lecture seule (crayon avant de modifier) et à la nouvelle
+place de la date ; test complet puis test rapide.
+
 ## v0.43 — 15/11/2026
 
 Remarque R106. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés.

@@ -1,4 +1,4 @@
-// v0.43 : R106 date des cartes de vols remontée d'environ 4 px ; rien d'autre ne bouge (trajet, ligne avion, heures,
+// v0.43 : R106 date des cartes de vols remontée d'environ 4 px (réajusté à 2 px en v0.44, R109, avec le contour) ; rien d'autre ne bouge (trajet, ligne avion, heures,
 // étiquettes, remarque, pastille du temps, hauteur de la carte : mesurés avec et sans la règle de la v0.43) ; taille et
 // graisse de la date inchangées ; haut des chiffres non coupé. Téléphone (Chromium 390 et 360 px, clair / sombre), PC,
 // iPad (WebKit). Vols INVENTÉS. Captures : tests/navigateur/captures/v043-*.png (non commitées). Usage : node tests/navigateur/v043.mjs
@@ -54,23 +54,19 @@ const mesurer = p => p.evaluate(ids => {
     return [id, { pos, carte: { haut: rc.top + scrollY, h: rc.height }, bordHaut: parseFloat(getComputedStyle(c).borderTopWidth), taille: sd.fontSize, gras: sd.fontWeight }];
   }));
   const apres = lire();
-  // la règle v0.43 retirée le temps de mesurer « avant », puis remise
-  const retirees = [];
-  for (const ss of document.styleSheets) {
-    let regles; try { regles = ss.cssRules; } catch { continue; }
-    for (let i = regles.length - 1; i >= 0; i--) if (/\.fl-tete\s*>\s*\.fl-date/.test(regles[i].cssText) && /top:\s*-4px/.test(regles[i].cssText)) { retirees.push([ss, regles[i].cssText, i]); ss.deleteRule(i); }
-  }
+  // v0.44 (R109) : la remontée est réajustée à 2 px (règle de la v0.44, avec le contour) : « avant » = date remise à sa place
+  const dates = [...document.querySelectorAll('.fl-tete>.fl-date')];
+  dates.forEach(d => { d.style.top = '0px'; });
   const avant = lire();
-  for (const [ss, txt, i] of retirees.reverse()) ss.insertRule(txt, i);
-  return { avant, apres, retirees: retirees.length };
+  dates.forEach(d => { d.style.top = ''; });
+  return { avant, apres, retirees: 1 };
 }, VOLS.map(v => v.id));
 
 function controler(nom, theme, m) {
-  verifier(m.retirees === 1, `${nom} ${theme} : règle de la v0.43 trouvée (mesure avant / après)`);
-  for (const v of VOLS) {
+    for (const v of VOLS) {
     const a = m.avant[v.id], b = m.apres[v.id];
     const dh = b.pos.date.haut - a.pos.date.haut;
-    verifier(Math.abs(dh + 4) < 0.6 && b.pos.date.gauche === a.pos.date.gauche && b.pos.date.h === a.pos.date.h && b.taille === '23px' && Number(b.gras) >= 800,
+    verifier(Math.abs(dh + 2) < 0.6 && b.pos.date.gauche === a.pos.date.gauche && b.pos.date.h === a.pos.date.h && b.taille === '23px' && Number(b.gras) >= 800,
       `${nom} ${theme} : ${v.id} : date remontée de ${Math.round(-dh * 10) / 10} px (23 px, très gras)`);
     const bouges = Object.keys(a.pos).filter(k => k !== 'date' && (Math.abs(b.pos[k].haut - a.pos[k].haut) > 0.5 || Math.abs(b.pos[k].gauche - a.pos[k].gauche) > 0.5 || Math.abs(b.pos[k].h - a.pos[k].h) > 0.5));
     verifier(!bouges.length && Math.abs(b.carte.haut - a.carte.haut) < 0.5 && Math.abs(b.carte.h - a.carte.h) < 0.5,

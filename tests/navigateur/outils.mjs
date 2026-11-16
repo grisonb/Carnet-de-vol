@@ -62,3 +62,18 @@ export function playwright() {
 }
 
 export const verifier = (cond, message) => { if (!cond) throw new Error('ÉCHEC : ' + message); console.log('  ✓ ' + message); };
+
+// v0.44 (R112) : un vol enregistré s'ouvre en LECTURE SEULE. Les anciens tests, écrits pour la modification, appuient sur
+// le crayon juste après l'ouverture (modifierVol) ; fermerFiche ferme la fiche quel que soit son mode (« Annuler » d'une
+// modification revient d'abord à la lecture seule, puis « Fermer » ; « Abandonner » si on le demande).
+export async function modifierVol(p) {
+  if (await p.isVisible('#f-edit')) await p.click('#f-edit');
+}
+export async function fermerFiche(p) {
+  for (let i = 0; i < 4 && await p.isVisible('#v-saisie'); i++) {
+    await p.click('#cancel');
+    await p.waitForTimeout(80);
+    if (await p.isVisible('#ab-yes')) await p.click('#ab-yes');
+  }
+  await p.waitForSelector('#v-saisie', { state: 'hidden' });
+}

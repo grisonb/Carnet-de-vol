@@ -108,7 +108,8 @@ try {
 
   console.log('Toucher et défilement');
   await p.tap(`.flight[data-id="${id}"]`);
-  verifier(await p.isVisible('#v-saisie') && await p.textContent('#f-title') === 'Modifier le vol', 'toucher simple : le vol s\'ouvre');
+  verifier(await p.isVisible('#v-saisie') && await p.textContent('#f-title') === 'Vol', 'toucher simple : le vol s\'ouvre (lecture seule, v0.44)');
+  await p.click('#f-edit');
   console.log('Supprimer depuis l\'écran du vol (même fonction)');
   await p.click('#del'); await p.click('#del-yes');
   await p.waitForTimeout(200);

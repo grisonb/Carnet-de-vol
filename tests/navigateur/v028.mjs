@@ -4,7 +4,7 @@
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -93,7 +93,7 @@ try {
     await T.click(`.tabs button[data-v="${v}"]`); await T.click('#fab');
     await T.waitForSelector('#v-saisie:not([hidden])');
     verifier(await T.textContent('#f-title') === 'Nouveau vol' && await T.inputValue('#f-arr') === 'LFTW', `« + » depuis ${v} : nouveau vol (valeurs par défaut habituelles)`);
-    await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+    await fermerFiche(T);
   }
   await T.click('#fab'); await T.waitForSelector('#v-saisie:not([hidden])');
   await T.fill('#f-rem', 'EN COURS');

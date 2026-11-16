@@ -133,6 +133,7 @@ try {
   await onglet(P, 'carnet');
   await P.click(`#list .flight[data-id="${vols.at(-1).id}"]`).catch(async () => P.click('#list .flight'));
   await P.waitForSelector('#v-saisie:not([hidden])');
+  await P.click('#f-edit'); // v0.44 (R112) : lecture seule -> crayon
   const idSaisi = await P.evaluate(async () => document.getElementById('f-title').textContent);
   await P.fill('#f-rem', 'MODIFIE SUR LE PC'); await P.click('#save'); await P.waitForSelector('#v-carnet:not([hidden])');
   const idPcModifie = await P.evaluate(async () => (await import('./js/etat.js')).etat.vols.find(v => v.remarques === 'MODIFIE SUR LE PC').id);

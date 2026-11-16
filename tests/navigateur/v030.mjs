@@ -5,7 +5,7 @@
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -38,7 +38,7 @@ async function appareil(nom, moteur, options) {
     await new Promise(ok => { t.oncomplete = ok; }); db.close();
   }, [AVION, VOL]);
   await p.reload(); await p.waitForSelector('body[data-pret="1"]');
-  await p.click('.flight[data-id="v-feu"]'); await p.waitForSelector('#v-saisie:not([hidden])'); await attendre(p, 200);
+  await p.click('.flight[data-id="v-feu"]'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p); await attendre(p, 200);
   return p;
 }
 

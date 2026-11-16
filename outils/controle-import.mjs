@@ -25,3 +25,4 @@ for (const l of comparerReference(t, valeurs)) {
 const r2 = analyserFlyLog(contenu, { vols: r.aCreer, avions: r.avions, personnes: r.personnes });
 console.log(`Second import du même fichier : à créer ${r2.aCreer.length}, doublons refusés ${r2.doublons.length}`);
 if (reference) console.log(ecarts ? `${ecarts} écart(s).` : 'Tous les totaux de référence sont identiques.');
+if (reference && ecarts) process.exitCode = 1; // v0.44 : le lanceur des tests voit l'écart

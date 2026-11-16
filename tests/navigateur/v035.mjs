@@ -10,7 +10,7 @@ import { createServer } from 'node:http';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -161,7 +161,7 @@ try {
   await ouvrirNpf(I, 'npf-sim-1');
   verifier((await visibleRouge(I, '#f-sim')).visible, 'iPad : bandeau « SIMULATION VOL » en haut du brouillon');
   await I.screenshot({ path: join(CAPT, 'v035-05-ipad-brouillon-simulation.png') });
-  await I.click('#cancel'); await I.click('#ab-yes').catch(() => {}); await I.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(I);
 
   console.log('Téléphone 390 px : bandeau « vols à importer » et liste NPF');
   const tel = await appareil('téléphone', nav, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
@@ -217,7 +217,7 @@ try {
   const nv = await T.evaluate(() => ({ feu: document.getElementById('fire-next').textContent, dep: document.getElementById('f-dep').value, reg: document.getElementById('ac-reg').textContent }));
   verifier(nv.feu === '(prochain : n°42)', `nouveau vol : prochain feu n°42 (la simulation, n°42-43, est ignorée) : ${nv.feu}`);
   verifier(nv.dep === 'LFMD' && nv.reg === 'M91', `nouveau vol : départ ${nv.dep} et avion ${nv.reg} du dernier VRAI vol (pas LFKJ / M92 de la simulation)`);
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   const pdf = await telecharger(T, '#pl-pdf', '#xp-dl');
   verifier(pdf.startsWith('%PDF') && pdf.includes('LFMD') && !pdf.includes('LFKJ') && !pdf.includes('EXERCICE ESSAI'), 'PDF EASA : le vrai vol y est, le vol de simulation non');
   const dbl = await T.evaluate(async () => { const { doublons } = await import('./js/synchro.js'); const { etat } = await import('./js/etat.js');
@@ -230,7 +230,7 @@ try {
   verifier(carteListe.sim && carteListe.bandeau === 'SIMULATION VOLhors totaux', 'liste : bandeau rouge « SIMULATION VOL » sur la carte du vol');
   verifier(await T.$eval(`.flight[data-id="${reel.id}"]`, c => !c.querySelector('.fl-sim')), 'liste : rien sur le vrai vol');
   await T.screenshot({ path: join(CAPT, 'v035-06-tel-liste-simulation.png') });
-  await T.click(`.flight[data-id="${sim.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 300);
+  await T.click(`.flight[data-id="${sim.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T); await attendre(T, 300);
   verifier((await visibleRouge(T, '#f-sim')).visible && (await T.textContent('#f-title')) === 'Modifier le vol', 'écran du vol : bandeau « SIMULATION VOL »');
   await T.waitForSelector('#carte-mini.leaflet-container', { timeout: 15000 });
   await T.click('#carte-mini'); await T.waitForSelector('#carte-grande .carte-feu'); await attendre(T, 400);
@@ -239,7 +239,7 @@ try {
   const kml = readFileSync(await dl.path(), 'utf8');
   const noms = [...kml.matchAll(/<Placemark>\s*<name>([^<]*)<\/name>/g)].map(m => m[1]);
   verifier(noms.length === 2 && noms[0] === `SIMULATION – Feu n°42 / ${AUJ.slice(0, 4)} / VILLE ESSAI S` && noms[1].startsWith('SIMULATION – Feu n°43'), `Google Earth : ${noms.join(' | ')}`);
-  await T.click('#cp-x'); await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#cp-x'); await fermerFiche(T);
   // un vrai vol garde son export Google Earth habituel
   const kmlReel = await T.evaluate(async () => { const { kmlDuVol } = await import('./js/kml.js'); const { etat } = await import('./js/etat.js'); return kmlDuVol(etat.vols.find(v => v.npfId === 'npf-reel-1')).points[0].nom; });
   verifier(kmlReel === `Feu n°41 / ${HIER.slice(0, 4)} / VILLE ESSAI R`, `vrai vol : « ${kmlReel} » (sans préfixe)`);
@@ -266,12 +266,12 @@ try {
   verifier(simI.simulation === true && (await totaux(I)).total === apresSim.total, 'iPad : vol reçu avec sa marque, hors totaux');
   await I.click('.tabs button[data-v="carnet"]'); await attendre(I, 300);
   await I.screenshot({ path: join(CAPT, 'v035-07-ipad-liste-simulation.png') });
-  await I.click(`.flight[data-id="${sim.id}"]`); await I.waitForSelector('#v-saisie:not([hidden])');
+  await I.click(`.flight[data-id="${sim.id}"]`); await I.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(I);
   await I.waitForSelector('#carte-mini.leaflet-container', { timeout: 15000 });
   await I.click('#carte-mini'); await I.waitForSelector('#carte-grande .carte-feu'); await attendre(I, 500);
   verifier(await I.isVisible('#cp-sim'), 'iPad : Carte du vol avec le bandeau « SIMULATION VOL »');
   await I.screenshot({ path: join(CAPT, 'v035-08-ipad-carte-simulation.png') });
-  await I.click('#cp-x'); await I.click('#cancel');
+  await I.click('#cp-x'); await fermerFiche(I);
 
   console.log('Suppression (glissé + Annuler)');
   const avantSuppr = await totaux(T);

@@ -6,7 +6,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, fermerFiche } from './outils.mjs';
 import { fauxFlyLog, VOLS_INVENTES } from '../outils/faux-flylog.js';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
@@ -149,14 +149,14 @@ try {
   verifier(await p.inputValue('#pm-tri') === 'ZZW', 'fiche personne pré-remplie avec le trigramme ZZW');
   await p.click('#pm-ok'); await attendre(300);
   verifier((await tout('personnes')).some(x => x.tri === 'ZZW') && await p.isHidden('#npf-copi-add'), 'ZZW ajouté à mes personnes (après mon « Ajouter »)');
-  await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(p);
 
   console.log('Vol R au format 1');
   await ouvrir('npf-r'); await p.waitForSelector('#v-saisie:not([hidden])');
   const r = await p.evaluate(() => ({ via: [...document.querySelectorAll('#via-list .viachip')].map(x => x.innerText.replace(/\s+/g, ' ').trim()),
     ac: document.getElementById('ac-reg').textContent + ' ' + document.getElementById('ac-sub').textContent }));
   verifier(r.ac.includes('F-XZZA') && r.via.length === 1 && r.via[0].startsWith('LFKB'), 'format 1 lu comme en v0.15 (immatriculation, escale LFKB)');
-  await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(p);
 
   console.log('Même id ré-exporté : « Ce qui change » (avion, escales, copi)');
   nas.vols.set('npf-p', { ...P, exporteLe: '2026-11-07T12:00:00Z', nomAvion: 'M75', copilote: 'ZZK', escales: [P.escales[0], P.escales[1]] });

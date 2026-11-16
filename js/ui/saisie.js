@@ -592,7 +592,7 @@ export function ouvrirSaisie(vol, opts = {}) {
   choisir('.seg.mini', F.mode === 'loc' ? 0 : 1);
 
   if (vol) {
-    $('#f-title').textContent = enConsultation() ? 'Vol (consultation)' : 'Modifier le vol';
+    $('#f-title').textContent = enConsultation() ? 'Vol' : 'Modifier le vol';
     $('#f-sub').textContent = `du ${dateFr(vol.date)} · ${[vol.dep, ...F.escales.map(e => e.code), vol.arr].join(' › ')}`
       + (enConsultation() ? ' · se modifie sur le téléphone' : '');
     $('#save').textContent = 'Enregistrer les modifications';
@@ -660,6 +660,35 @@ export function ouvrirSaisie(vol, opts = {}) {
   afficherCarteVol(brouillon ? { ...(vol || {}), date: brouillon.date, hDep: brouillon.hDep, hArr: brouillon.hArr, dep: brouillon.dep || (vol && vol.dep) || '',
     arr: brouillon.arr || (vol && vol.arr) || '', escales: F.escales, avionId: F.avionId, feuxPositions: feuxDuBrouillon(vol, brouillon.npf.feux),
     arriveePosition: F.arrPos, brouillon: true, simulation: F.simulation } : (vol || null));
+  // v0.44 (R112) : un vol enregistré s'ouvre en LECTURE SEULE (crayon -> modification) ; nouveau vol, brouillon NPF : modification
+  fixerLecture(!!vol && !brouillon && !opts.modifier);
+}
+
+// ---------- v0.44 (R112) : lecture seule ----------
+// Rien n'est modifiable : champs en lecture seule, et tout appui / frappe / saisie bloqué dans la fiche, sauf : Fermer,
+// le crayon, LF / LOC / UTC, la carte (flammes figées : voir carte.js), la fiche de l'avion (« i », sans son crayon) et
+// l'ouverture du détail des compteurs. Ni « Enregistrer » ni « Supprimer » (style).
+let lecture = false;
+const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #ctr-open';
+export const enLecture = () => lecture;
+function fixerLecture(oui) {
+  lecture = oui;
+  const s = $('#v-saisie');
+  s.classList.toggle('lecture', oui);
+  document.body.classList.toggle('vol-lecture', oui);
+  for (const el of s.querySelectorAll('input, textarea')) {
+    if (oui && !el.readOnly) { el.readOnly = true; el.dataset.lecture = '1'; }
+    else if (!oui && el.dataset.lecture) { el.readOnly = false; delete el.dataset.lecture; }
+  }
+  $('#cancel').textContent = oui ? 'Fermer' : 'Annuler';
+  $('#f-edit').hidden = !oui || enConsultation();
+  if (F && F.vol && !F.npf) $('#f-title').textContent = oui ? 'Vol' : 'Modifier le vol';
+}
+function bloquerEnLecture(e) {
+  if (!lecture || !e.target.closest || e.target.closest(AUTORISES_LECTURE)) return;
+  if (e.type === 'keydown' && (e.key === 'Tab' || e.key === 'Escape')) return;
+  if (e.type !== 'touchstart' && e.type !== 'pointerdown') e.preventDefault(); // le défilement de la page reste libre
+  e.stopImmediatePropagation();
 }
 
 // ---------- Changements non enregistrés (flèche retour : « Abandonner la saisie ? ») ----------
@@ -668,7 +697,7 @@ function empreinte() {
   return JSON.stringify([CHAMPS.map(c => $(c).value), F.mode, F.escales, F.avionId, F.etiquettes, F.fonction,
     F.lignes.map(l => l.t), F.compteurs, F.s, F.ifr]);
 }
-export const saisieModifiee = () => !!F && F.empreinte !== undefined && empreinte() !== F.empreinte;
+export const saisieModifiee = () => !!F && !lecture && F.empreinte !== undefined && empreinte() !== F.empreinte;
 export function abandonnerSaisie() { F = null; quitter(); }
 
 // ---------- Enregistrement ----------
@@ -763,7 +792,11 @@ async function enregistrer() {
 // ---------- Branchements ----------
 export function initSaisie({ fermer }) {
   // v0.37 (R90) : la ligne Avion se réajuste quand sa largeur change (saisie affichée, rotation, PC) et quand la police est prête
-  if (window.ResizeObserver) new ResizeObserver(() => ajusterAvion()).observe($('#ac-cur'));
+  // v0.44 : seulement quand la LARGEUR change, ajusté à l'image suivante (jamais de boucle « ResizeObserver loop » sur Safari)
+  if (window.ResizeObserver) {
+    let largeur = -1;
+    new ResizeObserver(es => { const l = es[0].contentRect.width; if (l === largeur) return; largeur = l; requestAnimationFrame(ajusterAvion); }).observe($('#ac-cur'));
+  }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterAvion);
   quitter = fermer;
   champOACI('#f-dep', '#f-arr'); champOACI('#f-arr', '#f-t0');
@@ -782,7 +815,15 @@ export function initSaisie({ fermer }) {
   for (const s of ['#f-t0', '#f-t1', '#f-date']) $(s).addEventListener('input', recalculer);
   $('#tz-loc').addEventListener('click', () => changerMode('loc'));
   $('#tz-utc').addEventListener('click', () => changerMode('utc'));
-  $('#cancel').addEventListener('click', () => { F = null; quitter(); });
+  // v0.44 (R112) : « Fermer » (lecture) quitte ; « Annuler » d'un vol enregistré revient à la lecture seule sans rien changer
+  $('#cancel').addEventListener('click', () => {
+    if (F && F.vol && !F.npf && !lecture && etat.vols.some(v => v.id === F.vol.id)) { const y = scrollY; ouvrirSaisie(etat.vols.find(v => v.id === F.vol.id)); scrollTo(0, y); return; }
+    F = null; fixerLecture(false); quitter();
+  });
+  $('#f-edit').addEventListener('click', () => { if (!F || !lecture || enConsultation()) return; fixerLecture(false); });
+  for (const t of ['click', 'dblclick', 'mousedown', 'pointerdown', 'keydown', 'beforeinput', 'input', 'change'])
+    $('#v-saisie').addEventListener(t, bloquerEnLecture, true);
+  $('#v-saisie').addEventListener('touchstart', bloquerEnLecture, { capture: true, passive: true });
   // Brouillon NPF : « Ignorer ce vol » (confirmation) le retire du NAS sans rien enregistrer
   // Brouillon NPF : copilote inconnu -> « + Ajouter ZZY à mes personnes » (fiche pré-remplie avec le trigramme)
   $('#npf-copi-add').addEventListener('click', () => { $('#f-copi').value = F.npf.copiInconnu; ouvrirPersonne(null); });

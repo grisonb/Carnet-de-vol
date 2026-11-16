@@ -11,7 +11,7 @@ process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 import { volsPDF } from '../outils/vols-pdf.js';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
@@ -144,7 +144,7 @@ try {
   console.log('Modification sur l\'iPad (saisie au doigt) -> téléphone et PC');
   const idIpad = vols.at(-1).id;
   await I.tap(`#list .flight[data-id="${idIpad}"]`).catch(() => I.tap('#list .flight'));
-  await I.waitForSelector('#v-saisie:not([hidden])'); await attendre(I, 400);
+  await I.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(I); await attendre(I, 400);
   const idOuvert = await I.evaluate(async () => { const t = document.getElementById('f-sub').textContent; return t; });
   m = await miseEnPage(['#save', '#cancel', '#f-dep', '#f-arr', '#f-t0', '#f-t1']);
   verifier(!m.trop && !m.petits.length, `saisie (paysage) : rien ne dépasse, cases et boutons ≥ 44 px ${m.petits.join(' ')}`);
@@ -188,9 +188,9 @@ try {
   m = await miseEnPage(['#fab', '.tabs button', '#list .flight']);
   verifier(!m.trop && !m.petits.length, 'portrait : rien ne dépasse, cibles ≥ 44 px');
   await I.screenshot({ path: join(CAPT, 'v025-05-ipad-portrait-carnet.png') });
-  await I.tap('#list .flight'); await I.waitForSelector('#v-saisie:not([hidden])'); await attendre(I, 400);
+  await I.tap('#list .flight'); await I.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(I); await attendre(I, 400);
   await I.screenshot({ path: join(CAPT, 'v025-06-ipad-portrait-saisie.png') });
-  await I.tap('#cancel'); await I.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(I); await I.waitForSelector('#v-carnet:not([hidden])');
   await onglet(I, 'plus'); await I.click('#pl-sync');
   await I.screenshot({ path: join(CAPT, 'v025-07-ipad-portrait-synchro.png') });
   await I.click('#ou-x');

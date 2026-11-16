@@ -186,7 +186,10 @@ try {
 
   console.log('Modification et suppression');
   await nouvelle.click();
-  verifier(await p.textContent('#f-title') === 'Modifier le vol', 'le vol s\'ouvre en modification');
+  // v0.44 (R112) : un vol s'ouvre en lecture seule ; le crayon le passe en modification
+  verifier(await p.textContent('#f-title') === 'Vol' && await p.isHidden('#save') && await p.isHidden('#del-zone'), 'le vol s\'ouvre en lecture seule');
+  await p.click('#f-edit');
+  verifier(await p.textContent('#f-title') === 'Modifier le vol', 'crayon : le vol passe en modification');
   verifier(await p.inputValue('#c-nuit') === '1h15' && await p.textContent('#f-bloc') === '1h15', 'valeurs enregistrées affichées');
   await p.click('#del');
   await p.click('#del-no');

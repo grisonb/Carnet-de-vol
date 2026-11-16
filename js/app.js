@@ -3,7 +3,7 @@
 import { $, $$, toast } from './ui/commun.js';
 import { charger, surChangement } from './etat.js';
 import { chargerTerrains } from './terrains.js';
-import { initCarnet, rafraichirCarnet, memoriserPlace, restaurerPlace, oublierPlace, allerAuDernierVol } from './ui/carnet.js';
+import { initCarnet, rafraichirCarnet, memoriserPlace, restaurerPlace, oublierPlace, allerAuDernierVol, ajusterEntete } from './ui/carnet.js';
 import { initSaisie, ouvrirSaisie, saisieModifiee, abandonnerSaisie } from './ui/saisie.js';
 import { initRetour, majRetour } from './ui/retour.js';
 import { initTotaux, rafraichirTotaux } from './ui/totaux.js';
@@ -36,7 +36,7 @@ function montrer(v) {
     if (v === 'totaux') rafraichirTotaux();
     if (v === 'plus') majPlus();
   }
-  if (v === 'carnet') restaurerPlace(); else window.scrollTo(0, 0);
+  if (v === 'carnet') { ajusterEntete(); restaurerPlace(); } else window.scrollTo(0, 0); // v0.44 : tailles du total (carnet de nouveau visible)
   majRetour();
 }
 

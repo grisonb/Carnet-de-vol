@@ -3,7 +3,7 @@
 // Usage : node tests/navigateur/fluidite.mjs
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, RACINE } from './outils.mjs';
+import { serveur, playwright, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 import { fauxFlyLog } from '../outils/faux-flylog.js';
 
 const N = 4070;
@@ -76,8 +76,8 @@ await chrono('recherche effacée (retour à la liste complète)', async () => { 
 await chrono('écran Totaux (tout le carnet)', async () => { await p.click('.tabs button[data-v="totaux"]'); await p.waitForSelector('#t-h .tline'); });
 await chrono('Totaux : changer de période (12 mois)', async () => { await p.click('#per button[data-p="12m"]'); await p.waitForSelector('#t-h .tline'); });
 await p.click('.tabs button[data-v="carnet"]');
-await chrono('ouvrir un vol en modification', async () => { await p.click('.flight >> nth=0'); await p.waitForSelector('#v-saisie:not([hidden])'); });
-await chrono('nouveau vol (formulaire pré-rempli)', async () => { await p.click('#cancel'); await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])'); });
+await chrono('ouvrir un vol en modification', async () => { await p.click('.flight >> nth=0'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p); });
+await chrono('nouveau vol (formulaire pré-rempli)', async () => { await fermerFiche(p); await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])'); });
 await chrono('Tous mes avions', async () => { await p.click('#ac-cur'); await p.click('#ac-all'); await p.waitForSelector('#fl-list .acitem'); });
 
 console.log(`Fluidité avec ${N} vols inventés, processeur ralenti ×6 (Pixel 7 émulé) :`);

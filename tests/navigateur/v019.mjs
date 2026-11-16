@@ -5,7 +5,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 import { fauxFlyLog, VOLS_INVENTES } from '../outils/faux-flylog.js';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
@@ -88,7 +88,7 @@ try {
     await verifierBouton('#ab-no', VERT, '« Continuer la saisie »');
     await p.screenshot({ path: join(CAPT, `v019-03-abandonner-${theme}.png`) });
     await p.click('#ab-no'); await attendre(300);
-    await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(300);
+    await fermerFiche(p); await attendre(300);
   }
   await p.emulateMedia({ colorScheme: 'light' });
 
@@ -102,7 +102,7 @@ try {
   await p.click('#p-add'); await p.waitForSelector('#p-modal:not([hidden])'); await annuler('#pm-x', 'ajouter une personne'); await p.click('#pm-x');
   await p.click('#tg-add'); await p.waitForSelector('#tg-modal:not([hidden])'); await annuler('#pm2-x', 'ajouter une étiquette'); await p.click('#pm2-x');
   await p.click('#ac-cur'); await p.click('#ac-add'); await p.waitForSelector('#add1:not([hidden])'); await annuler('#a1-x', 'ajouter un avion'); await p.click('#a1-x');
-  await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(p);
   await p.click('#npf-bandeau'); await p.click('#npf-l [data-ign]'); await p.waitForSelector('#ni-no');
   await annuler('#ni-no', 'ignorer un vol NPF'); await p.click('#ni-no');
   await p.waitForSelector('#npf-l'); await p.click('#ou-x'); // « Annuler » ramène à la liste : on la ferme
@@ -121,7 +121,7 @@ try {
   await p.click('#fa-no');
   // « Annuler » du message « Vol supprimé » (en bas de l'écran)
   await p.click('.tabs button[data-v="carnet"]');
-  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   await p.click('#del');
   await p.click('#del-yes'); await p.waitForSelector('#toast:not([hidden]) .tbtn');
   await annuler('#toast .tbtn', 'du message « Vol supprimé »');

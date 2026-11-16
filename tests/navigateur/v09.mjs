@@ -4,7 +4,7 @@
 // Captures : tests/navigateur/captures/v09-*.png (non commitées). Usage : node tests/navigateur/v09.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 import { fauxFlyLog, VOLS_INVENTES } from '../outils/faux-flylog.js';
 import { VERSION } from '../../js/version.js';
 
@@ -197,7 +197,7 @@ try {
   await p.click('#fab');
   await retour();
   verifier(await vue() === 'carnet' && !(await visible('#ab-modal')), 'nouveau vol sans rien taper : retour direct');
-  await p.click('.flight[data-id="t-a"]');
+  await p.click('.flight[data-id="t-a"]'); await modifierVol(p); // v0.44 : lecture seule -> crayon
   await p.click('#via-add'); verifier(await visible('#via-modal'), 'fenêtre « terrain intermédiaire » ouverte');
   await retour(); verifier(!(await visible('#via-modal')) && await vue() === 'saisie', '  retour -> elle se ferme, la fiche du vol reste');
   await p.evaluate(() => { document.getElementById('carte-plein').hidden = false; });
@@ -219,18 +219,18 @@ try {
   verifier(await vue() === 'carnet', '« Abandonner » : retour à la liste');
   verifier((await tout('vols')).find(v => v.id === 't-a').remarques === 'ESSAI DATE A', '  le vol n\'a pas été modifié');
   verifier((await pile()).poussees === 0, '  historique propre (aucune entrée fantôme)');
-  await p.click('.flight[data-id="t-a"]'); await p.fill('#f-rem', 'ESSAI DATE A BIS'); await p.click('#save'); await p.waitForTimeout(400);
+  await p.click('.flight[data-id="t-a"]'); await modifierVol(p); await p.fill('#f-rem', 'ESSAI DATE A BIS'); await p.click('#save'); await p.waitForTimeout(400);
   verifier(await vue() === 'carnet' && (await pile()).poussees === 0, 'vol enregistré : retour à la liste, historique propre');
 
   console.log('Ligne de mission : × rouge');
-  await p.click('.flight[data-id="t-a"]');
+  await p.click('.flight[data-id="t-a"]'); await modifierVol(p);
   await p.fill('#m-q', 'ESSAI MISSION'); await p.click('#m-add');
   const xm = await x('#ml .x');
   verifier(xm.croix && xm.fond === 'rgb(198, 40, 40)' && xm.l >= 40, `ligne de mission : × rouge dessiné (${xm.l}×${xm.h} px)`);
   await p.locator('.c-mi').screenshot({ path: join(CAPT, 'v09-07-x-mission.png') });
   await p.click('#ml .x');
   verifier(await p.locator('#ml .mline').count() === 0, '  × enlève la ligne');
-  await p.click('#cancel'); await p.waitForTimeout(300);
+  await fermerFiche(p); await p.waitForTimeout(300);
 
   // ---------------- R28 : appui long ----------------
   console.log('Appui long (R28)');

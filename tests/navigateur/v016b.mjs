@@ -6,7 +6,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -75,7 +75,7 @@ try {
   await nouveauVol();
   verifier(await terrains() === 'LFTW → LFTW', 'dernier vol arrivé à LFTW : LFTW → LFTW');
   await p.click('#cancel');
-  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   verifier(await terrains() === 'LFLY → LFTW' && await p.textContent('#f-title') === 'Modifier le vol', 'vol existant modifié : ses terrains ne changent pas');
   await p.click('#cancel');
 

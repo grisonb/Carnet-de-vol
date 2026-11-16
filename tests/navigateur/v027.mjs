@@ -6,7 +6,7 @@ process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -112,10 +112,10 @@ try {
   console.log('R64 : Nouveau vol après Enregistrer, après Annuler, après Ignorer');
   await nouveauVol();
   verifier(propre(await etatFormulaire(T)), 'Nouveau vol après un enregistrement : propre');
-  await saisirAMain(); await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await saisirAMain(); await fermerFiche(T);
   await nouveauVol();
   verifier(propre(await etatFormulaire(T)), 'Nouveau vol après « Annuler » : propre');
-  await T.click('#cancel');
+  await fermerFiche(T);
   await ouvrirNpf('npf-r64-3');
   await saisirAMain();
   await T.click('#npf-ign'); await T.click('#ni-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
@@ -153,9 +153,9 @@ try {
     return { pdf: pdf.valeursVol(v, e.etat.avions.get(v.avionId)).approches, csv: s.texteTableur([v], e.etat.avions).trim().split(/\r?\n/)[1].split(';')[i] };
   }, v3.id);
   verifier(pdfCsv.pdf === 4 && pdfCsv.csv === '4', `PDF ${pdfCsv.pdf}, CSV ${pdfCsv.csv} : le total`);
-  await T.click(`#list .flight[data-id="${v3.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 200);
+  await T.click(`#list .flight[data-id="${v3.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T); await attendre(T, 200);
   verifier(await T.textContent('#s-approches') === '1' && (await T.textContent('#via-list')).includes('2 appr'), 'vol rouvert : arrivée 1, terrains intermédiaires gardés');
-  await T.click('#cancel');
+  await fermerFiche(T);
 
   console.log('R63 : ancien vol et ancienne sauvegarde (sans le champ)');
   const ancien = { ...v3, id: 'ancien-r63', approches: 3, escales: [{ code: 'LFTH', attJour: 1, attNuit: 0 }], date: '2026-10-01', creeLe: H, modifieLe: H };
@@ -168,11 +168,11 @@ try {
     return { ok: lu.ok, approches: v.approches, n: e.etat.vols.length, r63: e.etat.vols.find(x => (x.escales || []).some(y => y.approches === 2))?.approches };
   }, ancien);
   verifier(restaure.ok && restaure.approches === 3 && restaure.r63 === 4, 'sauvegarde restaurée : ancien vol 3 (inchangé), nouveau vol 4 (gardé)');
-  await T.click(`#list .flight[data-id="ancien-r63"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 200);
+  await T.click(`#list .flight[data-id="ancien-r63"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T); await attendre(T, 200);
   // v0.31 (R74) : le 0 du terrain intermédiaire s'affiche en gris (« 0 appr »)
   verifier(await T.textContent('#s-approches') === '3' && (await T.$$eval('#via-list .vc-p', l => l.filter(p => p.classList.contains('zero') && p.textContent === '0 appr').length)) === 1,
     'ancien vol ouvert : ses 3 approches sur l\'arrivée, terrain intermédiaire à 0 (en gris)');
-  await T.click('#cancel');
+  await fermerFiche(T);
 
   console.log('R63 : synchro vers le PC (et retour)');
   await T.click('.tabs button[data-v="plus"]'); await T.click('#pl-sync'); await T.click('#sy-ref'); await T.click('#sr-ok');
@@ -184,7 +184,7 @@ try {
   const surPc = await volEnregistre(P, `v.id === '${v3.id}'`);
   verifier(surPc && surPc.approches === 4 && JSON.stringify(surPc.escales.map(e => e.approches)) === '[2,1]', 'PC : le vol arrive avec ses approches par terrain intermédiaire');
   await P.click('.tabs button[data-v="carnet"]');
-  await P.click(`#list .flight[data-id="${v3.id}"]`); await P.waitForSelector('#v-saisie:not([hidden])'); await attendre(P, 200);
+  await P.click(`#list .flight[data-id="${v3.id}"]`); await P.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(P); await attendre(P, 200);
   await P.click('#via-list .viachip'); await P.waitForSelector('#via-modal:not([hidden])');
   verifier(await P.textContent('#vm-approches') === '2', 'PC : terrain intermédiaire rouvert avec ses 2 approches');
   await P.click('[data-vm="approches"][data-d="1"]'); await P.click('#vm-ok');
@@ -203,7 +203,7 @@ try {
     const t = db.transaction('vols', 'readwrite'); t.objectStore('vols').put(v); await new Promise(ok => { t.oncomplete = ok; }); db.close();
   }, retour);
   await I.reload(); await I.waitForSelector('body[data-pret="1"]');
-  await I.click('#list .flight'); await I.waitForSelector('#v-saisie:not([hidden])'); await attendre(I, 300);
+  await I.click('#list .flight'); await I.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(I); await attendre(I, 300);
   verifier(await I.textContent('#s-approches') === '1', 'iPad : arrivée 1');
   await I.screenshot({ path: join(CAPT, 'v027-04-ipad-saisie-escales.png') });
   await I.click('#via-list .viachip'); await I.waitForSelector('#via-modal:not([hidden])'); await attendre(I, 200);

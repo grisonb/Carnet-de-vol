@@ -7,7 +7,7 @@ process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { createServer } from 'node:http';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -129,7 +129,7 @@ async function attendreVol(p, id, cond) {
   for (let k = 0; k < 150; k++) { const v = await volEnregistre(p, id); if (v && cond(v)) return v; await p.waitForTimeout(100); }
   throw new Error('ÉCHEC : délai dépassé pour le vol ' + id);
 }
-const ouvrir = async (p, id) => { await p.click('.tabs button[data-v="carnet"]'); await p.click(`#list .flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await attendre(p, 250); };
+const ouvrir = async (p, id) => { await p.click('.tabs button[data-v="carnet"]'); await p.click(`#list .flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p); await attendre(p, 250); };
 const taper = async (p, sel, texte) => { await p.click(sel); await p.fill(sel, ''); await p.locator(sel).pressSequentially(texte); await attendre(p, 150); };
 const valeurs = p => p.evaluate(() => ({ t0: document.getElementById('f-t0').value, t1: document.getElementById('f-t1').value, bloc: document.getElementById('f-bloc').textContent,
   nuit: document.getElementById('c-nuit').value, ifr: document.getElementById('c-ifr').value, j: document.getElementById('s-attJour').textContent, n: document.getElementById('s-attNuit').textContent,
@@ -163,12 +163,12 @@ try {
   await taper(T, '#f-t1', '0930');
   f = await valeurs(T);
   verifier(f.t0 === '08h30' && f.t1 === '09h30' && f.bloc === '1h00', `arrivée seule 09h30 -> départ calculé ${f.t0}`);
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   await ouvrir(T, 'v-ancien-minuit');
   await taper(T, '#f-t0', '2330');
   f = await valeurs(T);
   verifier(f.t1 === '01h00' && f.bloc === '1h30' && f.j1, `passage de minuit : 23h30 + 1h30 -> ${f.t1} (J+1)`);
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   await ouvrir(T, 'v-ancien-nuit');
   const avantNuit = await valeurs(T);
   await taper(T, '#f-t0', '1900');
@@ -187,7 +187,7 @@ try {
   await taper(T, '#f-t1', '1130');
   f = await valeurs(T);
   verifier(f.bloc === '1h30' && f.t0 === '10h00' && !f.msg && await T.isHidden('#f-ancien'), 'vol récent : le temps de vol suit les heures comme avant (1h30), départ non touché');
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
 
   console.log('R77 / R78 : bloc Avion et libellés de la saisie');
   const accueilAvant = await T.innerText('.flight[data-id="v-recent"] .fl-id');
@@ -215,11 +215,11 @@ try {
   verifier(lb.every(x => x.couleur === encreSombre && x.taille === 17), `sombre : libellés en couleur claire du texte (${encreSombre})`);
   await T.screenshot({ path: join(CAPT, 'v032-04-tel-saisie-sombre.png') });
   await T.emulateMedia({ colorScheme: 'light' });
-  await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   await ouvrir(T, 'v-a2');
   a1 = await av();
   verifier(/^F-XAAB \/ Robin/.test(a1.texte) && a1.dedans, `avion sans nom : « ${a1.texte.slice(0, 40)}… », jamais sous les boutons i et +`);
-  await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   verifier(await T.innerText('.flight[data-id="v-recent"] .fl-id') === accueilAvant, `page d'accueil inchangée (« ${accueilAvant.replace(/\s+/g, ' ')} »)`);
 
   console.log('R79 : numéro du feu');
@@ -251,7 +251,7 @@ try {
   verifier((await T.textContent('#fire-next')) === '(prochain : n°63)', 'vol suivant : prochain n°63');
   await T.click('#feu-p');
   verifier((await T.inputValue('#ml input')) === 'FEU n°63 ', 'le « + » donne bien FEU n°63');
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   console.log('R79 : vol déjà enregistré, modifié plus tard');
   await ouvrir(T, 'v-f54');
   await T.click('#feu-num'); await T.waitForSelector('#fn-modal:not([hidden])');
@@ -284,7 +284,7 @@ try {
   verifier(bloquees.length === avantReseau, 'aucun appel réseau pour fabriquer et partager le fichier');
   const vk = await volEnregistre(T, 'v-kml');
   verifier(vk.feuxPositions.length === 2 && vk.compteurs.largCdbDash === 3, 'le vol n\'est pas modifié par l\'envoi');
-  await T.click('#cp-x'); await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#cp-x'); await fermerFiche(T);
 
   console.log('Synchro vers le PC');
   await T.click('.tabs button[data-v="plus"]'); await T.click('#pl-sync'); await T.click('#sy-ref'); await T.click('#sr-ok');
@@ -304,7 +304,7 @@ try {
   const texteDl = readFileSync(await dl.path(), 'utf8');
   k = await lireKmlPage(P, texteDl);
   verifier(dl.suggestedFilename() === 'Feux-14-08-2026.kml' && k.valide && k.points.length === 2, `téléchargement : ${dl.suggestedFilename()} (${k.points.length} points)`);
-  await P.click('#cp-x'); await P.click('#cancel');
+  await P.click('#cp-x'); await fermerFiche(P);
 
   console.log('360 px : avion au texte long');
   const t360 = await appareil('360 px', nav, { viewport: { width: 360, height: 780 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }, { nasConfig: false });
@@ -326,7 +326,7 @@ try {
   await taper(I, '#f-t0', '1000');
   verifier((await valeurs(I)).t1 === '11h00', 'iPad : ancien vol, arrivée calculée 11h00');
   await I.screenshot({ path: join(CAPT, 'v032-09-ipad-saisie-ancien-vol.png') });
-  await I.click('#cancel'); await I.click('#ab-yes').catch(() => {}); await I.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(I);
   await ouvrir(I, 'v-f58');
   await I.click('#feu-num'); await I.waitForSelector('#fn-modal:not([hidden])');
   verifier(await I.inputValue('#fn-n') === '58' && await I.isHidden('#fn-alerte'), 'iPad : fenêtre « Numéro du feu » (n°58, pas de doublon)');
@@ -334,7 +334,7 @@ try {
   await I.click('#fn-m'); await I.click('#fn-m'); await I.click('#fn-m'); await I.click('#fn-m'); // 54 : déjà dans un autre vol
   verifier(await I.isVisible('#fn-alerte'), 'iPad : doublon n°54 signalé');
   await I.screenshot({ path: join(CAPT, 'v032-11-ipad-numero-feu-doublon.png') });
-  await I.click('#fn-non'); await I.click('#cancel'); await I.waitForSelector('#v-carnet:not([hidden])');
+  await I.click('#fn-non'); await fermerFiche(I);
   await ouvrir(I, 'v-kml');
   await I.waitForSelector('#carte-mini .carte-feu', { timeout: 15000 });
   await I.click('#carte-mini'); await I.waitForSelector('#carte-grande .carte-feu'); await attendre(I, 500);

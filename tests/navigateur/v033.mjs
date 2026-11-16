@@ -7,7 +7,7 @@
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -75,13 +75,13 @@ async function appareil(nom, moteur, options, partage) {
   return { ctx, p };
 }
 const attendre = (p, ms) => p.waitForTimeout(ms);
-const ouvrir = async (p, id) => { await p.click('.tabs button[data-v="carnet"]'); await p.click(`#list .flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await attendre(p, 250); };
+const ouvrir = async (p, id) => { await p.click('.tabs button[data-v="carnet"]'); await p.click(`#list .flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p); await attendre(p, 250); };
 async function cartePleinEcran(p, id) {
   await ouvrir(p, id);
   await p.waitForSelector('#carte-mini.leaflet-container', { timeout: 15000 });
   await p.click('#carte-mini'); await p.waitForSelector('#carte-grande.leaflet-container'); await attendre(p, 500);
 }
-const fermer = async p => { await p.click('#cp-x'); await p.click('#cancel'); await p.click('#ab-yes').catch(() => {}); await p.waitForSelector('#v-carnet:not([hidden])'); };
+const fermer = async p => { await p.click('#cp-x'); await fermerFiche(p); };
 
 // Place du bouton : tout en bas, sous la carte (ne la recouvre pas), à côté du crédit, au moins 44 px, dans l'écran
 const placeBouton = p => p.evaluate(() => {

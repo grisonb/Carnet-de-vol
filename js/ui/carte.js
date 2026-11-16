@@ -205,7 +205,9 @@ export async function communeDe(lat, lon) {
 const arrondi = x => Math.round(x * 1e6) / 1e6;
 const nomFeu = f => (f.communeAVenir ? 'Commune : au retour du réseau' : f.commune || f.nom || 'Feu');
 const volParId = id => etat.vols.find(v => v.id === id) || null;
-const peutModifierFeux = vol => !!vol && !!vol.id && !vol.brouillon && !enConsultation() && !!volParId(vol.id);
+// v0.44 (R112) : vol ouvert en lecture seule (fiche affichée sans le crayon appuyé) : flammes ni déplaçables ni supprimables
+const volEnLecture = () => { const s = document.getElementById('v-saisie'); return !!s && !s.hidden && s.classList.contains('lecture'); };
+const peutModifierFeux = vol => !!vol && !!vol.id && !vol.brouillon && !enConsultation() && !volEnLecture() && !!volParId(vol.id);
 
 // Fenêtre de l'app (jamais celle du navigateur) : renvoie true si on confirme
 function confirmerFeu({ titre, texte, oui, danger }) {

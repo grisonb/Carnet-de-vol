@@ -4,7 +4,7 @@
 // Carnet ramènent en haut. Captures : tests/navigateur/captures/v013-*.png (non commitées). Usage : node tests/navigateur/v013.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 import { fauxFlyLog } from '../outils/faux-flylog.js';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
@@ -66,13 +66,12 @@ try {
   await p.screenshot({ path: join(CAPT, 'v013-01-loin-dans-la-liste.png') });
   const cible = await p.evaluate(() => [...document.querySelectorAll('#list .flight')].find(c => c.getBoundingClientRect().top > 200).dataset.id);
   await p.click(`.flight[data-id="${cible}"]`);
-  await p.waitForSelector('#v-saisie:not([hidden])');
-  await p.click('#cancel');
-  await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
+  await fermerFiche(p);
   const apres = await visible();
   verifier(apres.id === ici.id && Math.abs(apres.haut - ici.haut) <= 2, `vol ouvert puis Annuler : même place (${apres.date})`);
   await p.click(`.flight[data-id="${cible}"]`);
-  await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   await p.goBack();
   await p.waitForSelector('#v-carnet:not([hidden])');
   const apres2 = await visible();
@@ -82,7 +81,7 @@ try {
   const apres3 = await visible();
   verifier(apres3.id === ici.id && Math.abs(apres3.haut - ici.haut) <= 2, 'onglet Totaux puis Carnet : même place');
   // Une modification pendant qu'on regarde la liste (suppression d'un autre vol par glissé) : la place reste
-  await p.click(`.flight[data-id="${cible}"]`); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click(`.flight[data-id="${cible}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   const champ = await p.$('#f-rem, textarea');
   if (champ) { await champ.fill('ESSAI MODIFIÉ'); }
   await p.click('.save');
@@ -143,8 +142,8 @@ try {
   await p.click('.fl-voir'); await attendre(600);
   const v2 = await p.evaluate(() => { const c = document.querySelector('.flight.fl-vu'); return c && { d: c.querySelector('.fl-date').textContent, h: c.getBoundingClientRect().top }; });
   verifier(v2 && v2.d === date && v2.h > 0 && v2.h < 300, `recherche ${date} puis « Voir dans le carnet » : liste ouverte sur ce jour`);
-  await p.click('.flight.fl-vu'); await p.waitForSelector('#v-saisie:not([hidden])');
-  await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('.flight.fl-vu'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
+  await fermerFiche(p);
   const v3 = await visible();
   verifier(Math.abs(new Date(v3.date.split('/').reverse().join('-')) - new Date(jour(123))) <= 3 * 864e5, `on peut ouvrir ce vol et revenir au même endroit (${v3.date})`);
 

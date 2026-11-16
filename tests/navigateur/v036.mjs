@@ -8,7 +8,7 @@ process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -142,15 +142,15 @@ try {
   console.log('Saisie : « + » d\'un vrai vol et d\'un vol de simulation');
   await T.click('#fab'); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 250);
   verifier((await T.textContent('#fire-next')) === '(prochain : n°56)', `nouveau vrai vol : prochain feu n°56 (simulations ignorées) : ${await T.textContent('#fire-next')}`);
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
-  await T.click(`.flight[data-id="${s3.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 250);
+  await fermerFiche(T);
+  await T.click(`.flight[data-id="${s3.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T); await attendre(T, 250);
   await T.click('#feu-p');
   verifier(JSON.stringify(await lignesFeu(T)) === '["FEU n°58 VILLE-ESSAI-F","FEU n°59"]', `« + » dans la simulation 3 : n°59 (suite des simulations)`);
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
-  await T.click(`.flight[data-id="${r1.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 250);
+  await fermerFiche(T);
+  await T.click(`.flight[data-id="${r1.id}"]`); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T); await attendre(T, 250);
   await T.click('#feu-p');
   verifier(JSON.stringify(await lignesFeu(T)) === '["FEU n°55 VILLE-ESSAI-E","FEU n°56"]', '« + » dans le vrai vol : n°56 (simulations ignorées)');
-  await T.click('#cancel'); await T.click('#ab-yes').catch(() => {}); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
   await T.locator('#list').screenshot({ path: join(CAPT, 'v036-02-tel-390-liste.png') });
 
   console.log('iPad (WebKit) : même règle');
@@ -159,10 +159,10 @@ try {
     { vols: [...VOLS, { ...VOLS[0], id: 'v-sim-ipad', simulation: true, missions: ['FEU n°60 ESSAI'], ordre: VOLS[0].ordre + 1 }] });
   const I = ipad.p;
   await importer(I, npf('sim-ipad', 0, '06:00', true, ['VILLE-ESSAI-G']), ['FEU n°61 VILLE-ESSAI-G'], 'iPad : simulation après une simulation n°60');
-  await I.click('#cancel'); await I.click('#ab-yes').catch(() => {}); await I.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(I);
   nas.npf = nas.npf.filter(v => v.id !== 'sim-ipad');
   await importer(I, npf('vrai-ipad', 0, '06:00', false, ['VILLE-ESSAI-H']), ['FEU n°55 VILLE-ESSAI-H'], 'iPad : vrai vol, simulations ignorées');
-  await I.click('#cancel'); await I.click('#ab-yes').catch(() => {});
+  await fermerFiche(I);
 
   verifier(!bloquees.length, 'aucun appel hors de cet ordinateur' + (bloquees.length ? ' : ' + [...new Set(bloquees)].slice(0, 5).join(' ') : ''));
   verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.slice(0, 5).join(' | ') : ''));

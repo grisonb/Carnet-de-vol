@@ -6,7 +6,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 import { fauxFlyLog, VOLS_INVENTES } from '../outils/faux-flylog.js';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
@@ -110,7 +110,7 @@ try {
   await p.click('#tz-utc');
   verifier(await p.inputValue('#f-t0') === '13h05' && await p.inputValue('#f-t1') === '15h40', '  en UTC : 13:05 → 15:40 (comme envoyé par NPF)');
   await p.screenshot({ path: join(CAPT, 'v015-03-brouillon.png') });
-  await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(p);
   verifier((await volsBase()).length === depart && await bandeau() === '3 vols à importer depuis NPF-Q400 ›' && !nas.retraits.length,
     'Annuler : rien n\'est enregistré, le vol reste en attente');
   await ouvrirListe(); await p.click('#npf-l [data-npf="npf-a"]'); await p.waitForSelector('#v-saisie:not([hidden])');
@@ -183,7 +183,7 @@ try {
   console.log('Feux sur la Carte du vol, hors ligne');
   await ctx.setOffline(true);
   await p.click('#q-open'); await p.fill('#q', 'COMMUNE-ESSAI-5'); await attendre(500);
-  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   await p.waitForSelector('#carte-mini:not([hidden]) .carte-feu', { timeout: 10000 });
   const carte = await p.evaluate(() => ({ feux: document.querySelectorAll('#carte-mini .carte-feu').length, nom: document.getElementById('carte-mini').textContent,
     txt: document.getElementById('carte-txt').textContent, sansFond: document.getElementById('carte-mini').classList.contains('sans-fond'),

@@ -287,6 +287,46 @@ function dessinerBande() {
   $('#h-strip').innerHTML = choix.length
     ? choix.map(v => `<div><b class="num">${esc(v.texte)}</b><span>${esc(v.lib)}</span></div>`).join('')
     : '<div class="empty">Touche ici pour choisir des heures à afficher</div>';
+  ajusterEntete();
+}
+// v0.44 (R111) : la plus grande police qui tient sans retour à la ligne ni coupure. Repères (maximum) selon le nombre de
+// cases : 1 -> 32 / 14 px, 2 -> 27 / 13, 3 -> 22 / 12,5, 4 et plus -> 18 / 11,5 (valeur / libellé) ; la police baisse par
+// pas de 0,5 px tant qu'une valeur (ou un libellé) déborde de sa case. Total : 38 px au plus. Caché : refait à l'affichage.
+const REPERES = [[32, 14], [27, 13], [22, 12.5], [18, 11.5]];
+const deborde = el => el.scrollWidth > el.clientWidth + 0.5;
+function ajusterTaille(conteneur, variable, elements, max, min) {
+  for (let t = max; ; t -= 0.5) {
+    conteneur.style.setProperty(variable, t + 'px');
+    if (t <= min || !elements.some(deborde)) return t;
+  }
+}
+function ajusterLigne(ligne) {
+  if (!ligne || ligne.hidden || !ligne.clientWidth) return;
+  const cases = [...ligne.children].filter(c => !c.classList.contains('empty'));
+  if (!cases.length) return;
+  const [v, l] = REPERES[Math.min(cases.length, 4) - 1];
+  const valeurs = cases.map(c => c.querySelector('b')).filter(Boolean), libelles = cases.map(c => c.querySelector('span')).filter(Boolean);
+  // les cases se partagent la place : valeurs, puis libellés, et ainsi de suite jusqu'à ce que plus rien ne bouge
+  ligne.style.setProperty('--bl', l + 'px');
+  for (let n = 0, av = 0, al = 0; n < 6; n++) {
+    const tv = ajusterTaille(ligne, '--bv', valeurs, v, 9), tl = ajusterTaille(ligne, '--bl', libelles, l, 8);
+    if (tv === av && tl === al) break;
+    av = tv; al = tl;
+  }
+}
+export function ajusterEntete() {
+  const tot = $('#h-total'), lab = document.querySelector('#h-carte .h-lab');
+  if (tot && tot.clientWidth) {
+    for (let t = 38; ; t -= 1) { tot.style.fontSize = t + 'px'; if (t <= 16 || !deborde(tot)) break; }
+    lab.style.fontSize = '';
+    for (let t = 11.5; deborde(lab) && t > 8; ) { t -= 0.5; lab.style.fontSize = t + 'px'; }
+  }
+  ajusterLigne($('#h-strip')); ajusterLigne($('#h-quick'));
+}
+// « 5432h10 » : le « h » en plus petit (le texte lu reste « 5432h10 »)
+function afficherTotal(texte) {
+  const i = texte.lastIndexOf('h');
+  $('#h-total').innerHTML = i < 0 ? esc(texte) : `${esc(texte.slice(0, i))}<small>h</small>${esc(texte.slice(i + 1))}`;
 }
 // v0.42 (R104) : cases 3 / 7 / 30 jours affichées (par défaut oui) ; réglage privé de l'appareil (ni synchro, ni NAS, ni sauvegarde)
 const afficherJours = () => reglage('afficherJours') !== false;
@@ -316,12 +356,13 @@ export function rafraichirCarnet({ haut = false, versVol = null, retour = false 
   lirePeriode();
   const base = volsDuHaut();
   rendreBande();
-  $('#h-total').textContent = hm(totalHdV(base));
+  afficherTotal(hm(totalHdV(base)));
   // v0.31 (R71) : 3 / 7 / 30 jours comptent à partir d'aujourd'hui : masqués pendant une période
   // v0.42 (R104) : et masqués si l'interrupteur « Afficher 3, 7 et 30 jours » est éteint (réglage de cet appareil)
   $('#h-quick').hidden = !!periode || !afficherJours();
   if (!periode) $('#h-quick').innerHTML = [3, 7, 30].map(n =>
     `<div><span class="lbl">${n} jours</span><b>${hm(heuresDerniersJours(etat.vols, n, auj))}</b></div>`).join('');
+  ajusterEntete();
   // Une date (06/05/25, 05/2025, 2025…) : les vols de cette date (date affichée sur la carte) ; sinon recherche texte
   const brut = $('#q').value, parDate = filtreDate(lireDate(brut)), q = normaliser(brut);
   resultats = parDate ? base.filter(v => parDate(dateAffichee(v) || '')) : q ? base.filter(v => texteRecherche(v).includes(q)) : base;
@@ -411,7 +452,16 @@ export function initCarnet(ouvrir) {
     await ecrireReglageDiscret('afficherJours', !afficherJours()); // discret : ne lance ni copie NAS ni synchro
     $('#hs-jours').setAttribute('aria-checked', String(afficherJours()));
     $('#h-quick').hidden = !!periode || !afficherJours();
+    ajusterEntete();
   });
+  // v0.44 (R111) : tailles refaites quand la fenêtre change de taille (rotation, PC), quand le carnet réapparaît (app.js,
+  // montrer) et quand la police est prête. (Pas de ResizeObserver : Safari signalait une « boucle » ResizeObserver.)
+  let ajustementPrevu = false;
+  const prevoirAjustement = () => { if (ajustementPrevu) return; ajustementPrevu = true; requestAnimationFrame(() => { ajustementPrevu = false; ajusterEntete(); }); };
+  addEventListener('resize', prevoirAjustement);
+  addEventListener('orientationchange', prevoirAjustement);
+  if (window.visualViewport) visualViewport.addEventListener('resize', prevoirAjustement);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterEntete);
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completer(); }, { rootMargin: '800px' })
     .observe($('#list-fin'));
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completerAvant(); }, { rootMargin: '600px' })

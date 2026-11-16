@@ -151,6 +151,18 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.44 : R109 date dans un contour (`--date-cadre`, bord 1 px + liseré 0,5 px, rayon 8, line-height 1, `text-box:trim-both cap
+  alphabetic` ; repli `@supports not` : padding 1 / 2 px mesuré au pixel), `top:-2px` + trajet `margin-top:-2px` ; mois
+  `#list .month` 18 px 800. R110 `--fond-accueil` (#d4deec) : `body:has(#v-carnet:not([hidden]))` et `--bg` de `#v-carnet`.
+  R111 `.hrow` en flex : `.h-cote` (version + `#rafraichir`), `#h-carte` (`.h-lab`, `#h-total` avec `<small>h</small>`),
+  `#q-open` ; `ajusterEntete()` (carnet.js) : police du total (38 px max) et des bandes `#h-strip` / `#h-quick` (variables
+  `--bv` / `--bl`, repères REPERES, passes jusqu'à stabilité ; refait sur `resize`, `orientationchange`, `visualViewport`
+  resize et dans `montrer('carnet')` ; PAS de ResizeObserver : Safari signalait « ResizeObserver loop »). Ligne avion de la
+  saisie : son ResizeObserver n'agit que si la largeur change, à l'image suivante. R112 lecture seule
+  de la saisie (saisie.js `fixerLecture`, `enLecture`, classe `#v-saisie.lecture` + `body.vol-lecture`, champs `readOnly`
+  marqués `data-lecture`, `bloquerEnLecture` en capture sauf `AUTORISES_LECTURE`) ; crayon `#f-edit` ; `#cancel` « Fermer » /
+  « Annuler » (vol enregistré -> retour en lecture) ; `ouvrirSaisie(vol, { modifier })` ; carte.js `volEnLecture()` fige les
+  flammes ; `saisieModifiee()` faux en lecture. R113 `tests/lancer.mjs` (rapide / complet).
 - v0.43 : R106 `.fl-tete>.fl-date{position:relative;top:-4px}` (décalage visuel seulement, rien d'autre ne bouge).
 - v0.42 : R104 `#hs-jours` (menu `#hs-modal`) -> réglage privé `afficherJours` (REGLAGES_PRIVES, `ecrireReglageDiscret`) :
   `#h-quick` caché s'il vaut false. R105 carteVol : `.fl-top.fl-tete` en grille (date `.fl-date` ligne 1, `.fl-route` ligne 2,
@@ -236,6 +248,19 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 
 ## Tests
 
+**Deux commandes (v0.44, R113)** — chaque test tourne à part, un échec n'arrête pas la suite, durée de chaque test et résumé
+à la fin, journaux dans `tests/navigateur/journaux/` (non commités) :
+- `npm run test:rapide` : TEST RAPIDE (10 min au plus) : tests unitaires + test navigateur de la version en cours (le plus
+  grand `vNNN.mjs`, ou d'autres en arguments : `node tests/lancer.mjs rapide v031`) + non-régression courte (`RAPIDE`
+  dans `tests/lancer.mjs` : parcours = lancement sans erreur, vol, sauvegarde / restauration, PDF ; mise-a-jour = mise à
+  jour de version sans perte ; v012 = synchro NAS de base sur un faux NAS ; accueil 390 / 360 px dans le test de la
+  version). Plus le contrôle avec le vrai fichier (ci-dessous, à lancer à la main). Passe AUTOMATIQUEMENT en test complet
+  si des fichiers « sensibles » ont changé depuis le dernier commit (synchro, import, sauvegarde / restauration, format
+  des données, service worker : liste `SENSIBLES`).
+- `npm run test:complet` (= `npm run test:navigateur`) : TEST COMPLET, toute la batterie (liste `COMPLET`), à la demande.
+- Aucun test n'a été supprimé : on ne fait que les déplacer entre `RAPIDE` et `COMPLET` (accord de l'utilisateur requis
+  pour supprimer).
+
 - `npm test` : tests unitaires (Node, vols inventés).
 - `node tests/navigateur/parcours.mjs` : parcours complet Chromium, émulation Pixel 7.
 - `node tests/navigateur/installation.mjs` : manifeste installable, id distinct des autres apps du site,
@@ -292,6 +317,10 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v044.mjs` : date dans son contour (MESURE de l'encre au pixel, Chromium et WebKit, 390 / 360 px,
+  écrans ×2 et ×3, clair / sombre), mois ; fond de l'accueil ; carte du total et bandes (390 / 360 / 340 px, 1 à 4 cases,
+  gros et très gros carnet, « plus grande taille qui tient ») ; vol en lecture seule (chaque champ, chaque bouton, fiche
+  avion, flamme, LF / LOC / UTC, crayon -> Annuler / Enregistrer, nouveau vol, recherche). `V044_PARTIE=R112` : une partie.
 - `node tests/navigateur/v043.mjs` : date remontée de 4 px, tout le reste à la même place (mesure avec / sans la règle), 390 / 360 px clair / sombre, PC, iPad.
 - `node tests/navigateur/v024.mjs` : synchro dans les deux sens (passage en modification, conflits et 3 choix, doublon, NPF, hors ligne, >20 suppressions, annuler, mot de passe refusé).
 - `node tests/navigateur/fluidite.mjs` : 4070 vols inventés, processeur ralenti ×6.

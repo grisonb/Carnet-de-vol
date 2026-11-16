@@ -6,7 +6,7 @@
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -47,8 +47,8 @@ async function appareil(nom, moteur, options) {
   return p;
 }
 const attendre = (p, ms) => p.waitForTimeout(ms);
-const ouvrir = async (p, id) => { await p.click('.tabs button[data-v="carnet"]'); await p.click(`#list .flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await attendre(p, 300); };
-const fermer = async p => { await p.click('#cancel'); await p.click('#ab-yes').catch(() => {}); await p.waitForSelector('#v-carnet:not([hidden])'); };
+const ouvrir = async (p, id) => { await p.click('.tabs button[data-v="carnet"]'); await p.click(`#list .flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p); await attendre(p, 300); };
+const fermer = async p => { await fermerFiche(p); };
 // Ligne Avion : une seule ligne, rien de coupé, tailles des polices, place des boutons « i » et « + »
 const ligneAvion = p => p.evaluate(() => {
   const r = s => document.querySelector(s).getBoundingClientRect(), t = document.querySelector('#ac-cur .t');

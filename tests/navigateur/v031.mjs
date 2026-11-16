@@ -9,7 +9,7 @@ import { createServer } from 'node:http';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -171,7 +171,7 @@ async function appuiLongGlisse(p, sel, dx, dy, cdp = null) {
 const centre = async (p, sel) => { const b = await p.locator(sel).boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
 async function ouvrirCartePlein(p, idVol) {
   await p.click('.tabs button[data-v="carnet"]');
-  await p.click(`#list .flight[data-id="${idVol}"]`); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click(`#list .flight[data-id="${idVol}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   await p.waitForSelector('#carte-mini .carte-feu', { timeout: 15000 });
   await p.click('#carte-mini'); await p.waitForSelector('#carte-plein:not([hidden])');
   await p.waitForSelector('#carte-grande .carte-feu', { timeout: 15000 }); await attendre(p, 400);
@@ -260,7 +260,7 @@ try {
   verifier(pagesAvecPeriode === pagesSans, `PDF EASA : tout le carnet, avec ou sans période (${pagesSans})`);
 
   console.log('R74 : étiquettes des terrains intermédiaires');
-  await T.click('#list .flight[data-id="v-via"]'); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 200);
+  await T.click('#list .flight[data-id="v-via"]'); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T); await attendre(T, 200);
   const via = await T.$$eval('#via-list .viachip', l => l.map(c => {
     const r = c.getBoundingClientRect(), n = c.querySelector('.vc-n').getBoundingClientRect(), nom = c.querySelector('.vc-nom');
     return { texte: c.innerText.replace(/\s+/g, ' '), coupe: nom.scrollWidth > nom.clientWidth, nVisible: n.right <= r.right + 0.5 && n.right <= innerWidth,
@@ -270,7 +270,7 @@ try {
   verifier(via[0].pastilles[2].zero && via[0].pastilles[2].couleur !== via[0].pastilles[0].couleur && via[0].pastilles[0].graisse === '800', `0 en gris (${via[0].pastilles[2].couleur}), autres en gras foncé (${via[0].pastilles[0].couleur}, 800)`);
   verifier(via[0].coupe && via.every(v => v.nVisible), '390 px : nom très long raccourci « … », nombres visibles');
   await T.locator('.sec.c-route, #via-list').first().screenshot({ path: join(CAPT, 'v031-05-tel-terrains.png') }).catch(() => T.locator('#via-list').screenshot({ path: join(CAPT, 'v031-05-tel-terrains.png') }));
-  await T.click('#cancel'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await fermerFiche(T);
 
   console.log('Vol feu reçu de NPF-Q400 (2 flammes inventées)');
   await T.waitForSelector('#npf-bandeau:not([hidden])', { timeout: 15000 }); await T.click('#npf-bandeau'); await T.waitForSelector('#npf-l');
@@ -373,7 +373,7 @@ try {
   verifier((await P.$$('#carte-grande .carte-feu')).length === 1, 'PC : Carte du vol à jour');
   await appuiLongGlisse(P, '#carte-grande .carte-feu[data-feu="0"]', 40, 40);
   await P.waitForSelector('#feu-modal:not([hidden])'); await P.click('#feu-non');
-  await P.click('#cp-x'); await P.click('#cancel');
+  await P.click('#cp-x'); await fermerFiche(P);
 
   console.log('Même vol NPF-Q400 envoyé de nouveau (même id)');
   nas.npf = [npfFeux('2026-11-10T08:00:00Z', FEUX_NPF)];
@@ -403,7 +403,7 @@ try {
   console.log('Téléphone 360 px : terrains intermédiaires');
   const t360 = await appareil('360 px', nav, { viewport: { width: 360, height: 780 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }, { nasConfig: false });
   const S = t360.p;
-  await S.click('#list .flight[data-id="v-via"]'); await S.waitForSelector('#v-saisie:not([hidden])'); await attendre(S, 200);
+  await S.click('#list .flight[data-id="v-via"]'); await S.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(S); await attendre(S, 200);
   const via360 = await S.$$eval('#via-list .viachip', l => l.map(c => { const r = c.getBoundingClientRect(), n = c.querySelector('.vc-n').getBoundingClientRect(), nom = c.querySelector('.vc-nom');
     return { coupe: nom.scrollWidth > nom.clientWidth, ok: n.right <= r.right + 0.5 && r.right <= innerWidth && n.left >= r.left }; }));
   verifier(via360[0].coupe && via360.every(v => v.ok), '360 px : nom très long raccourci, nombres toujours visibles');
@@ -425,9 +425,9 @@ try {
   verifier((await I.$$('#list .flight')).length === periode.length && await I.textContent('#pb-txt') === 'Période : du 01/01/2025 au 10/05/2025', 'iPad : période et bandeau');
   await I.screenshot({ path: join(CAPT, 'v031-13-ipad-loupe-periode.png') });
   await I.click('#pb-x'); await attendre(I, 300);
-  await I.click('#list .flight[data-id="v-via"]'); await I.waitForSelector('#v-saisie:not([hidden])'); await attendre(I, 200);
+  await I.click('#list .flight[data-id="v-via"]'); await I.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(I); await attendre(I, 200);
   await I.locator('#via-list').screenshot({ path: join(CAPT, 'v031-14-ipad-terrains.png') });
-  await I.click('#cancel');
+  await fermerFiche(I);
   await ouvrirCartePlein(I, 'v-feu-ipad');
   await I.click('#cp-fond [data-fond="photo"]'); await attendre(I, 800);
   verifier((await I.textContent('#carte-grande .leaflet-control-attribution')).includes('© IGN'), 'iPad : fond Photo avec « © IGN »');

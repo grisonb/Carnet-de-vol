@@ -773,3 +773,62 @@ body.est-demenage>*:not(#demenage):not(#toast){display:none!important}
 /* v0.43 (R106) : date remontée de 4 px vers le bord haut de la carte ; décalage visuel seulement (position relative) :
    le trajet, la pastille et tout le reste gardent exactement leur place, la carte garde sa hauteur */
 .fl-tete>.fl-date{position:relative;top:-4px}
+
+/* v0.44 (R109) : date des cartes dans un contour noir 1,5 px (rayon 8 px, 5 px haut / bas, 7 px gauche / droite), chiffres
+   centrés au pixel dans le contour : line-height 1 + text-box (rognage à la hauteur des capitales et à la ligne de base) ;
+   navigateurs sans text-box : marges calculées pour la même place (mesurée au pixel, Chrome et Safari). Taille et graisse
+   inchangées ; le trajet reste collé dessous (date remontée de 2 px, trajet de 2 px), la pastille à droite.
+   Contour : bord 1 px + liseré 0,5 px (Chrome arrondit 1,5 px à 1 px). Sombre : contour clair (le noir ne se verrait pas). */
+:root{--date-cadre:#1b2433;--mois-encre:#1b2433;--fond-accueil:#d4deec;--total-encre:#0f1b35}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--date-cadre:#c9d3de;--mois-encre:var(--ink);--fond-accueil:var(--bg);--total-encre:var(--ink)}}
+:root[data-theme="dark"]{--date-cadre:#c9d3de;--mois-encre:var(--ink);--fond-accueil:var(--bg);--total-encre:var(--ink)}
+.fl-tete>.fl-date{justify-self:start;top:-2px;line-height:1;padding:5px 7px;border:1px solid var(--date-cadre);
+  box-shadow:0 0 0 .5px var(--date-cadre);border-radius:8px;white-space:nowrap}
+@supports (text-box:trim-both cap alphabetic){.fl-tete>.fl-date{text-box:trim-both cap alphabetic}}
+@supports not (text-box:trim-both cap alphabetic){.fl-tete>.fl-date{padding-top:var(--date-repli-haut,1px);padding-bottom:var(--date-repli-bas,2px)}}
+.fl-tete>.fl-route{margin-top:-2px}
+/* en-têtes de mois : 18 px, très gras, noir */
+#list .month{font-size:18px;font-weight:800;letter-spacing:.05em;color:var(--mois-encre)}
+
+/* v0.44 (R110) : fond de la page d'accueil bleu clair (#d4deec) ; les cartes restent blanches ; sombre inchangé */
+body:has(#v-carnet:not([hidden])){background:var(--fond-accueil)}
+#v-carnet{--bg:var(--fond-accueil)}
+
+/* v0.44 (R111) : total dans une carte blanche (bande bleu-blanc-rouge en haut) ENTRE les deux boutons ronds (inchangés) ;
+   la version au-dessus du bouton de synchro. Tout sur une ligne ; un très grand total réduit sa police (ajusté par l'app). */
+.hero.hrow{display:flex;align-items:center;gap:8px;padding:16px 0 0;justify-items:normal}
+.hrow .h-cote{position:relative;flex:none;width:44px;height:44px}
+.hrow .rafraichir,.hrow .loupe{position:relative;left:auto;right:auto;top:auto;transform:none;flex:none}
+.hrow .h-cote .ver{position:absolute;left:50%;top:auto;bottom:calc(100% + 4px);transform:translateX(-50%);white-space:nowrap}
+.h-carte{flex:1;min-width:0;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--carte-bord);
+  box-shadow:0 0 0 .5px var(--carte-bord),var(--carte-ombre);border-radius:16px;padding:14px 8px 11px;text-align:center;display:grid;gap:4px}
+.h-carte::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,#1f3f99 0 33.33%,#fff 33.33% 66.66%,#d62b2b 66.66%)}
+.h-carte::after{content:"";position:absolute;left:0;right:0;top:5px;height:1px;background:var(--line)}
+.h-carte .h-lab{font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted);white-space:nowrap;overflow:hidden;text-transform:uppercase}
+.hero.hrow .h-carte .big{font-size:38px;font-weight:800;line-height:1;color:var(--total-encre);white-space:nowrap;overflow:hidden}
+.h-carte .big small{font-size:.55em;font-weight:700;margin-left:1px;opacity:.85}
+/* bande d'heures : cases côte à côte (un libellé long prend un peu plus de place) ; la plus grande police qui tient (repères 32 / 27 / 22 / 18 px pour 1 / 2 / 3 / 4
+   cases ; libellés 14 à 11,5 px, gras), jamais de retour à la ligne ni de coupure (ajusté par l'app, ajusterBandes) */
+#v-carnet .hstrip{display:flex;overflow:hidden;border:1px solid var(--carte-bord);border-radius:16px;padding:10px 4px;margin-top:10px}
+#v-carnet .hstrip>div{flex:1 1 auto;min-width:0;padding:2px 4px;border-left:1px solid var(--line)}
+#v-carnet .hstrip>div:first-child{border-left:0}
+#v-carnet .hstrip b{font-size:var(--bv,18px);font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden}
+#v-carnet .hstrip span{display:block;font-size:var(--bl,11.5px);font-weight:700;letter-spacing:.04em;margin-top:3px;white-space:nowrap;overflow:hidden}
+#v-carnet .hstrip .empty{grid-column:1/-1;font-size:14px}
+#v-carnet .quick div{min-width:0}
+#v-carnet .quick .lbl{display:block;font-size:var(--bl,12.5px);font-weight:700;white-space:nowrap;overflow:hidden}
+#v-carnet .quick b{font-size:var(--bv,22px);font-weight:800;white-space:nowrap;overflow:hidden}
+
+/* v0.44 (R112) : vol ouvert en LECTURE SEULE : rien n'est modifiable (champs, + et −, interrupteurs, étiquettes,
+   flammes) sauf LF / LOC / UTC ; pas d'« Enregistrer » ni de « Supprimer » ; crayon en haut à droite -> Modifier le vol */
+.fh-droite{flex:none;width:72px;display:flex;justify-content:flex-end}
+.f-edit{width:44px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:#1f4e79;display:grid;place-items:center;padding:0}
+.f-edit svg{width:20px;height:20px;fill:currentColor}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .f-edit{color:var(--primary)}}
+:root[data-theme="dark"] .f-edit{color:var(--primary)}
+body.consultation .f-edit{display:none!important}
+#v-saisie.lecture #save,#v-saisie.lecture #del-zone,#v-saisie.lecture #npf-zone{display:none!important}
+#v-saisie.lecture .sec{pointer-events:none}
+#v-saisie.lecture .sec.c-carte,#v-saisie.lecture .tz-groupe,#v-saisie.lecture #ac-fiche,#v-saisie.lecture #ctr-open{pointer-events:auto}
+#v-saisie.lecture input,#v-saisie.lecture textarea{caret-color:transparent}
+body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{display:none!important}

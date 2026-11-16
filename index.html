@@ -42,11 +42,11 @@
     <!-- v0.31 (R71) : période active (loupe) : la croix revient à tout le carnet -->
     <div class="periode-bandeau" id="periode-bandeau" hidden><span id="pb-txt"></span><button type="button" class="xbtn" id="pb-x" aria-label="Revenir à tout le carnet"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
     <div class="hero hrow">
-      <span class="ver" id="h-version" aria-label="Version de l'app"></span>
+      <!-- v0.44 (R111) : version au-dessus du bouton de synchro ; carte du total entre les deux boutons ronds -->
+      <div class="h-cote"><span class="ver" id="h-version" aria-label="Version de l'app"></span>
       <!-- v0.26 (R61) : « Rafraîchir » = Synchroniser maintenant (icône dessinée par l'app) -->
-      <button type="button" class="rafraichir" id="rafraichir" aria-label="Rafraîchir : synchroniser maintenant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></button>
-      <span class="lbl" style="text-transform:none">TOTAL HdV</span>
-      <span class="big num" id="h-total">0h00</span>
+      <button type="button" class="rafraichir" id="rafraichir" aria-label="Rafraîchir : synchroniser maintenant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></button></div>
+      <div class="h-carte" id="h-carte"><span class="lbl h-lab">Total heures de vol</span><span class="big num" id="h-total">0h00</span></div>
       <button type="button" class="loupe" id="q-open" aria-label="Rechercher un vol" aria-expanded="false" aria-controls="q"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg></button>
     </div>
     <div class="hstrip" id="h-strip" role="button" tabindex="0" aria-label="Choisir les heures affichées"></div>
@@ -68,7 +68,8 @@
     <div class="formhead">
       <button class="ghost annuler" id="cancel" type="button">Annuler</button>
       <div style="text-align:center"><h2 id="f-title" style="font-size:18px">Nouveau vol</h2><div class="hint" id="f-sub"></div></div>
-      <span style="width:72px"></span>
+      <!-- v0.44 (R112) : vol ouvert en lecture seule ; le crayon passe la fiche en « Modifier le vol » -->
+      <span class="fh-droite"><button type="button" class="f-edit" id="f-edit" hidden aria-label="Modifier le vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg></button></span>
     </div>
     <!-- v0.35 (R85) : vol de simulation (NPF-Q400-RUN) : ne compte dans aucun total -->
     <div class="sim-bandeau" id="f-sim" hidden role="note">SIMULATION VOL<small>Ne compte dans aucun total ni dans le PDF</small></div>

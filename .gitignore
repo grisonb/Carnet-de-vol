@@ -11,3 +11,4 @@ node_modules/
 tests/navigateur/captures/
 test-results/
 .DS_Store
+tests/navigateur/journaux/

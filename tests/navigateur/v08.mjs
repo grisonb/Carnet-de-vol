@@ -4,7 +4,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol } from './outils.mjs';
 import { fauxFlyLog, VOLS_INVENTES } from '../outils/faux-flylog.js';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
@@ -53,7 +53,7 @@ const lireVol = id => p.evaluate(async id => {
 const ouvrirVol = async texte => {
   await p.click('.tabs button[data-v="carnet"]');
   await p.click(`.flight:has-text("${texte}")`);
-  await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
 };
 const texteCarte = async () => { await p.waitForFunction(() => document.querySelector('#carte-txt').textContent !== 'Recherche de la trace…'); return p.textContent('#carte-txt'); };
 

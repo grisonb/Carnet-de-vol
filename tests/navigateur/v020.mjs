@@ -5,7 +5,7 @@
 // Captures : tests/navigateur/captures/v020-*.png (non commitées). Usage : node tests/navigateur/v020.mjs
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { serveur, playwright, verifier, RACINE } from './outils.mjs';
+import { serveur, playwright, verifier, RACINE, modifierVol, fermerFiche } from './outils.mjs';
 
 const CAPT = join(RACINE, 'tests/navigateur/captures');
 mkdirSync(CAPT, { recursive: true });
@@ -26,7 +26,7 @@ p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR
 const attendre = ms => p.waitForTimeout(ms);
 const recharger = async () => { await p.reload(); await p.waitForSelector('body[data-pret="1"]'); };
 const nouveauVol = async () => { await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])'); await attendre(100); };
-const fermer = async () => { await p.click('#cancel'); if (await p.isVisible('#ab-modal')) await p.click('#ab-yes'); await p.waitForSelector('#v-carnet:not([hidden])'); };
+const fermer = async () => { await fermerFiche(p); await p.waitForSelector('#v-carnet:not([hidden])'); };
 const terrains = () => p.evaluate(() => [document.getElementById('f-dep').value, document.getElementById('f-arr').value].join(' → '));
 const taper = async (sel, texte) => { await p.tap(sel); await attendre(150); await p.keyboard.type(texte); await attendre(50); };
 const effacer = async n => { for (let i = 0; i < n; i++) await p.keyboard.press('Backspace'); };
@@ -86,7 +86,7 @@ try {
   verifier(await terrains() === 'FMEP → FMEE', '  puis départ FMEP : FMEE toujours gardé');
   await fermer();
   // Le vol enregistré n'est jamais modifié par la règle
-  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])');
+  await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   await taper('#f-dep', 'LFMN');
   verifier(await terrains() === 'LFMN → FMEP', 'vol déjà enregistré : changer le départ ne touche pas à son arrivée');
   await fermer();
