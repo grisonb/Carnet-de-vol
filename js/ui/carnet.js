@@ -8,7 +8,7 @@ import { $, esc, codeAvecDrapeau } from './commun.js';
 import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret } from '../etat.js';
 import { activerGlisser } from './glisser.js';
 import { demanderSuppression, initSuppression } from './suppression.js';
-import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix } from '../bande.js';
+import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
 import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide } from '../temps.js';
 import { heuresLocales } from '../fuseaux.js';
 import { fuseau } from '../terrains.js';
@@ -295,9 +295,11 @@ function rendreBande() {
   bandeEnAttente = true;
   setTimeout(() => { bandeEnAttente = false; dessinerBande(); }, 0);
 }
+// v0.46 (R120) : choix de la bande, anciens codes OACI convertis en noms de modèles (à l'affichage)
+const bandeChoisie = () => normaliserBande(reglage('bandeHeures'), [...etat.avions.values()]);
 function dessinerBande() {
   const t = totauxCarnet();
-  const choix = reglage('bandeHeures').map(c => valeurBande(c, t)).filter(Boolean);
+  const choix = bandeChoisie().map(c => valeurBande(c, t)).filter(Boolean);
   $('#h-strip').innerHTML = choix.length
     ? choix.map(v => `<div><b class="num">${esc(v.texte)}</b><span>${esc(v.lib)}</span></div>`).join('')
     : '<div class="empty">Touche ici pour choisir des heures à afficher</div>';
@@ -320,13 +322,27 @@ function ajusterLigne(ligne) {
   if (!cases.length) return;
   const [v, l] = REPERES[Math.min(cases.length, 4) - 1];
   const valeurs = cases.map(c => c.querySelector('b')).filter(Boolean), libelles = cases.map(c => c.querySelector('span')).filter(Boolean);
-  // les cases se partagent la place : valeurs, puis libellés, et ainsi de suite jusqu'à ce que plus rien ne bouge
-  ligne.style.setProperty('--bl', l + 'px');
-  for (let n = 0, av = 0, al = 0; n < 6; n++) {
-    const tv = ajusterTaille(ligne, '--bv', valeurs, v, 9), tl = ajusterTaille(ligne, '--bl', libelles, l, 8);
-    if (tv === av && tl === al) break;
-    av = tv; al = tl;
-  }
+  // v0.46 : une case ne descend jamais sous la largeur de ses textes (style) : c'est la BANDE qui doit tenir. Les
+  // libellés rapetissent d'abord jusqu'à 10 px, puis les valeurs jusqu'à 14 px, puis les libellés jusqu'à 8 px et les
+  // valeurs jusqu'à 9 px ; « … » (libellés) seulement en dernier recours
+  const trop = els => () => deborde(ligne) || els.some(deborde);
+  const reduire = (variable, depuis, jusqua, tropLong) => {
+    let t = parseFloat(ligne.style.getPropertyValue(variable)) || depuis;
+    while (tropLong() && t > jusqua) { t -= 0.5; ligne.style.setProperty(variable, t + 'px'); }
+  };
+  ligne.classList.remove('serre');
+  ligne.style.setProperty('--bv', v + 'px'); ligne.style.setProperty('--bl', l + 'px');
+  reduire('--bl', l, Math.min(l, 10), trop(libelles));
+  reduire('--bv', v, Math.min(v, 14), trop(valeurs));
+  reduire('--bl', l, 8, trop(libelles));
+  reduire('--bv', v, 9, trop(valeurs));
+  // puis la place libérée sert : valeurs, puis libellés, regrossissent tant que tout tient (jamais au-delà des repères)
+  const agrandir = (variable, max, tropLong) => {
+    let t = parseFloat(ligne.style.getPropertyValue(variable));
+    while (t < max) { ligne.style.setProperty(variable, (t + 0.5) + 'px'); if (tropLong()) { ligne.style.setProperty(variable, t + 'px'); break; } t += 0.5; }
+  };
+  if (!deborde(ligne)) { agrandir('--bv', v, trop(valeurs)); agrandir('--bl', l, trop(libelles)); }
+  if (deborde(ligne)) ligne.classList.add('serre'); // dernier recours : les cases peuvent rétrécir, « … » sur les libellés
 }
 export function ajusterEntete() {
   const tot = $('#h-total'), lab = document.querySelector('#h-carte .h-lab');
@@ -347,7 +363,7 @@ function afficherTotal(texte) {
 const afficherJours = () => reglage('afficherJours') !== false;
 function rendreChoixBande() {
   $('#hs-jours').setAttribute('aria-checked', String(afficherJours()));
-  const t = totauxCarnet(), coches = reglage('bandeHeures');
+  const t = totauxCarnet(), coches = bandeChoisie();
   const bouton = c => `<button type="button" data-hs="${esc(c.cle)}" aria-pressed="${coches.includes(c.cle)}">${esc(c.lib)}</button>`;
   // Ordre d'affichage : une ligne par valeur cochée, flèches ↑ ↓ à gauche, valeur à droite
   const lignes = coches.map(c => ({ c, v: valeurBande(c, t) })).filter(x => x.v);
@@ -451,14 +467,14 @@ export function initCarnet(ouvrir) {
   $('#hs-modal').addEventListener('click', async e => {
     const m = e.target.closest('[data-hsmv]');
     if (m) {
-      const coches = reglage('bandeHeures').filter(c => valeurBande(c, totauxCarnet()));
+      const coches = bandeChoisie().filter(c => valeurBande(c, totauxCarnet()));
       await enregistrerReglage('bandeHeures', deplacerChoix(coches, Number(m.dataset.hsmv), Number(m.dataset.d)));
       dessinerBande(); rendreChoixBande();
       return;
     }
     const b = e.target.closest('[data-hs]');
     if (!b) return;
-    await enregistrerReglage('bandeHeures', basculerChoix(reglage('bandeHeures'), b.dataset.hs));
+    await enregistrerReglage('bandeHeures', basculerChoix(bandeChoisie(), b.dataset.hs));
     dessinerBande();
     rendreChoixBande();
   });

@@ -119,14 +119,20 @@ async function entete(p) {
   return p.evaluate(() => {
     const r = s => document.querySelector(s).getBoundingClientRect(), st = s => getComputedStyle(document.querySelector(s));
     const deborde = e => e.scrollWidth > e.clientWidth + 0.5 || (() => { const g = document.createRange(); g.selectNodeContents(e); return g.getBoundingClientRect().width > e.getBoundingClientRect().width + 0.5; })();
-    const textes = [...document.querySelectorAll('#h-total, #h-carte .h-lab, #h-strip b, #h-strip span, #h-quick:not([hidden]) .lbl, #h-quick:not([hidden]) b')];
+    // v0.46 : « … » permis sur les libellés de la bande SEULEMENT en dernier recours (classe « serre » : libellés 8 px et
+    // valeurs 9 px n'ont pas suffi) ; sinon la bande entière tient et rien n'est coupé
+    const S = document.querySelector('#h-strip'), serre = S.classList.contains('serre');
+    const dernierRecours = serre && S.style.getPropertyValue('--bl') === '8px' && S.style.getPropertyValue('--bv') === '9px';
+    const textes = [...document.querySelectorAll('#h-total, #h-carte .h-lab, #h-strip b, #h-quick:not([hidden]) .lbl, #h-quick:not([hidden]) b'
+      + (dernierRecours ? '' : ', #h-strip span'))];
+    if (!serre && deborde(S)) textes.push(S);
     const coupes = textes.filter(e => deborde(e) || e.getClientRects().length > 1 || e.getBoundingClientRect().height > parseFloat(getComputedStyle(e).fontSize) * 1.7).map(e => e.textContent);
     const avant = getComputedStyle(document.querySelector('#h-carte'), '::before');
     // « la plus grande qui tient » : 0,5 px de plus et quelque chose déborde (sauf si on est déjà au repère)
     const plusGrand = (ligne, v, sel) => {
       const L = document.querySelector(ligne); if (!L || L.hidden) return null;
       const t = parseFloat(L.style.getPropertyValue(v)); L.style.setProperty(v, (t + 0.5) + 'px');
-      const d = [...L.querySelectorAll(sel)].some(deborde); L.style.setProperty(v, t + 'px'); return { t, deborderait: d };
+      const d = [...L.querySelectorAll(sel)].some(deborde) || deborde(L); /* (v0.46 : la bande entière doit tenir) */ L.style.setProperty(v, t + 'px'); return { t, deborderait: d };
     };
     return { sync: r('#rafraichir'), carte: r('#h-carte'), loupe: r('#q-open'), ver: r('#h-version'), largeur: document.documentElement.clientWidth, trop: [...document.querySelectorAll('body *')].filter(x => x.getClientRects().length && x.getBoundingClientRect().right > document.documentElement.clientWidth + 1).slice(0, 6).map(x => `${x.tagName}#${x.id}.${x.className} ${Math.round(x.getBoundingClientRect().right)}`).join(' | '), // (WebKit mobile : innerWidth faux après un changement de taille)
       scrollX: document.documentElement.scrollWidth,
@@ -135,7 +141,7 @@ async function entete(p) {
       titreS: `${st('#h-carte .h-lab').fontSize} ${st('#h-carte .h-lab').fontWeight} ${st('#h-carte .h-lab').letterSpacing}`, valeur: `${st('#h-total').fontSize} ${st('#h-total').fontWeight} ${st('#h-total').color}`,
       petitH: document.querySelector('#h-total small') ? parseFloat(getComputedStyle(document.querySelector('#h-total small')).fontSize) / parseFloat(st('#h-total').fontSize) : 0,
       total: document.querySelector('#h-total').textContent, coupes, nb: document.querySelectorAll('#h-strip>div:not(.empty)').length,
-      bv: plusGrand('#h-strip', '--bv', 'b'), bl: plusGrand('#h-strip', '--bl', 'span'), qv: plusGrand('#h-quick', '--bv', 'b'), ql: plusGrand('#h-quick', '--bl', '.lbl'),
+      dernierRecours, bv: plusGrand('#h-strip', '--bv', 'b'), bl: plusGrand('#h-strip', '--bl', 'span'), qv: plusGrand('#h-quick', '--bv', 'b'), ql: plusGrand('#h-quick', '--bl', '.lbl'),
       carteVol: getComputedStyle(document.querySelector('#list .flight')).backgroundColor };
   });
 }
@@ -154,10 +160,10 @@ function controlerEntete(nom, e, n) {
     `${nom} : carte blanche, bord #aab3c2, coins 16 px, bande bleu-blanc-rouge de 5 px en haut`);
   verifier(e.titre === 'TOTAL HEURES DE VOL' && /^(11\.5|1[01](\.5)?|[89](\.5)?)px 700 /.test(e.titreS), `${nom} : titre « ${e.titre} » (${e.titreS})`);
   verifier(Math.abs(e.petitH - 0.55) < 0.02, `${nom} : le « h » du total à 55 %`);
-  verifier(!e.coupes.length, `${nom} : ${n} case(s) : aucun texte coupé ni à la ligne${e.coupes.length ? ' — ' + e.coupes.join(', ') : ''}`);
+  verifier(!e.coupes.length, `${nom} : ${n} case(s) : aucun texte coupé ni à la ligne${e.dernierRecours ? ' (libellés trop longs même à 8 px : « … » en dernier recours)' : ''}${e.coupes.length ? ' — ' + e.coupes.join(', ') : ''}`);
   if (n) {
     const [v, l] = REPERES[Math.min(n, 4) - 1];
-    verifier(e.nb === n && e.bv.t <= v && (e.bv.t === v || e.bv.deborderait) && e.bl.t <= l && (e.bl.t === l || e.bl.deborderait),
+    verifier(e.nb === n && e.bv.t <= v && e.bl.t <= l && (e.dernierRecours || ((e.bv.t === v || e.bv.deborderait) && (e.bl.t === l || e.bl.deborderait))),
       `${nom} : ${n} case(s) : la plus grande taille qui tient (valeurs ${e.bv.t} px, repère ${v} ; libellés ${e.bl.t} px, repère ${l})`);
   }
   if (e.qv) verifier(e.qv.t <= 22 && (e.qv.t === 22 || e.qv.deborderait) && e.ql.t <= 12.5 && (e.ql.t === 12.5 || e.ql.deborderait),

@@ -847,3 +847,25 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .flight .fl-id .fl-nm,.flight .fl-id .fl-reg{font-size:17px;flex:none}
 .flight .fl-id .fl-mod{font-size:var(--mod,15px);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flight .fl-meta{font-size:15px}
+
+/* v0.46 (R117) : nom / trigramme de l'autre pilote (fiche d'un vol) en GRAS 20 px ; la case garde sa taille : hauteur de
+   ligne figée à l'ancienne valeur (22,4 px = 16 px × 1,4) ; le texte d'aide (placeholder) garde son ancienne taille.
+   (R118) : date de la fiche en GRAS, à la plus grande taille qui tient (ajusterDate, saisie.js : variable --date-t) ;
+   même hauteur de ligne figée, la case ne change pas de taille ; l'icône calendrier reste à sa place. */
+#f-copi{font-size:20px;font-weight:700;line-height:22.4px;height:46.4px} /* 46,4 = 22,4 + 2 × 11 + 2 (hauteur d’origine ; Safari l’agrandissait) */
+#f-copi::placeholder{font-size:16px;font-weight:400}
+#f-date.datein{font-size:var(--date-t,16px);font-weight:700;line-height:22.4px}
+/* v0.46 (R120) : libellés de la bande (noms de modèles, plus longs que les codes OACI) : toujours sur une ligne, taille
+   adaptée (ajusterEntete, R111), « … » propre seulement en dernier recours */
+#v-carnet .hstrip span{text-overflow:ellipsis}
+/* une case ne rétrécit pas sous la largeur de ses textes (sinon la plus petite case perdait 1 px et coupait son libellé) ;
+   l'app réduit les polices jusqu'à ce que la bande entière tienne ; « … » en dernier recours seulement */
+#v-carnet .hstrip>div{min-width:min-content}
+#v-carnet .hstrip.serre>div{min-width:0}
+/* (R118) l'intérieur du champ date de Chrome a sa propre hauteur de ligne : figée aussi (sinon la case grandit de 1,6 px).
+   Une règle par pseudo-élément (un pseudo-élément inconnu ferait ignorer toute la règle par les autres navigateurs). */
+#f-date.datein::-webkit-datetime-edit{line-height:22.4px}
+#f-date.datein::-webkit-datetime-edit-fields-wrapper{line-height:22.4px}
+#f-date.datein::-webkit-date-and-time-value{line-height:22.4px}
+/* l'icône du calendrier (Chrome) se dimensionne d'après la police : elle garde sa taille d'origine (16 px) */
+#f-date.datein::-webkit-calendar-picker-indicator{font-size:16px}

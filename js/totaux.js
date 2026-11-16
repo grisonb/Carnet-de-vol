@@ -1,6 +1,6 @@
 // Totaux : accueil (TOTAL HdV, 3/7/30 jours), écran Totaux, Contrôle import.
 
-import { colonnesAvion, COMPTEURS, estSimulation } from './modele.js';
+import { colonnesAvion, COMPTEURS, estSimulation, familleAvion } from './modele.js';
 import { ajouterJours } from './temps.js';
 
 export const RUBRIQUES = [
@@ -36,6 +36,7 @@ const SOMMES = ['tempsTotal', 'simTemps', 'tempsCdB', 'tempsCopi', 'tempsDC', 't
 export function totauxVides() {
   const t = Object.fromEntries(RUBRIQUES.map(r => [r.cle, 0]));
   t.parEtiquette = {}; t.parAvion = {}; t.parType = {}; t.parTypeCdB = {}; t.parTypeCopi = {};
+  t.parFamille = {}; t.parFamilleCdB = {}; t.parFamilleCopi = {}; // v0.46 (R120) : par nom de modèle (bande d'heures)
   return t;
 }
 
@@ -69,6 +70,12 @@ export function ajouterVol(t, v, avions) {
     t.parType[ty] = (t.parType[ty] || 0) + temps;
     t.parTypeCdB[ty] = (t.parTypeCdB[ty] || 0) + (v.tempsCdB || 0);
     t.parTypeCopi[ty] = (t.parTypeCopi[ty] || 0) + (v.tempsCopi || 0);
+    const fa = familleAvion(a);
+    if (fa) {
+      t.parFamille[fa] = (t.parFamille[fa] || 0) + temps;
+      t.parFamilleCdB[fa] = (t.parFamilleCdB[fa] || 0) + (v.tempsCdB || 0);
+      t.parFamilleCopi[fa] = (t.parFamilleCopi[fa] || 0) + (v.tempsCopi || 0);
+    }
   }
   return t;
 }

@@ -662,6 +662,7 @@ export function ouvrirSaisie(vol, opts = {}) {
     arriveePosition: F.arrPos, brouillon: true, simulation: F.simulation } : (vol || null));
   // v0.44 (R112) : un vol enregistré s'ouvre en LECTURE SEULE (crayon -> modification) ; nouveau vol, brouillon NPF : modification
   fixerLecture(!!vol && !brouillon && !opts.modifier);
+  requestAnimationFrame(ajusterDate); // v0.46 (R118)
 }
 
 // ---------- v0.44 (R112) : lecture seule ----------
@@ -789,15 +790,37 @@ async function enregistrer() {
   quitter();
 }
 
+// v0.46 (R118) : date de la fiche à la plus grande taille qui tient dans sa case (gras), sans changer la case : largeur du
+// texte « JJ/MM/AAAA » mesurée (canvas) contre la place libre, icône du calendrier comprise (Chrome / Android / PC ;
+// Safari n'en affiche pas). De 24 px au plus à 14 px au moins.
+const DATE_MAX = 24, DATE_MIN = 14;
+let toileDate = null;
+function ajusterDate() {
+  const el = $('#f-date');
+  if (!el || !el.clientWidth) return; // fiche cachée : refait quand elle s'affiche (ResizeObserver de la ligne avion)
+  const st = getComputedStyle(el);
+  const icone = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Android/.test(navigator.userAgent) ? 4 : 28;
+  const dispo = el.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight) - icone;
+  const texte = (el.value && dateFr(el.value)) || '00/00/0000';
+  toileDate = toileDate || document.createElement('canvas').getContext('2d');
+  let t = DATE_MAX;
+  for (; t > DATE_MIN; t -= 0.5) {
+    toileDate.font = `700 ${t}px ${st.fontFamily}`;
+    if (toileDate.measureText(texte).width <= dispo) break;
+  }
+  el.style.setProperty('--date-t', t + 'px');
+}
+
 // ---------- Branchements ----------
 export function initSaisie({ fermer }) {
   // v0.37 (R90) : la ligne Avion se réajuste quand sa largeur change (saisie affichée, rotation, PC) et quand la police est prête
   // v0.44 : seulement quand la LARGEUR change, ajusté à l'image suivante (jamais de boucle « ResizeObserver loop » sur Safari)
   if (window.ResizeObserver) {
     let largeur = -1;
-    new ResizeObserver(es => { const l = es[0].contentRect.width; if (l === largeur) return; largeur = l; requestAnimationFrame(ajusterAvion); }).observe($('#ac-cur'));
+    new ResizeObserver(es => { const l = es[0].contentRect.width; if (l === largeur) return; largeur = l; requestAnimationFrame(() => { ajusterAvion(); ajusterDate(); }); }).observe($('#ac-cur'));
   }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterAvion);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { ajusterAvion(); ajusterDate(); });
+  $('#f-date').addEventListener('input', ajusterDate);
   quitter = fermer;
   champOACI('#f-dep', '#f-arr'); champOACI('#f-arr', '#f-t0');
   champHeure('#f-t0', '#f-t1'); champHeure('#f-t1', null);

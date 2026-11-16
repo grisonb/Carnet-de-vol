@@ -137,6 +137,16 @@ export const BASE = 'LFTW';
 // v0.35 (R85) : vol de SIMULATION envoyé par NPF-Q400-RUN (« simulation »: true ; champ absent pour un vrai vol).
 // Il reste dans le carnet (sauvegarde, copie NAS, synchro, CSV) mais ne compte JAMAIS : totaux, PDF, n° des feux,
 // valeurs par défaut d'un nouveau vol, doublons.
+// v0.46 (R120) : famille d'un avion pour les heures affichées (menu « Choisir les heures affichées » et bande de
+// l'accueil) : le NOM DU MODÈLE de sa fiche au lieu du code OACI. Regroupés : tous les DH8D -> « Dash 8 Q400 » (MR, MRE…),
+// tous les CL2T -> « CL-415 ». Fiche sans modèle : le code OACI. Simulateur : aucune famille (comme parType).
+export const FAMILLES_PAR_CODE = { DH8D: 'Dash 8 Q400', CL2T: 'CL-415' };
+export function familleAvion(a) {
+  if (!a || a.sim) return null;
+  const code = String(a.typeOACI || '').trim().toUpperCase();
+  return FAMILLES_PAR_CODE[code] || String(a.modele || '').trim() || code || '?';
+}
+
 export const estSimulation = v => !!v && v.simulation === true;
 export const volsReels = vols => vols.filter(v => !estSimulation(v));
 export const arriveeParDefaut = dep => (String(dep || '').trim().toUpperCase() === 'FMEP' ? 'FMEP' : BASE);

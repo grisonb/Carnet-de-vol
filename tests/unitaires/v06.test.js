@@ -27,13 +27,15 @@ test('bande : valeurs identiques à l\'écran Totaux (mêmes calculs)', () => {
 });
 
 test('bande : un choix par type d\'appareil, du plus d\'heures au moins ; DH8D total / CdB / Copi', () => {
+  // v0.46 (R120) : un choix par NOM DE MODÈLE (famille) ; DH8D -> « Dash 8 Q400 », « … CdB », « … Copi »
   const ch = choixParType(t, r.avions);
-  const types = ch.filter(c => c.cle.startsWith('type:')).map(c => c.cle.slice(5));
-  const minutes = types.map(ty => t.parType[ty]);
+  const familles = ch.filter(c => c.cle.startsWith('famille:')).map(c => c.cle.slice(8));
+  const minutes = familles.map(f => t.parFamille[f]);
   assert.deepEqual(minutes, [...minutes].sort((a, b) => b - a), 'rangés du plus d\'heures au moins');
-  assert.ok(!types.includes('SIMULATEURS'));
-  const i = ch.findIndex(c => c.cle === 'type:DH8D');
-  assert.deepEqual(ch.slice(i, i + 3).map(c => c.lib), ['DH8D total', 'DH8D CdB', 'DH8D Copi']);
+  assert.ok(!familles.includes('SIMULATEURS') && !ch.some(c => c.cle.startsWith('type')));
+  const i = ch.findIndex(c => c.cle === 'famille:Dash 8 Q400');
+  assert.deepEqual(ch.slice(i, i + 3).map(c => c.lib), ['Dash 8 Q400', 'Dash 8 Q400 CdB', 'Dash 8 Q400 Copi']);
+  assert.equal(valeurBande('famille:Dash 8 Q400', t).texte, valeurBande('type:DH8D', t).texte);
   // valeurs DH8D recalculées à la main
   const dash = r.aCreer.filter(v => avions.get(v.avionId)?.typeOACI === 'DH8D');
   const somme = k => dash.reduce((s, v) => s + (v[k] || 0), 0);

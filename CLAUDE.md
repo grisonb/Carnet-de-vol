@@ -151,6 +151,16 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.46 : R117 `#f-copi` 20 px 700, line-height 22,4 px et height 46,4 px figées (placeholder 16 px). R118 `#f-date.datein`
+  700, `--date-t` (`ajusterDate`, saisie.js : canvas, 24 à 14 px, réserve de l'icône 28 px sauf Safari), line-height figée
+  y compris `::-webkit-datetime-edit*`, icône `::-webkit-calendar-picker-indicator` en 16 px (sinon la case grandit).
+  R120 `familleAvion` / `FAMILLES_PAR_CODE` (modele.js : DH8D -> Dash 8 Q400, CL2T -> CL-415, sinon modèle, sinon code),
+  `t.parFamille|CdB|Copi` (totaux.js), clés `famille:` / `familleCdB:` / `familleCopi:` (bande.js, `FAMILLES_DETAILLEES`),
+  `normaliserBande` (anciennes clés `type:` converties à l'affichage, `bandeChoisie()` dans carnet.js ; écrit au premier
+  changement seulement : pas de conflit de synchro). Anciennes clés toujours lues par `valeurBande`. Bande : cases
+  `min-width:min-content` (c'est la bande entière qui doit tenir) ; `ajusterLigne` : libellés -> 10 px, valeurs -> 14 px,
+  libellés -> 8 px, valeurs -> 9 px, puis regrossit valeurs et libellés tant que tout tient ; dernier recours : classe
+  `serre` (cases rétrécissables, « … » sur les libellés).
 - v0.45 : R114 `.fl-tete>.fl-route{margin-top:2px}` (trajet descendu de 4 px). R116 `.fl-tete>.fl-bloc{position:relative;
   top:-2.5px}` (haut de la pastille = haut du contour de la date). R115 `.flight .fl-id` en flex : `.fl-nm` / `.fl-reg` 17 px
   (flex:none), `.fl-mod` 15 px (`--mod`, « … » sur lui seul), `.fl-meta` 15 px ; `ajusterTypes()` (carnet.js) réduit le type
@@ -321,6 +331,9 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v046.mjs` : cases autre pilote / date et bouton + de même taille (avec / sans les règles v0.46),
+  texte non coupé (encre au pixel contre le même texte dessiné à part), icône du calendrier, lecture / modification ;
+  noms de modèles dans le menu et la bande, anciens choix convertis, Chromium et WebKit 390 / 360 px.
 - `node tests/navigateur/v045.mjs` : date immobile (avec / sans les règles v0.45), trajet descendu de 4 px, haut de la pastille
   = haut du contour (mesures AU PIXEL, Chromium et WebKit, 390 / 360 px, clair / sombre), ligne avion 17 / 15 px sur une ligne
   (cas longs : type 13 px puis « … »), heures 15 px.

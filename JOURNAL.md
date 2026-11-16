@@ -1,5 +1,23 @@
 # Journal des versions
 
+## v0.46 — 16/11/2026
+
+Remarques R117, R118, R120. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R117 : autre pilote en gras** (fiche d'un vol) : nom / trigramme en gras 20 px (au lieu de 16) ; la case et le bouton +
+gardent exactement leur taille et leur place (mesuré avant / après, Chrome et Safari), en lecture seule et en modification.
+
+**R118 : date de la fiche en gras**, à la plus grande taille qui tient dans la case (22 à 24 px selon l'écran) ; la case
+garde sa taille ; l'icône du calendrier garde la sienne et reste utilisable (Chrome / Android / PC ; Safari n'en a pas).
+
+**R120 : noms de modèles dans les heures affichées** (menu « Choisir les heures affichées » et bande de l'accueil) au lieu
+des codes OACI : « Dash 8 Q400 » (tous les DH8D : MR et MRE regroupés ; total, CdB, Copi), « CL-415 » (tous les CL2T),
+sinon le modèle de la fiche (un bouton par nom si un même code en a plusieurs). Heures identiques (vérifié avec le vrai
+fichier). Anciens choix convertis tout seuls à l'affichage, même ordre ; enregistrés en noms de modèles au premier
+changement. PDF EASA, fiches avions, saisie et cartes de vols inchangés. Libellés de la bande : « … » en dernier recours.
+
+**Tests** : `tests/unitaires/v046.test.js`, `tests/navigateur/v046.mjs` ; v06 (unitaire) adapté ; test complet.
+
 ## v0.45 — 16/11/2026
 
 Remarques R114 à R116. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
