@@ -24,7 +24,7 @@ const faux = createServer((req, res) => {
     const json = (o, code = 200) => { res.writeHead(200, { ...cors, 'Content-Type': 'application/json' }); res.end(JSON.stringify(code === 200 ? o : { ...o, code })); };
     if (u.pathname.startsWith('/macros/s/')) { // faux « web app Google » (deux adresses inventées)
       appelsSocle++;
-      return json({ ok: true, version: 1, colonnes: [{ titre: 'Entrainement avant le', valeur: '28/11/2026' }, { titre: 'vol IFR avant le', valeur: '22/11/2026' }] });
+      return json({ ok: true, version: 1, colonnes: [{ titre: 'Vol OPS avant le', valeur: '28/11/2026' }, { titre: 'vol IFR avant le', valeur: '22/11/2026' }] });
     }
     if (req.headers['x-carnet-cle'] !== nas.mdp) return json({ erreur: 'mot-de-passe' }, 401);
     if (action === 'test') return json({ ok: true, copies: 0, cle: 'carnet', version: 5 });

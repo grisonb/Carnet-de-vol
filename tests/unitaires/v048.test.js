@@ -9,11 +9,11 @@ import { REGLAGES_PRIVES, creerSauvegarde } from '../../js/sauvegarde.js';
 const AUJ = '2026-11-17';
 const fr = iso => iso.split('-').reverse().join('/');
 const reponse = (ops, ifr) => ({ ok: true, version: 1, aujourdhui: fr(AUJ), lu: '2026-11-17T17:50:00.000Z', colonnes: [
-  { titre: 'Dernier vol', valeur: '16/11/2026' }, { titre: 'vol IFR avant le', valeur: fr(ifr) }, { titre: 'Entrainement avant le', valeur: fr(ops) }] });
+  { titre: 'Dernier vol', valeur: '16/11/2026' }, { titre: 'vol IFR avant le', valeur: fr(ifr) }, { titre: 'Vol OPS avant le', valeur: fr(ops) }] });
 
 test('titres comparés sans majuscules, accents ni espaces', () => {
   assert.equal(normaliserTitre(' Entraînement  AVANT le '), normaliserTitre('Entrainement avant le'));
-  const r = lireReponseSocle({ ok: true, colonnes: [{ titre: 'ENTRAÎNEMENT AVANT LE', valeur: '18/12/2026' }, { titre: 'Vol IFR avant  le', valeur: '02/12/2026' }] });
+  const r = lireReponseSocle({ ok: true, colonnes: [{ titre: 'VÔL  OPS AVANT LE', valeur: '18/12/2026' }, { titre: 'Vol IFR avant  le', valeur: '02/12/2026' }] }); // v0.50 : colonne OPS
   assert.deepEqual(r, { ok: true, ops: { avantLe: '2026-12-18', dernier: '2026-12-17' }, ifr: { avantLe: '2026-12-02', dernier: '2026-12-01' } });
 });
 
@@ -29,8 +29,8 @@ test('« avant le » : dernier jour = la veille ; J-10 vert, J-4 / J-0 orange, J
 
 test('réponses en erreur : pas de plantage, message clair', () => {
   assert.match(lireReponseSocle({ ok: false, erreur: 'feuille introuvable' }).erreur, /feuille introuvable/);
-  assert.match(lireReponseSocle({ ok: true, colonnes: [{ titre: 'vol IFR avant le', valeur: '02/12/2026' }] }).erreur, /Entrainement avant le.*introuvable/);
-  assert.match(lireReponseSocle({ ok: true, colonnes: [{ titre: 'Entrainement avant le', valeur: '' }, { titre: 'vol IFR avant le', valeur: '02/12/2026' }] }).erreur, /date illisible/);
+  assert.match(lireReponseSocle({ ok: true, colonnes: [{ titre: 'vol IFR avant le', valeur: '02/12/2026' }] }).erreur, /Vol OPS avant le.*introuvable/);
+  assert.match(lireReponseSocle({ ok: true, colonnes: [{ titre: 'Vol OPS avant le', valeur: '' }, { titre: 'vol IFR avant le', valeur: '02/12/2026' }] }).erreur, /date illisible/);
   assert.equal(lireReponseSocle(null).ok, false);
   assert.equal(lireReponseSocle('texte').ok, false);
   assert.equal(dateDeTexte('31/02/2026'), null);

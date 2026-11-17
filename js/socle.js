@@ -6,7 +6,9 @@
 
 import { ajouterJours } from './temps.js';
 
-export const SOCLE_COLONNES = { ops: 'Entrainement avant le', ifr: 'vol IFR avant le' };
+// v0.50 (R124) : OPS = « Vol OPS avant le » (pas « Entrainement avant le », ni « Vol OPS a partir du » : titre exact,
+// sans tenir compte des majuscules, accents ni espaces)
+export const SOCLE_COLONNES = { ops: 'Vol OPS avant le', ifr: 'vol IFR avant le' };
 export const SOCLE_ORANGE = 5; // 5 jours ou moins restants (J-5 à J-0) : orange
 
 // Titres comparés sans majuscules, accents ni espaces

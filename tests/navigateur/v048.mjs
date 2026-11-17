@@ -36,7 +36,7 @@ const faux = createServer((req, res) => {
       if (socle.mode === 'muet') { socle.pendus.push(res); return; }
       if (socle.mode === 'erreur') return json({ ok: false, erreur: 'feuille ESSAI introuvable' });
       const colonnes = [{ titre: 'Dernier vol', valeur: fr(jour(-1)) }, { titre: 'Dernier Feu / Ent. OPS', valeur: fr(jour(-1)) }];
-      if (socle.mode !== 'titres') colonnes.push({ titre: 'vol IFR avant le', valeur: fr(socle.ifr) }, { titre: 'Entrainement avant le', valeur: fr(socle.ops) });
+      if (socle.mode !== 'titres') colonnes.push({ titre: 'vol IFR avant le', valeur: fr(socle.ifr) }, { titre: 'Vol OPS avant le', valeur: fr(socle.ops) });
       return json({ ok: true, version: 1, aujourdhui: fr(AUJ), lu: '2026-11-17T09:00:00.000Z', colonnes });
     }
     // Faux NAS v5 (synchro ; pas de vols NPF)

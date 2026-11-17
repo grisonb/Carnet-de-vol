@@ -1,5 +1,17 @@
 # Journal des versions
 
+## v0.50 — 17/11/2026
+
+Remarque R124. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R124 : case OPS = colonne « Vol OPS avant le »** (au lieu de « Entrainement avant le ») ; jamais confondue avec « Vol
+OPS a partir du » (titre exact, sans tenir compte des majuscules, accents ni espaces). Case IFR inchangée. Dernier jour =
+la veille, comme avant. Colonne absente : « Colonne « Vol OPS avant le » introuvable dans la feuille. » Rien d'autre ne
+change.
+
+**Tests** : `tests/unitaires/v050.test.js`, `tests/navigateur/v050.mjs` ; v048 et v049 : la feuille inventée a la nouvelle
+colonne ; test rapide.
+
 ## v0.49 — 17/11/2026
 
 Remarque R123. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

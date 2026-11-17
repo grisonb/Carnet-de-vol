@@ -151,6 +151,8 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.50 : R124 `SOCLE_COLONNES.ops` = « Vol OPS avant le » (js/socle.js) ; « Vol OPS a partir du » et « Entrainement avant le »
+  ne sont jamais lus.
 - v0.49 : R123 réglages partagés : `enregistrerReglage` (etat.js) écrit `{ cle, valeur, modifieLe }` ; `elementsDuCarnet` /
   `trierRecus` font voyager `modifieLe` ; `analyserRecus` : réglage non fusionnable changé des deux côtés -> le plus récent
   (`modifieLe`, sinon `le` du NAS ; inconnu ici -> NAS), plus de conflit ; `reglageVide` + `videDOrigine` : vide jamais
@@ -348,6 +350,7 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v050.mjs` : case OPS = « Vol OPS avant le » (colonnes pièges), colonne absente (Tester, lecture).
 - `node tests/navigateur/v049.mjs` : réglage partagé entre deux appareils déjà synchronisés (bouton, synchro automatique,
   vide d'origine, effacement, le plus récent gagne, état laissé par la v0.47 rattrapé), faux NAS + faux socle.
 - `node tests/navigateur/v048.mjs` : socle OPS / IFR (faux serveur qui imite la web app Google, faux NAS, horloge simulée) :
