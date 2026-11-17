@@ -151,6 +151,11 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.47 : R121 `verifierVolsNpf({ essai })` (js/ui/npf.js) renvoie `{ statut, n }`, une seule recherche à la fois (promesse
+  `recherche` partagée), échec -> un nouvel essai `NPF_REESSAI` (1 min, pas d'essai en chaîne), `setInterval` `NPF_PERIODE`
+  (2 min) seulement si `document.visibilityState === 'visible'` ; `texteNpf`. Bouton `#rafraichir` (ui/synchro.js) :
+  `Promise.all([synchroniser(), verifierVolsNpf()])`, message « … · N vols NPF à importer » (échec NPF affiché seulement
+  si la synchro a réussi ou n'est pas activée).
 - v0.46 : R117 `#f-copi` 20 px 700, line-height 22,4 px et height 46,4 px figées (placeholder 16 px). R118 `#f-date.datein`
   700, `--date-t` (`ajusterDate`, saisie.js : canvas, 24 à 14 px, réserve de l'icône 28 px sauf Safari), line-height figée
   y compris `::-webkit-datetime-edit*`, icône `::-webkit-calendar-picker-indicator` en 16 px (sinon la case grandit).
@@ -331,6 +336,8 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v047.mjs` : vols NPF sans refaire l'export (faux NAS v5 + NPF, mode muet ; horloge de la page
+  simulée avec `page.clock` : 2 min, 1 min, 20 s sans attendre ; arrière-plan simulé par `document.visibilityState`).
 - `node tests/navigateur/v046.mjs` : cases autre pilote / date et bouton + de même taille (avec / sans les règles v0.46),
   texte non coupé (encre au pixel contre le même texte dessiné à part), icône du calendrier, lecture / modification ;
   noms de modèles dans le menu et la bande, anciens choix convertis, Chromium et WebKit 390 / 360 px.

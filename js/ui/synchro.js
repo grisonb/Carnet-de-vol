@@ -10,6 +10,7 @@ import * as db from '../db.js';
 import { requete, configNas, nasRefuse, noterRefus, ecranNas } from './nas.js';
 import { creerCopieur } from '../copieur.js';
 import { cleVolOuvert } from './saisie.js';
+import { verifierVolsNpf, texteNpf } from './npf.js';
 import { nouvelId, cleDoublon } from '../modele.js';
 import { hm, dateFr } from '../temps.js';
 import { elementsDuCarnet, preparerEnvoi, majCarte, carteDepuisNas, trierRecus, lots, resumeSynchro, REGLAGES_PARTAGES,
@@ -239,9 +240,15 @@ async function rafraichir() {
   const b = $('#rafraichir');
   if (b.classList.contains('tourne')) return;
   b.classList.add('tourne'); b.setAttribute('aria-busy', 'true');
-  let r;
-  try { r = roleSynchro() && configNas().configuree ? await synchroniser() : { statut: 'pasConfiguree' }; } finally { b.classList.remove('tourne'); b.removeAttribute('aria-busy'); }
-  toast(texteRafraichir(r, resumeEtat()), r.statut === 'ok' ? 1600 : 3200);
+  // v0.47 (R121) : la synchro ET la recherche des vols envoyés par NPF-Q400, en même temps ; le message dit les deux
+  let r, npf;
+  try {
+    [r, npf] = await Promise.all([roleSynchro() && configNas().configuree ? synchroniser() : { statut: 'pasConfiguree' }, verifierVolsNpf()]);
+  } finally { b.classList.remove('tourne'); b.removeAttribute('aria-busy'); }
+  // (synchro en échec : son message dit déjà le problème du NAS ou du réseau, on n'ajoute que les vols trouvés)
+  const echecNpf = npf && !['ok', 'inactif'].includes(npf.statut), syncOk = ['ok', 'pasConfiguree'].includes(r.statut);
+  const tn = echecNpf && !syncOk ? '' : texteNpf(npf);
+  toast([texteRafraichir(r, resumeEtat()), tn].filter(Boolean).join(' · '), r.statut === 'ok' && !echecNpf ? (tn ? 2600 : 1600) : 3600);
 }
 
 let minuterie = null;

@@ -1,5 +1,20 @@
 # Journal des versions
 
+## v0.47 — 17/11/2026
+
+Remarque R121 (suite au diagnostic du 17/11). carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non
+touchés ; données inchangées.
+
+**R121 : les vols envoyés par NPF arrivent sans refaire l'export.**
+- Le bouton d'actualisation lance la synchro ET la recherche des vols NPF ; message « À jour · 2 vols NPF à importer »
+  (« À jour » seul s'il n'y en a aucun) ; recherche ratée : « Vols NPF : NAS injoignable, nouvel essai dans 1 min ».
+- Recherche toutes les 2 min quand l'app est ouverte ET visible (rien en arrière-plan ni écran éteint).
+- Recherche ratée (NAS injoignable, plus de 20 s…) : un nouvel essai automatique 1 min plus tard, sans message.
+- Jamais deux recherches en même temps. Bandeau, fenêtre d'import, « pas de doublon » et les 4 déclencheurs d'avant
+  inchangés.
+
+**Tests** : `tests/navigateur/v047.mjs` (faux NAS local, horloge simulée) ; test complet.
+
 ## v0.46 — 16/11/2026
 
 Remarques R117, R118, R120. carnet.php v5 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

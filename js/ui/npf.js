@@ -11,7 +11,6 @@ import { requete, configNas, nasRefuse, noterRefus } from './nas.js';
 import { volNpfValide, resumeNpf, volDejaEnregistre, dejaAJour, brouillonNpf, differencesNpf } from '../npf.js';
 
 let attente = [];            // vols NPF en attente (valides, pas encore enregistrés à jour dans le carnet)
-let enCours = false;
 let ouvrirBrouillon = () => {};
 const avions = () => [...etat.avions.values()];
 
@@ -35,27 +34,52 @@ function majBandeau() {
 }
 
 // Demande discrète des vols en attente sur le NAS
-export async function verifierVolsNpf() {
+// v0.47 (R121) : renvoie le résultat { statut: 'ok', n } (n = vols à importer), { statut: <échec> } ou { statut: 'inactif' }
+// (pas de NAS, mot de passe refusé, PC). Une seule recherche à la fois : un 2e appel pendant la recherche reçoit la même.
+// Échec (NAS injoignable, plus de 20 s, réponse illisible…) : UN nouvel essai automatique 1 min plus tard, sans message.
+export const NPF_PERIODE = 2 * 60 * 1000; // recherche régulière, app ouverte et visible (comme la synchro)
+export const NPF_REESSAI = 60 * 1000;
+let recherche = null, reessai = null;
+const SANS_REESSAI = ['ok', 'inactif', 'refuse', 'demenage'];
+export function verifierVolsNpf({ essai = false } = {}) {
   // v0.22 : mot de passe refusé -> on n'insiste pas (chaque essai raté compte sur le NAS)
   // v0.23 / v0.24 : les vols NPF s'enregistrent sur le TÉLÉPHONE seulement (ni PC qui consulte, ni PC qui modifie) :
   // un vol NPF ne peut donc pas être enregistré deux fois (une fois sur chaque appareil)
-  if (!configNas().configuree || enCours || nasRefuse() || enConsultation() || reglage('synchroRole') === 'modification') return;
-  enCours = true;
-  try {
-    const r = await requete('vols-liste', { delai: 20000 });
-    if (r.statut === 'refuse') { await noterRefus(); return; }
-    if (r.statut !== 'ok') return;
-    let j = null;
-    try { j = await r.reponse.json(); } catch { return; }
-    const restants = [];
-    for (const n of (j && Array.isArray(j.vols) ? j.vols : []).filter(volNpfValide)) {
-      const v = volDejaEnregistre(etat.vols, n.id);
-      // Déjà enregistré dans le carnet (et pas ré-exporté depuis) : on le retire du NAS sans rien demander
-      if (dejaAJour(v, n)) retirerDuNas(n.id); else restants.push(n);
+  if (!configNas().configuree || nasRefuse() || enConsultation() || reglage('synchroRole') === 'modification') return Promise.resolve({ statut: 'inactif' });
+  if (recherche) return recherche;
+  recherche = chercher().catch(() => ({ statut: 'injoignable' })).finally(() => { recherche = null; });
+  return recherche.then(res => {
+    if (res.statut === 'ok' && reessai) { clearTimeout(reessai); reessai = null; }
+    if (!SANS_REESSAI.includes(res.statut) && !essai && !reessai) {
+      reessai = setTimeout(() => { reessai = null; verifierVolsNpf({ essai: true }); }, NPF_REESSAI);
     }
-    attente = restants;
-    majBandeau();
-  } finally { enCours = false; }
+    return res;
+  });
+}
+async function chercher() {
+  const r = await requete('vols-liste', { delai: 20000 });
+  if (r.statut === 'refuse') { await noterRefus(); return { statut: 'refuse' }; }
+  if (r.statut !== 'ok') return { statut: r.statut };
+  let j = null;
+  try { j = await r.reponse.json(); } catch { return { statut: 'illisible' }; }
+  if (!j || !Array.isArray(j.vols)) return { statut: 'illisible' };
+  const restants = [];
+  for (const n of j.vols.filter(volNpfValide)) {
+    const v = volDejaEnregistre(etat.vols, n.id);
+    // Déjà enregistré dans le carnet (et pas ré-exporté depuis) : on le retire du NAS sans rien demander
+    if (dejaAJour(v, n)) retirerDuNas(n.id); else restants.push(n);
+  }
+  attente = restants;
+  majBandeau();
+  return { statut: 'ok', n: restants.length };
+}
+// v0.47 (R121) : morceau du message du bouton d'actualisation (vide si rien à dire)
+export function texteNpf(res) {
+  if (!res || res.statut === 'inactif') return '';
+  if (res.statut === 'ok') return res.n ? `${res.n} vol${res.n > 1 ? 's' : ''} NPF à importer` : '';
+  if (res.statut === 'refuse') return 'Vols NPF : mot de passe refusé';
+  const motif = { horsLigne: 'pas de réseau', bloque: 'trop d\'essais de mot de passe', stockage: 'erreur du NAS', illisible: 'réponse illisible du NAS' }[res.statut] || 'NAS injoignable';
+  return `Vols NPF : ${motif}, nouvel essai dans 1 min`;
 }
 
 async function retirerDuNas(id) {
@@ -145,4 +169,6 @@ export function initNpf({ ouvrir }) {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(verifierVolsNpf, 2000); });
   // Adresse ou mot de passe du NAS enregistrés : on regarde tout de suite
   document.addEventListener('nas-etat', () => { if (!attente.length) verifierVolsNpf(); });
+  // v0.47 (R121) : toutes les 2 min, seulement si l'app est ouverte ET visible (rien en arrière-plan, écran éteint)
+  setInterval(() => { if (document.visibilityState === 'visible') verifierVolsNpf(); }, NPF_PERIODE);
 }
