@@ -883,11 +883,16 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
   color:#fff;box-shadow:0 1px 4px rgba(20,30,50,.22)}
 .sc-vert{background:#2e7d32}.sc-orange{background:#e8892b}.sc-rouge{background:#d32f2f}
 .socle .sc.sc-gris{background:#c7cdd6;color:#4f5868;box-shadow:none}
-.sc-l{display:block;font-family:var(--f-num);font-size:26px;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
-.sc-l>span{display:inline}
-.sc-l>span+span{margin-left:7px}
-.sc-t{font-size:17px;font-weight:800}
-.sc-j{font-size:26px;font-weight:800}
-.sc-d{font-size:17px;font-weight:700}
-@supports (text-box:trim-both cap alphabetic){.sc-l{text-box:trim-both cap alphabetic}}
-@supports not (text-box:trim-both cap alphabetic){.sc-l{margin-top:-4.75px;margin-bottom:-2.25px}} /* mesuré au pixel (Chrome sans text-box) */
+/* v0.51 (R125) : CHAQUE morceau (titre, J-, date) est sa propre boîte, rognée à la hauteur des capitales / chiffres et
+   centrée verticalement dans la case (plus d'alignement sur la ligne de base du gros « J- ») ; tailles --sc-t / --sc-j et écart
+   --sc-e (ajusterSocle, js/ui/socle.js) : 17 / 26 / 7 px à 360 px, plus grand si la case est plus large (au plus 30 / 26),
+   arrondis au pixel entier (Chrome arrondit les mesures d'une police de taille fractionnaire : centrage faussé) */
+.sc-l{display:flex;align-items:center;justify-content:center;height:100%;gap:var(--sc-e, 7px);font-family:var(--f-num);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.sc-l>span{display:block;flex:none;line-height:1}
+.sc-t{font-size:var(--sc-t, 17px);font-weight:800}
+.sc-j{font-size:var(--sc-j, 26px);font-weight:800}
+.sc-d{font-size:var(--sc-t, 17px);font-weight:700}
+@supports (text-box:trim-both cap alphabetic){.sc-l>span{text-box:trim-both cap alphabetic}}
+/* sans text-box : même rognage en marges négatives (en em : valables à toutes les tailles), mesuré au pixel */
+@supports not (text-box:trim-both cap alphabetic){.sc-l>span{margin-top:var(--sc-rh,-0.18em);margin-bottom:var(--sc-rb,-0.11em)}}

@@ -127,9 +127,13 @@ function controlerMise(nom, m, largeur) {
   verifier(m.length === 2 && Math.abs(m[1].x - (m[0].x + m[0].l) - 8) < 0.6 && m.every(c => c.h === 30 && c.rayon === '12px'), `${nom} : 2 cases côte à côte, 8 px d'écart, 30 px de haut, coins 12 px`);
   for (const c of m) {
     const [t, j, d] = c.parties;
-    verifier(c.lignes && Math.abs(t.haut - d.haut) < 0.6 && t.taille === '17px' && t.gras === '800' && j.taille === '26px' && j.gras === '800' && d.taille === '17px' && d.gras === '700'
-      && /tabular-nums/.test(j.chiffres) && c.ecartParties.every(e => Math.abs(e - 7) < 0.8),
-      `${nom} : ${c.parties.length} parties sur UNE ligne (17 / 26 / 17 px, 800 / 800 / 700, chiffres à largeur fixe, 7 px entre elles)`);
+    // v0.51 (R125) : 17 / 26 / 17 px à 360 px, plus grand au-delà (au plus 20 / 30 / 20), écart 7 px à la même échelle ;
+    // chaque morceau centré dans la case (voir v051) : leurs hauts ne sont plus alignés
+    const tj = parseFloat(j.taille), tt = parseFloat(t.taille), ech = tj / 26;
+    const tailles = largeur === 360 ? (t.taille === '17px' && j.taille === '26px') : (tj >= 26 && tj <= 30 && tt <= 20);
+    verifier(c.lignes && tailles && d.taille === t.taille && t.gras === '800' && j.gras === '800' && d.gras === '700'
+      && /tabular-nums/.test(j.chiffres) && c.ecartParties.every(e => Math.abs(e - 7 * ech) < 1),
+      `${nom} : ${c.parties.length} parties sur UNE ligne (${t.taille} / ${j.taille} / ${d.taille}, 800 / 800 / 700, chiffres à largeur fixe, écart ${c.ecartParties.map(e => e.toFixed(1)).join(' / ')} px)`);
     // (boîte du texte au centre à 1 px près ; l'encre peut différer un peu : espaces naturels des lettres « O » / « 1 »)
     verifier(Math.abs(c.gauche - c.droite) <= 1 && Math.abs(c.v.gauche - c.v.droite) <= 2, `${nom} : centré horizontalement (${c.gauche.toFixed(1)} / ${c.droite.toFixed(1)} px ; encre ${c.v.gauche.toFixed(1)} / ${c.v.droite.toFixed(1)})`);
     verifier(Math.abs(c.v.haut - c.v.bas) <= 1, `${nom} : centré verticalement (mesure au pixel : ${c.v.haut.toFixed(2)} px en haut, ${c.v.bas.toFixed(2)} px en bas)`);

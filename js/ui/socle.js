@@ -61,6 +61,59 @@ export function afficherSocle() {
       + `<span class="sc-l"><span class="sc-t">${titre}</span><span class="sc-j num">${esc(e.texte)}</span><span class="sc-d num">${esc(e.date)}</span></span></div>`;
   }).join('');
   z.hidden = false;
+  ajusterSocle();
+}
+
+// v0.51 (R125) : taille des cases d'après leur largeur. Coefficient --sck commun aux deux cases : 1 quand la case a sa
+// largeur d'un écran de 360 px (titre 17, J- 26, date 17), proportionnel au-delà, au plus 30 / 26 (J- 30, titre et date
+// 19,6) ; jamais moins de 10 px de marge de chaque côté (le contenu le plus large des deux cases décide : « J+12 »…).
+const SCK_MAX = 30 / 26, MARGE = 10, ECART = 8;
+export function ajusterSocle() {
+  const z = $('#h-socle');
+  if (!z || z.hidden || !z.clientWidth) return; // caché : refait quand le carnet réapparaît (ajusterEntete)
+  const cases = [...z.querySelectorAll('.sc')];
+  if (!cases.length) return;
+  const largeur = cases[0].clientWidth;
+  const largeur360 = (360 - (innerWidth - z.clientWidth) - ECART) / cases.length; // largeur d'une case sur un écran de 360 px
+  // tailles arrondies au pixel entier (Chrome arrondit les mesures d'une police fractionnaire : le centrage serait faussé)
+  // sans text-box : seulement des tailles VÉRIFIÉES au pixel (titre / J-) : à certaines tailles (titre 18, J- 29…), l'ancien
+  // Chrome dessine le texte jusqu'à 0,75 px de travers ; on prend le plus grand couple qui ne dépasse pas la taille voulue
+  const verifiees = AVEC_TEXT_BOX() ? null : [[17, 26], [19, 28], [20, 30]];
+  const poser = k => {
+    const [t, j] = verifiees ? verifiees.filter(([, jj]) => jj <= Math.max(26, Math.round(26 * k))).at(-1) : [Math.round(17 * k), Math.round(26 * k)];
+    const kk = verifiees ? Math.min(k, j / 26) : k; // (contenu trop large : on retombe sur un couple plus petit, voir plus bas)
+    z.style.setProperty('--sc-j', j + 'px'); z.style.setProperty('--sc-t', t + 'px'); z.style.setProperty('--sc-e', Math.round(7 * kk) + 'px');
+  };
+  let k = Math.min(SCK_MAX, Math.max(1, largeur / largeur360));
+  for (let i = 0; i < 4; i++) {
+    poser(k);
+    const contenu = Math.max(...cases.map(c => c.querySelector('.sc-l').scrollWidth));
+    if (contenu <= largeur - 2 * MARGE) break;
+    k *= (largeur - 2 * MARGE) / contenu * 0.98;
+  }
+  if (!AVEC_TEXT_BOX()) rognerSansTextBox(z);
+}
+// Navigateurs sans text-box (Chrome avant la v133…) : chaque morceau est rogné à son ENCRE, mesurée ici même (ligne de base
+// réelle dans ce navigateur + hauteur de l'encre du texte) : des marges fixes ne suffisent pas, Chrome arrondit ses mesures
+// de police différemment selon la taille.
+const AVEC_TEXT_BOX = () => !!(window.CSS && CSS.supports && CSS.supports('text-box', 'trim-both cap alphabetic'));
+let toile = null;
+function rognerSansTextBox(z) {
+  toile = toile || document.createElement('canvas').getContext('2d');
+  for (const s of z.querySelectorAll('.sc-l>span')) {
+    s.style.marginTop = s.style.marginBottom = '0px';
+    const st = getComputedStyle(s), repere = document.createElement('i');
+    repere.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+    s.append(repere);
+    const haut = s.getBoundingClientRect().top, base = repere.getBoundingClientRect().top - haut, h = s.getBoundingClientRect().height;
+    repere.remove();
+    // encre mesurée sur une police de 1000 px puis ramenée à la taille (Chrome arrondit ces mesures au pixel entier)
+    const taille = parseFloat(st.fontSize);
+    toile.font = `${st.fontWeight} 1000px ${st.fontFamily}`;
+    const m = toile.measureText(s.textContent), asc = m.actualBoundingBoxAscent * taille / 1000, desc = m.actualBoundingBoxDescent * taille / 1000;
+    s.style.marginTop = `${-(base - asc)}px`; // la boîte du morceau = son encre : centrée dans la case par le flex
+    s.style.marginBottom = `${-(h - base - desc)}px`;
+  }
 }
 
 // ---------- Plus › Socle OPS / IFR ----------

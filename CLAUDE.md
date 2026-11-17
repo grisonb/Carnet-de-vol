@@ -151,6 +151,11 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.51 : R125 `.sc-l` en flex (hauteur de la case), chaque `span` rogné (`text-box` sinon `rognerSansTextBox` : ligne de base
+  mesurée avec un repère + encre mesurée sur une police de 1000 px) et centré seul ; `ajusterSocle` (js/ui/socle.js, appelé
+  par `afficherSocle` et `ajusterEntete`) : `--sc-t` / `--sc-j` / `--sc-e` arrondis au pixel, × largeur / largeur à 360 px
+  (au plus 30 / 26), marges ≥ 10 px ; sans text-box : couples vérifiés 17/26, 19/28, 20/30 (l'ancien Chrome dessine de
+  travers à certaines tailles : titre 18, J- 29).
 - v0.50 : R124 `SOCLE_COLONNES.ops` = « Vol OPS avant le » (js/socle.js) ; « Vol OPS a partir du » et « Entrainement avant le »
   ne sont jamais lus.
 - v0.49 : R123 réglages partagés : `enregistrerReglage` (etat.js) écrit `{ cle, valeur, modifieLe }` ; `elementsDuCarnet` /
@@ -350,6 +355,9 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v051.mjs` : centrage de CHAQUE morceau à l'encre (couleur de la case lue dans son style, bords de la
+  capture ignorés), marges ≥ 10 px, tailles ; 360 / 393 / 412 px, ×2 / ×3, Chromium (repli), WebKit (text-box) et WebKit
+  forcé sur le repli. `V051_SONDE=1` : tout mesurer sans s'arrêter.
 - `node tests/navigateur/v050.mjs` : case OPS = « Vol OPS avant le » (colonnes pièges), colonne absente (Tester, lecture).
 - `node tests/navigateur/v049.mjs` : réglage partagé entre deux appareils déjà synchronisés (bouton, synchro automatique,
   vide d'origine, effacement, le plus récent gagne, état laissé par la v0.47 rattrapé), faux NAS + faux socle.

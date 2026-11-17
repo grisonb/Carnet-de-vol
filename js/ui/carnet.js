@@ -7,6 +7,7 @@
 import { $, esc, codeAvecDrapeau } from './commun.js';
 import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret } from '../etat.js';
 import { activerGlisser } from './glisser.js';
+import { ajusterSocle } from './socle.js';
 import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
 import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide } from '../temps.js';
@@ -352,6 +353,7 @@ export function ajusterEntete() {
     for (let t = 11.5; deborde(lab) && t > 8; ) { t -= 0.5; lab.style.fontSize = t + 'px'; }
   }
   ajusterLigne($('#h-strip')); ajusterLigne($('#h-quick'));
+  ajusterSocle(); // v0.51 (R125)
   ajusterTypes();
 }
 // « 5432h10 » : le « h » en plus petit (le texte lu reste « 5432h10 »)

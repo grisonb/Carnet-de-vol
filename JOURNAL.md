@@ -1,5 +1,17 @@
 # Journal des versions
 
+## v0.51 — 17/11/2026
+
+Remarque R125. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R125 : cases OPS / IFR** : chaque morceau (titre, J-, date) est centré verticalement dans la case, indépendamment des
+autres (plus d'alignement sur la ligne de base du gros « J- ») ; mesuré à l'encre, au pixel, à 360 / 393 / 412 px, écrans
+×2 et ×3, Chrome et Safari, avec text-box et avec la solution de repli. La police suit la largeur de la case : 17 / 26 / 17
+à 360 px, plus grande au-delà (au plus 20 / 30 / 20), toujours 10 px de marge au moins, sur une ligne. Case de 30 px,
+couleurs, gris et synchro inchangés.
+
+**Tests** : `tests/navigateur/v051.mjs` ; v048 adapté (tailles et écart à l'échelle de la case) ; test rapide.
+
 ## v0.50 — 17/11/2026
 
 Remarque R124. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
