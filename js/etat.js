@@ -79,7 +79,9 @@ export async function ecrireReglageDiscret(cle, valeur) {
 export async function enregistrerReglage(cle, valeur) {
   if (REGLAGES_PARTAGES.includes(cle) && refuseEnConsultation()) return false; // réglage du carnet
   etat.reglages[cle] = valeur;
-  await db.ecrireReglage(cle, valeur);
+  // v0.49 (R123) : un réglage partagé garde l'heure de sa modification (elle voyage avec lui : le plus récent gagne)
+  if (REGLAGES_PARTAGES.includes(cle)) await db.enregistrer({ reglages: [{ cle, valeur, modifieLe: new Date().toISOString() }] });
+  else await db.ecrireReglage(cle, valeur);
   prevenir();
 }
 

@@ -96,8 +96,13 @@ async function cycleDeuxSens(progres) {
     const r = await recevoirDepuis(0, async el => { tous.push(...el); });
     if (r.statut !== 'ok') return r;
     carte = carteDepuisNas(tous);
-    await noter({ carte, rev: r.rev });
+    await noter({ carte, rev: r.rev, reglagesConnus: REGLAGES_PARTAGES });
   }
+  // v0.49 (R123) : rattrapage des réglages partagés qu'une ancienne version de l'app a sautés (elle ne les connaissait pas,
+  // mais son repère de synchro est passé dessus : ils n'arrivaient jamais). Une fois par nouvelle liste de réglages.
+  const rattrapage = await rattraperReglages(carte, true);
+  if (rattrapage.statut !== 'ok') return rattrapage;
+  carte = rattrapage.carte;
   // 1. Recevoir ce que l'autre appareil a changé
   let { m: locaux } = await locauxActuels();
   let conflits = new Map((etatSynchro().conflits || []).map(c => [c.cle, c]));
@@ -147,8 +152,40 @@ async function cycleDeuxSens(progres) {
   return { statut: 'ok', envoyees: faites - Math.max(0, restent), recus: appliques, vols: contenu.vols.length, conflits: conflits.size, aConfirmer };
 }
 
+// v0.49 (R123) : réglages partagés que cet appareil n'a jamais traités (nouveaux dans cette version de l'app) : relus
+// sur le NAS depuis le début, puis traités comme une réception normale (le plus récent gagne, un vide d'origine n'écrase
+// rien). Consultation : la version du NAS est rangée telle quelle. Rien à faire si la liste des réglages n'a pas changé.
+async function rattraperReglages(carte, deuxSensIci) {
+  const connus = etatSynchro().reglagesConnus || [];
+  if (REGLAGES_PARTAGES.every(k => connus.includes(k))) return { statut: 'ok', carte };
+  const tous = [];
+  const r = await recevoirDepuis(0, async el => { tous.push(...el.filter(x => x.magasin === 'reglages' && REGLAGES_PARTAGES.includes(x.id))); });
+  if (r.statut !== 'ok') return r;
+  let c = carte, applique = 0;
+  if (deuxSensIci) {
+    const aRevoir = tous.filter(x => !c[cleElement('reglages', x.id)]); // seulement ceux jamais traités ici (absents de la carte)
+    const { m: locaux } = await locauxActuels();
+    // la version commune de ces réglages n'est pas connue : on repart de rien pour eux
+    const base = { ...c };
+    for (const x of aRevoir) delete base[cleElement('reglages', x.id)];
+    const a = analyserRecus(aRevoir, locaux, base, null);
+    if (a.appliquer.length) await ecrireIci(a.appliquer);
+    c = { ...c, ...Object.fromEntries(aRevoir.map(x => [cleElement('reglages', x.id), a.carte[cleElement('reglages', x.id)]]).filter(([, v]) => v)) };
+    applique = a.appliquer.length;
+  } else if (tous.length) {
+    await ecrireIci(tous.map(x => ({ magasin: x.magasin, id: x.id, donnees: x.supprime ? null : x.donnees })));
+    c = { ...c, ...carteDepuisNas(tous) };
+    applique = tous.length;
+  }
+  await noter({ carte: c, reglagesConnus: REGLAGES_PARTAGES });
+  if (applique) { await charger(); prevenir(); }
+  return { statut: 'ok', carte: c };
+}
+
 // ---------- Consultation (PC qui ne modifie rien) : recevoir et ranger ----------
 async function cycleConsultation(progres) {
+  const rattrapage = await rattraperReglages(etatSynchro().carte || {}, false); // v0.49 (R123)
+  if (rattrapage.statut !== 'ok') return rattrapage;
   let recus = 0, change = false, carte = etatSynchro().carte || {};
   const r = await recevoirDepuis(etatSynchro().rev || 0, async (elements, jusqua) => {
     await ecrireIci(elements.map(x => ({ magasin: x.magasin, id: x.id, donnees: x.supprime ? null : x.donnees })));

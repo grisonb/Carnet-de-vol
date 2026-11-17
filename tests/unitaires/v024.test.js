@@ -139,7 +139,7 @@ test('« Annuler » 4 s après une suppression, même si la synchro est passée 
   assert.ok(vol(pc, 'v1'), 'le vol est revenu partout');
 });
 
-test('réglages : listes et terrains fusionnés sans conflit ; titulaire en conflit', () => {
+test('réglages : listes et terrains fusionnés sans conflit ; titulaire : le plus récent gagne (v0.49)', () => {
   const { nas, tel, pc } = deuxAppareils();
   tel.contenu.reglages.find(r => r.cle === 'etiquettes').valeur = ['BOMBING', 'TRANSPORT'];
   pc.contenu.reglages.find(r => r.cle === 'etiquettes').valeur = ['BOMBING', 'TAILWHEEL'];
@@ -150,10 +150,13 @@ test('réglages : listes et terrains fusionnés sans conflit ; titulaire en conf
   assert.deepEqual(tel.contenu.reglages.find(x => x.cle === 'etiquettes').valeur, ['BOMBING', 'TAILWHEEL', 'TRANSPORT']);
   assert.deepEqual(fusionReglage('terrainsPerso', { ZZZA: { nom: 'Ici' } }, { ZZZB: { nom: 'Là' } }), { ZZZB: { nom: 'Là' }, ZZZA: { nom: 'Ici' } });
   assert.equal(fusionReglage('titulaire', 'A', 'B'), null);
-  tel.contenu.reglages.find(x => x.cle === 'titulaire').valeur = 'Tel';
-  pc.contenu.reglages.find(x => x.cle === 'titulaire').valeur = 'Pc';
-  synchro(nas, tel); synchro(nas, pc);
-  assert.ok(pc.conflits.has('reglages/titulaire'));
+  // v0.49 (R123) : plus de conflit pour un réglage : le plus récent (heure de modification qui voyage avec lui) gagne
+  Object.assign(tel.contenu.reglages.find(x => x.cle === 'titulaire'), { valeur: 'Tel', modifieLe: '2026-01-01T10:00:00Z' });
+  Object.assign(pc.contenu.reglages.find(x => x.cle === 'titulaire'), { valeur: 'Pc', modifieLe: '2026-01-01T11:00:00Z' });
+  synchro(nas, tel); synchro(nas, pc); synchro(nas, tel);
+  assert.ok(!pc.conflits.has('reglages/titulaire') && !tel.conflits.has('reglages/titulaire'));
+  assert.equal(pc.contenu.reglages.find(x => x.cle === 'titulaire').valeur, 'Pc', 'le PC garde sa version, plus récente');
+  assert.equal(tel.contenu.reglages.find(x => x.cle === 'titulaire').valeur, 'Pc', 'le téléphone reçoit la plus récente');
 });
 
 test('vol ouvert dans la saisie : jamais changé sous les yeux du pilote (conflit à la place)', () => {

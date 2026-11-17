@@ -1,5 +1,23 @@
 # Journal des versions
 
+## v0.49 — 17/11/2026
+
+Remarque R123. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R123 : l'adresse du socle passe d'un appareil à l'autre, même déjà synchronisés.**
+- Cause (reproduite avec le faux NAS) : entre deux appareils à jour, l'adresse passait bien. Mais un appareil encore en
+  v0.47 quand l'adresse est partie ne connaissait pas ce réglage : il le sautait tout en avançant son repère de synchro ;
+  une fois en v0.48, il ne le redemandait jamais.
+- Rattrapage : à la première synchro d'une version qui connaît de nouveaux réglages partagés, l'appareil relit une fois
+  sur le NAS les réglages qu'il n'a jamais traités.
+- Réglages partagés : envoyés dès qu'ils changent (même sans vol modifié), reçus à chaque synchro ; le plus récent gagne,
+  réglage par réglage (l'heure de modification voyage avec le réglage ; plus de « conflit à choisir » pour un réglage) ;
+  un réglage resté vide et jamais échangé n'est jamais envoyé (il n'efface rien ailleurs) ; un effacement volontaire
+  est transmis. Dès que l'adresse arrive, le socle est lu et les cases apparaissent.
+
+**Tests** : `tests/unitaires/v049.test.js`, `tests/navigateur/v049.mjs` ; v024 (unitaire) : titulaire, le plus récent
+gagne au lieu d'un conflit ; test complet.
+
 ## v0.48 — 17/11/2026
 
 Remarque R122. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

@@ -45,7 +45,10 @@ export function elementsDuCarnet(contenu) {
   }
   for (const p of contenu.personnes || []) if (p && p.id) l.push({ magasin: 'personnes', id: p.id, donnees: p });
   for (const r of contenu.reglages || []) {
-    if (r && REGLAGES_PARTAGES.includes(r.cle) && r.valeur !== undefined) l.push({ magasin: 'reglages', id: r.cle, donnees: { cle: r.cle, valeur: r.valeur } });
+    // v0.49 (R123) : avec l'heure de sa modification (réglage changé depuis la v0.49 ; sinon rien : empreinte inchangée)
+    if (r && REGLAGES_PARTAGES.includes(r.cle) && r.valeur !== undefined) {
+      l.push({ magasin: 'reglages', id: r.cle, donnees: { cle: r.cle, valeur: r.valeur, ...(r.modifieLe ? { modifieLe: r.modifieLe } : {}) } });
+    }
   }
   return l;
 }
@@ -55,12 +58,18 @@ export function elementsDuCarnet(contenu) {
 // supprimé, gardé comme trace pour qu'un « Annuler » après la synchro ne crée pas de faux conflit).
 // exclure : clés en conflit (rien n'est envoyé tant que le pilote n'a pas choisi).
 // Renvoie { modifications, empreintes (clé -> empreinte envoyée, null pour une suppression), tropGros: [clés] }.
+// v0.49 (R123) : valeur « vide » d'un réglage (jamais rempli, ou effacé)
+export const reglageVide = v => v === '' || v === null || v === undefined || (Array.isArray(v) && !v.length)
+  || (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length);
+// v0.49 (R123) : réglage resté vide ici et jamais échangé avec le NAS : il n'est ni envoyé, ni « modifié ici »
+// (il n'écrase jamais une valeur remplie sur un autre appareil). Un effacement d'une valeur déjà échangée part, lui.
+const videDOrigine = (e, connu) => e.magasin === 'reglages' && reglageVide(e.donnees && e.donnees.valeur) && (!connu || connu[1] === null);
 export function preparerEnvoi(elements, carte = {}, exclure = new Set()) {
   const modifications = [], empreintes = {}, tropGros = [], presents = new Set();
   for (const e of elements) {
     const cle = cleElement(e.magasin, e.id), texte = JSON.stringify(e.donnees);
     presents.add(cle);
-    if (exclure.has(cle)) continue;
+    if (exclure.has(cle) || videDOrigine(e, carte[cle])) continue;
     if (texte.length > ELEMENT_MAX) { tropGros.push(cle); continue; }
     const h = empreinteTexte(texte), connu = carte[cle];
     if (connu && connu[1] === h) continue; // inchangé depuis le dernier envoi
@@ -108,7 +117,7 @@ export function trierRecus(elements) {
     if (!MAGASINS.includes(e.magasin)) continue;
     if (e.magasin === 'reglages' && !REGLAGES_PARTAGES.includes(e.id)) continue; // jamais un réglage propre à l'appareil
     if (e.supprime || !e.donnees) { enlever[e.magasin].push(e.id); continue; }
-    if (e.magasin === 'reglages') mettre.reglages.push({ cle: e.id, valeur: e.donnees.valeur });
+    if (e.magasin === 'reglages') mettre.reglages.push({ cle: e.id, valeur: e.donnees.valeur, ...(e.donnees.modifieLe ? { modifieLe: e.donnees.modifieLe } : {}) });
     else if (e.donnees.id === e.id) mettre[e.magasin].push(e.donnees);
   }
   return { mettre, enlever };
@@ -168,6 +177,9 @@ export function fusionReglage(cle, local, distant) {
 // Renvoie { appliquer: [{ magasin, id, donnees | null }], conflits: [...], carte, fusions: n }.
 // Règle : un élément reçu remplace celui de l'appareil SEULEMENT si celui-ci n'a pas changé depuis la dernière version
 // commune ; sinon, même contenu -> rien ; réglage fusionnable -> fusion ; autrement -> CONFLIT (rien n'est écrasé).
+// v0.49 (R123) : réglage partagé changé des deux côtés (et non fusionnable) : le PLUS RÉCENT gagne, d'après l'heure de
+// modification qui voyage avec lui (« modifieLe » ; à défaut, l'heure d'arrivée au NAS). Heure d'ici inconnue (changé
+// avant la v0.49) : le NAS. Version d'ici gardée : la carte prend le numéro du NAS, elle repart donc au prochain envoi.
 export function analyserRecus(recus, locaux, carte, ouvert = null) {
   const c = { ...carte }, appliquer = [], conflits = [];
   let fusions = 0;
@@ -177,7 +189,7 @@ export function analyserRecus(recus, locaux, carte, ouvert = null) {
     if (b && e.rev <= b[0]) continue; // déjà connu (dont ses propres envois qui reviennent)
     const hE = e.supprime || !e.donnees ? null : empreinteTexte(JSON.stringify(e.donnees));
     const l = locaux.get(cle), hL = l ? l.h : null, hBase = b ? b[1] : null;
-    const modifieIci = hL !== hBase;
+    const modifieIci = hL !== hBase && !(l && videDOrigine(l, b)); // vide d'origine : pas une modification
     if (hL === hE) { c[cle] = [e.rev, hE]; continue; } // déjà pareil ici
     if (!modifieIci && cle !== ouvert) {
       appliquer.push({ magasin: e.magasin, id: e.id, donnees: hE === null ? null : e.donnees });
@@ -187,6 +199,12 @@ export function analyserRecus(recus, locaux, carte, ouvert = null) {
     if (e.magasin === 'reglages' && hE !== null && l) {
       const v = fusionReglage(e.id, l.donnees.valeur, e.donnees.valeur);
       if (v !== null) { appliquer.push({ magasin: 'reglages', id: e.id, donnees: { cle: e.id, valeur: v } }); c[cle] = [e.rev, hE]; fusions++; continue; }
+    }
+    if (e.magasin === 'reglages' && cle !== ouvert) {
+      const tIci = Date.parse((l && l.donnees && l.donnees.modifieLe) || ''), tNas = Date.parse((e.donnees && e.donnees.modifieLe) || e.le || '');
+      if (!(tIci > tNas)) appliquer.push({ magasin: 'reglages', id: e.id, donnees: hE === null ? null : e.donnees }); // le NAS est plus récent
+      c[cle] = [e.rev, hE]; // version d'ici plus récente : elle repart (base = numéro du NAS)
+      continue;
     }
     conflits.push({ magasin: e.magasin, id: e.id, cle, rev: e.rev, distant: hE === null ? null : e.donnees, appareil: e.appareil || '', le: e.le || '' });
   }
