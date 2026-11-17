@@ -151,6 +151,12 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.48 : R122 `js/socle.js` (pur : `lireReponseSocle`, `echeance`, `normaliserTitre`, `SOCLE_COLONNES`) et `js/ui/socle.js`
+  (`lireSocle` une à la fois, fetch GET 20 s ; `afficherSocle` -> `#h-socle` `.sc.sc-vert|orange|rouge|gris` ; Plus
+  `#pl-socle` -> écran « Socle OPS / IFR » `#so-adr` / `#so-test` / `#so-ok`). Réglage PARTAGÉ `socleAdresse`
+  (REGLAGES_PARTAGES : synchro, sauvegarde, copie NAS ; jamais dans le code ni les tests : faux serveur local) ; réglage
+  PRIVÉ `socleLu` { le, ops: { avantLe, dernier }, ifr }. Lecture : lancement, visibilitychange, `#rafraichir`, changement
+  d'adresse (`surChangement`). Centrage : `text-box` sinon marges -4,75 / -2,25 px (mesurées au pixel). Bande : padding 4 px.
 - v0.47 : R121 `verifierVolsNpf({ essai })` (js/ui/npf.js) renvoie `{ statut, n }`, une seule recherche à la fois (promesse
   `recherche` partagée), échec -> un nouvel essai `NPF_REESSAI` (1 min, pas d'essai en chaîne), `setInterval` `NPF_PERIODE`
   (2 min) seulement si `document.visibilityState === 'visible'` ; `texteNpf`. Bouton `#rafraichir` (ui/synchro.js) :
@@ -336,6 +342,9 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v048.mjs` : socle OPS / IFR (faux serveur qui imite la web app Google, faux NAS, horloge simulée) :
+  Tester, couleurs et J-n, gris, centrage au pixel (Chromium / WebKit, 390 / 360 px), bande plus basse, appareil B (synchro)
+  et C (sauvegarde restaurée).
 - `node tests/navigateur/v047.mjs` : vols NPF sans refaire l'export (faux NAS v5 + NPF, mode muet ; horloge de la page
   simulée avec `page.clock` : 2 min, 1 min, 20 s sans attendre ; arrière-plan simulé par `document.visibilityState`).
 - `node tests/navigateur/v046.mjs` : cases autre pilote / date et bouton + de même taille (avec / sans les règles v0.46),

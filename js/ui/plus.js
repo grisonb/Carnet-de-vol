@@ -17,6 +17,7 @@ import { ouvrirFlotte, typesConnus, definirTypes } from './avions.js';
 import { ouvrirPersonne, ouvrirLibelles } from './saisie.js';
 import { ouvrirChoixBande } from './carnet.js';
 import { resumeCartes } from './carte.js';
+import { resumeSocle } from './socle.js';
 import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas } from './nas.js';
 import { ecranSynchro, resumeSynchroActuel } from './synchro.js';
 import { copieNasAJour, depuis } from '../copieur.js';
@@ -312,6 +313,7 @@ export async function majPlus() {
   $('#pl-nas-s').textContent = resumeCopieNas();
   $('#pl-sync-s').textContent = resumeSynchroActuel();
   resumeCartes().then(t => { $('#pl-cartes-s').textContent = t; });
+  $('#pl-socle-s').textContent = resumeSocle();
   const p = await persiste();
   $('#pl-stock-s').textContent = p === null ? 'Protection non disponible sur ce navigateur'
     : p ? 'Protégé contre l\'effacement automatique' : 'Non protégé : fais des sauvegardes';

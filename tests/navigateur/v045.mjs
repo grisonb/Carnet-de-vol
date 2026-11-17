@@ -136,7 +136,8 @@ try {
           verifier(Math.abs((qb.dateBas - qb.dateHaut) - (qa.dateBas - qa.dateHaut)) <= 0.5,
             `${n} : ${id} : contour de la date identique au pixel (${(qb.dateBas - qb.dateHaut).toFixed(2)} px de haut)`);
           // choix du pilote : le trajet descend de 4 px (les tests mesuraient déjà environ 6 px, le téléphone 1 à 2 px)
-          verifier(Math.abs(qb.ecartTrajet - qa.ecartTrajet - 4) <= 1, `${n} : ${id} : trajet descendu de ${(qb.ecartTrajet - qa.ecartTrajet).toFixed(2)} px : ${qb.ecartTrajet.toFixed(2)} px entre le bas du contour de la date et le haut du trajet (avant : ${qa.ecartTrajet.toFixed(2)} px)`);
+          // (deux mesures arrondies au pixel de l'écran : jusqu'à 4 pixels d'écran d'écart sur un écran ×3, soit 1,33 px)
+          verifier(Math.abs(qb.ecartTrajet - qa.ecartTrajet - 4) <= 1.34, `${n} : ${id} : trajet descendu de ${(qb.ecartTrajet - qa.ecartTrajet).toFixed(2)} px : ${qb.ecartTrajet.toFixed(2)} px entre le bas du contour de la date et le haut du trajet (avant : ${qa.ecartTrajet.toFixed(2)} px)`);
           verifier(Math.abs(qb.ecartPastille) <= 1, `${n} : ${id} : haut de la pastille = haut du contour de la date (écart ${qb.ecartPastille.toFixed(2)} px ; avant : ${qa.ecartPastille.toFixed(2)} px)`);
         }
         // R115 : tailles, couleurs, graisses ; une seule ligne

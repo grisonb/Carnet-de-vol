@@ -1,5 +1,22 @@
 # Journal des versions
 
+## v0.48 — 17/11/2026
+
+Remarque R122. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R122 : socle OPS et IFR sur l'accueil**, lu dans la feuille Google du pilote (web app en lecture seule, sans clé).
+- Plus › Socle OPS / IFR : « Adresse du socle (Google) » + « Tester » (« OK · OPS et IFR lus » ou l'erreur en clair).
+  L'adresse est gardée avec le carnet (synchro NAS, sauvegarde) : elle revient seule sur un nouvel appareil (synchro
+  rejointe ou sauvegarde restaurée). Elle n'est jamais dans le code.
+- Deux cases sous la bande des heures : OPS = « Entrainement avant le », IFR = « vol IFR avant le » ; dernier jour de
+  validité = la veille ; « J-10 » / « J-0 » / « J+3 » et la date courte ; vert (plus de 5 jours), orange (5 à 0), rouge
+  (dépassé) ; gris avec les dernières valeurs si la dernière lecture réussie n'est pas du jour. Sans adresse : rien.
+- Lecture au lancement, au retour au premier plan et au bouton d'actualisation ; 20 s au plus ; une seule à la fois.
+- Bande des heures plus basse (marges et interlignes), polices inchangées.
+
+**Tests** : `tests/unitaires/v048.test.js`, `tests/navigateur/v048.mjs` (faux serveur qui imite la web app, faux NAS,
+horloge simulée) ; test complet.
+
 ## v0.47 — 17/11/2026
 
 Remarque R121 (suite au diagnostic du 17/11). carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non

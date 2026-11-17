@@ -50,6 +50,8 @@
       <button type="button" class="loupe" id="q-open" aria-label="Rechercher un vol" aria-expanded="false" aria-controls="q"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg></button>
     </div>
     <div class="hstrip" id="h-strip" role="button" tabindex="0" aria-label="Choisir les heures affichées"></div>
+    <!-- v0.48 (R122) : socle OPS et IFR (feuille Google du pilote), sous la bande des heures ; caché sans adresse ni lecture -->
+    <div class="socle" id="h-socle" hidden></div>
     <div class="quick" id="h-quick"></div>
     <input class="search" id="q" type="search" hidden placeholder="Rechercher : date, terrain, immat., mission…" aria-label="Rechercher un vol">
     <!-- v0.31 (R71) : période (bornes comprises, date du vol affichée sur la carte) -->
@@ -233,6 +235,7 @@
         <button type="button" class="prow2" id="pl-libelles"><span class="pi pi-mi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zm-4 6h2v2H3zm4 0h14v2H7z"/></svg></span><span class="ptx"><b>Libellés missions</b><small>Suggestions proposées quand tu tapes une mission</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-pers"><span class="pi pi-fn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05A4.2 4.2 0 0 1 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span><span class="ptx"><b>Personnes</b><small>Copis, CdB, instructeurs, élèves</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-cartes"><span class="pi pi-carte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9a.5.5 0 0 0-.36.48V20.5a.5.5 0 0 0 .5.5l.16-.03L9 18.9l6 2.1 5.64-1.9a.5.5 0 0 0 .36-.48V3.5a.5.5 0 0 0-.5-.5zM15 19l-6-2.11V5l6 2.11z"/></svg></span><span class="ptx"><b>Cartes de vol</b><small id="pl-cartes-s">Mot de passe, traces ADS-B</small></span><span class="pch" aria-hidden="true">›</span></button>
+        <button type="button" class="prow2" id="pl-socle"><span class="pi pi-fn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14zM7 11h5v5H7z"/></svg></span><span class="ptx"><b>Socle OPS / IFR</b><small id="pl-socle-s">Adresse de la feuille Google à régler</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
       <h3 class="pgrp">Import FlyLog</h3>
       <div class="pcard">

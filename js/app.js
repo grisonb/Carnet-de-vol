@@ -13,6 +13,7 @@ import { initTerrainPerso } from './ui/terrain-perso.js';
 import { initCarte, lancerArrierePlan } from './ui/carte.js';
 import { initNas, carnetModifie } from './ui/nas.js';
 import { initNpf, verifierVolsNpf } from './ui/npf.js';
+import { initSocle } from './ui/socle.js';
 import { initSynchro, synchroModifiee, majBandeaux } from './ui/synchro.js';
 import { invaliderStats } from './ui/avions.js';
 import { VERSION } from './version.js';
@@ -105,6 +106,7 @@ async function demarrer() {
   demanderStockagePersistant().then(() => { if (vue === 'plus') majPlus(); });
   initNas();
   initSynchro();
+  initSocle(); // v0.48 (R122) : socle OPS / IFR
   setTimeout(verifierVolsNpf, 1200); // vols envoyés par NPF-Q400, discrètement
   finLancement(); // v0.40 (R102) : l'écran de lancement bleu nuit laisse place au carnet
   document.body.dataset.pret = '1';

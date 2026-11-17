@@ -14,7 +14,8 @@ export const REGLAGES_PRIVES = ['cartesMotDePasse', 'nasAdresse', 'nasMotDePasse
   'synchroRole', 'synchroEtat', 'synchroAppareil', // v0.23 : rôle et état de la synchro, propres à chaque appareil
   'synchroHistorique', // v0.24 : versions remplacées par la synchro (30 jours)
   'carteFond', 'feuxCommunesEnAttente', // v0.31 : fond Plan / Photo de cet appareil ; communes de feux déplacés hors ligne
-  'afficherJours']; // v0.42 (R104) : cases 3 / 7 / 30 jours de l'accueil affichées ou non sur cet appareil
+  'afficherJours', // v0.42 (R104) : cases 3 / 7 / 30 jours de l'accueil affichées ou non sur cet appareil
+  'socleLu']; // v0.48 (R122) : dernière lecture réussie du socle OPS / IFR (cet appareil)
 
 // contenu : { vols, avions, personnes, suppressions, reglages: [{cle, valeur}] }
 export function creerSauvegarde(contenu, maintenant = new Date().toISOString()) {

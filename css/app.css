@@ -869,3 +869,25 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 #f-date.datein::-webkit-date-and-time-value{line-height:22.4px}
 /* l'icône du calendrier (Chrome) se dimensionne d'après la police : elle garde sa taille d'origine (16 px) */
 #f-date.datein::-webkit-calendar-picker-indicator{font-size:16px}
+
+/* v0.48 (R122) : bande des heures plus basse SANS changer les polices : 4 px en haut et en bas, chiffres en interligne 1,
+   1 px entre chiffre et libellé */
+#v-carnet .hstrip{padding-top:4px;padding-bottom:4px}
+#v-carnet .hstrip b{line-height:1}
+#v-carnet .hstrip span{margin-top:1px}
+/* Socle OPS / IFR : 2 cases côte à côte (8 px), 30 px de haut, coins 12 px, légère ombre, fond plein, texte blanc ;
+   « OPS » 17 px 800, « J-10 » 26 px 800, « 27/11 » 17 px 700, 7 px entre eux, chiffres à largeur fixe, UNE ligne,
+   centrés (centre optique : rognage à la hauteur des capitales et à la ligne de base ; sinon marges mesurées) */
+.socle{display:flex;gap:8px;margin-top:8px}
+.socle .sc{flex:1 1 0;min-width:0;height:30px;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  color:#fff;box-shadow:0 1px 4px rgba(20,30,50,.22)}
+.sc-vert{background:#2e7d32}.sc-orange{background:#e8892b}.sc-rouge{background:#d32f2f}
+.socle .sc.sc-gris{background:#c7cdd6;color:#4f5868;box-shadow:none}
+.sc-l{display:block;font-family:var(--f-num);font-size:26px;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sc-l>span{display:inline}
+.sc-l>span+span{margin-left:7px}
+.sc-t{font-size:17px;font-weight:800}
+.sc-j{font-size:26px;font-weight:800}
+.sc-d{font-size:17px;font-weight:700}
+@supports (text-box:trim-both cap alphabetic){.sc-l{text-box:trim-both cap alphabetic}}
+@supports not (text-box:trim-both cap alphabetic){.sc-l{margin-top:-4.75px;margin-bottom:-2.25px}} /* mesuré au pixel (Chrome sans text-box) */
