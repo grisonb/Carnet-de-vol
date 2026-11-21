@@ -42,8 +42,9 @@ export function choixParType(t, avions = []) {
     const n = nomAffiche(f);
     out.push({ cle: `famille:${f}`, lib: n });
     if (FAMILLES_DETAILLEES.includes(f)) {
-      out.push({ cle: `familleCdB:${f}`, lib: `${n} CdB` }, { cle: `familleCopi:${f}`, lib: `${n} Copi` },
-        { cle: `familleAnnee:${f}`, lib: `${n} Année` }); // v0.52 (R128) : heures de l'année civile en cours
+      // v0.54 (R135) : « Dash 8 / CdB », « Dash 8 / Copi », « Dash 8 / Année » (mêmes identifiants)
+      out.push({ cle: `familleCdB:${f}`, lib: `${n} / CdB` }, { cle: `familleCopi:${f}`, lib: `${n} / Copi` },
+        { cle: `familleAnnee:${f}`, lib: `${n} / Année` }); // v0.52 (R128) : heures de l'année civile en cours
     }
   }
   return out;
@@ -75,9 +76,9 @@ export function valeurBande(cle, t) {
   const i = cle.indexOf(':'), genre = cle.slice(0, i), ty = cle.slice(i + 1);
   if (i < 0) return null;
   if (genre === 'famille') return { lib: nomAffiche(ty), texte: hm((t.parFamille || {})[ty] || 0) };
-  if (genre === 'familleCdB') return { lib: `${nomAffiche(ty)} CdB`, texte: hm((t.parFamilleCdB || {})[ty] || 0) };
-  if (genre === 'familleCopi') return { lib: `${nomAffiche(ty)} Copi`, texte: hm((t.parFamilleCopi || {})[ty] || 0) };
-  if (genre === 'familleAnnee') return { lib: `${nomAffiche(ty)} Année`, texte: hm((t.parFamilleAnnee || {})[ty] || 0) };
+  if (genre === 'familleCdB') return { lib: `${nomAffiche(ty)} / CdB`, texte: hm((t.parFamilleCdB || {})[ty] || 0) };
+  if (genre === 'familleCopi') return { lib: `${nomAffiche(ty)} / Copi`, texte: hm((t.parFamilleCopi || {})[ty] || 0) };
+  if (genre === 'familleAnnee') return { lib: `${nomAffiche(ty)} / Année`, texte: hm((t.parFamilleAnnee || {})[ty] || 0) };
   if (genre === 'type') return { lib: TYPES_DETAILLES.includes(ty) ? `${ty} total` : ty, texte: hm(t.parType[ty] || 0) };
   if (genre === 'typeCdB') return { lib: `${ty} CdB`, texte: hm(t.parTypeCdB[ty] || 0) };
   if (genre === 'typeCopi') return { lib: `${ty} Copi`, texte: hm(t.parTypeCopi[ty] || 0) };

@@ -64,3 +64,10 @@ export function minutesDeNuit(debutMs, duree, points) {
   }
   return nuit;
 }
+
+// v0.54 (R134) : répartition de n atterrissages (à l'arrivée) entre jour et nuit : vol fini de jour -> tous de jour ;
+// commencé de jour et fini de nuit -> 1 de nuit, les autres de jour ; entièrement de nuit -> tous de nuit
+export function repartitionAtterrissages(n, nuitDebut, nuitFin) {
+  if (!nuitFin || n <= 0) return { jour: Math.max(0, n), nuit: 0 };
+  return nuitDebut ? { jour: 0, nuit: n } : { jour: n - 1, nuit: 1 };
+}

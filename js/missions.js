@@ -65,14 +65,12 @@ export function pastillesRegles(vol, regles) {
   return out;
 }
 
-// Pastille feu : { texte, plein } ou null. Plein = nouveau feu sur ce vol ; contour = feu repris.
+// Pastille feu : { texte, plein } ou null. v0.54 (R133) : toujours pleine (« Feu n°7 », « Feu n°41, 42 », « Feu »).
+// v0.54 (R133) : toujours en rouge plein ; « Feu n°41 », plusieurs feux « Feu n°41, 42 », sans numéro « Feu » (affichage seul)
 export function pastilleFeu(vol) {
-  if (vol.feux > 0) {
-    const n = (vol.missions || []).map(numeroFeu).find(x => x !== null);
-    return { texte: n ? `Feu n°${n}` : 'Feu', plein: true };
-  }
-  if ((vol.missions || []).some(estLigneFeu)) return { texte: 'Feu', plein: false };
-  return null;
+  if (!(vol.feux > 0) && !(vol.missions || []).some(estLigneFeu)) return null;
+  const nums = [...new Set((vol.missions || []).map(numeroFeu).filter(x => x !== null))];
+  return { texte: nums.length ? `Feu n°${nums.join(', ')}` : 'Feu', plein: true };
 }
 
 // Gestion du compteur Feux dans la saisie.

@@ -12,7 +12,7 @@ import { hm, lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujo
 import { versLocal, versUTC } from '../fuseaux.js';
 import { terrain, fuseau } from '../terrains.js';
 import { drapeau } from '../drapeaux.js';
-import { minutesDeNuit, estNuit } from '../nuit.js';
+import { minutesDeNuit, estNuit, repartitionAtterrissages } from '../nuit.js';
 import { plusGrandFeu, ajouterFeu, enleverFeu, lignesPourSaisie, estLigneFeu, normaliser, estMasquee, numeroFeu,
   masquerSuggestion, remettreSuggestion } from '../missions.js';
 import { activerGlisser } from './glisser.js';
@@ -140,22 +140,38 @@ function recalculer() {
   F.bloc = bloc;
   $('#f-bloc').textContent = hm(bloc);
   $('#f-j1').hidden = !(i && i.ma && new Date(i.mb).toISOString().slice(0, 10) > i.dateUTC && minutesDuJour(heureDe('#f-t1')) < minutesDuJour(heureDe('#f-t0')));
-  const sj = F.escales.reduce((s, e) => s + e.attJour, 0), sn = F.escales.reduce((s, e) => s + e.attNuit, 0);
   const p = points();
-  let nuitFinale = false;
-  if (i && p) {
-    $('#c-nuit').value = hm(minutesDeNuit(i.ma, bloc, p));
-    const fin = p[p.length - 1];
-    nuitFinale = estNuit(i.mb, fin.lat, fin.lon);
-  } else if (i) $('#c-nuit').value = hm(0);
-  F.s.attJour = sj + (nuitFinale ? 0 : 1);
-  F.s.attNuit = sn + (nuitFinale ? 1 : 0);
-  sortie('attJour'); sortie('attNuit');
+  if (i && p) $('#c-nuit').value = hm(minutesDeNuit(i.ma, bloc, p));
+  else if (i) $('#c-nuit').value = hm(0);
+  // v0.54 (R134) : atterrissages jour / nuit répartis par la règle quand les heures, les terrains (ou les escales) changent ;
+  // sinon la répartition (corrigée à la main, ou celle du vol enregistré) est gardée
+  const sig = signatureAtt(i);
+  if (sig !== F.attSig) { F.attSig = sig; repartirAtt(i, p); }
   if (F.ifr) $('#c-ifr').value = hm(bloc);
   $('#c-col').value = hm(colonneAuto());
   $('#c-fn').value = hm(avion()?.sim ? 0 : bloc);
   recap(); apercu();
 }
+
+// ---------- v0.54 (R134) : atterrissages jour / nuit ----------
+// Règle, sur les atterrissages de l'ARRIVÉE (ceux des terrains intermédiaires gardent leur propre jour / nuit) :
+// vol fini de jour : tous de jour ; commencé de jour et fini de nuit : 1 de nuit, les autres de jour ; entièrement de
+// nuit : tous de nuit. « De nuit » = même règle que le temps de nuit (estNuit), à l'heure d'arrivée bloc au terrain
+// d'arrivée (au départ pour le début). Heures ou terrains inconnus : rien n'est changé. Le total ne change jamais ici.
+const sommeEsc = () => ({ j: F.escales.reduce((s, e) => s + (e.attJour || 0), 0), n: F.escales.reduce((s, e) => s + (e.attNuit || 0), 0) });
+const signatureAtt = i => JSON.stringify([i ? [i.ma, i.mb] : null, $('#f-dep').value.trim().toUpperCase(), $('#f-arr').value.trim().toUpperCase(),
+  F.escales.map(e => [e.code || e.nom || '', e.attJour, e.attNuit]), F.arrPos]);
+function repartirAtt(i = instants(), p = points()) {
+  const esc = sommeEsc(), avant = F.attEsc || esc; // escales déjà comptées dans les totaux affichés
+  const n = Math.max(0, F.s.attJour + F.s.attNuit - avant.j - avant.n); // atterrissages à l'arrivée
+  F.attEsc = esc;
+  if (!i || !p) { F.s.attJour = esc.j + n; F.s.attNuit = esc.n; return majAtt(); } // nuit inconnue : comme avant (de jour)
+  const deb = p[0], fin = p[p.length - 1];
+  const r = repartitionAtterrissages(n, estNuit(i.ma, deb.lat, deb.lon), estNuit(i.mb, fin.lat, fin.lon));
+  F.s.attJour = esc.j + r.jour; F.s.attNuit = esc.n + r.nuit;
+  majAtt();
+}
+function majAtt() { sortie('attJour'); sortie('attNuit'); recap(); }
 
 // v0.32 (R76) : ancien vol : le temps de vol, la nuit, l'IFR, les atterrissages et les colonnes déjà saisis ne sont
 // JAMAIS remplacés par un calcul ; la nuit calculée (si les heures et les terrains la permettent) est seulement proposée
@@ -553,8 +569,10 @@ function appliquerNpf(n, vol) {
     F.lignes = lignes;
   } else F.lignes = b.lignes;
   if (b.remarques) $('#f-rem').value = b.remarques;
-  if (b.attJour !== null) F.s.attJour = b.attJour;
-  if (b.attNuit !== null) F.s.attNuit = b.attNuit;
+  // Atterrissages : ceux des escales (jour / nuit d'après leurs heures) + 1 à l'arrivée, comme avant ; v0.54 (R134) :
+  // celui de l'arrivée est réparti par la règle (de nuit si le vol finit de nuit)
+  const e = sommeEsc();
+  F.s.attJour = e.j + 1; F.s.attNuit = e.n; F.attEsc = e; F.attSig = undefined;
   // Copilote : la personne retrouvée par son trigramme ; trigramme inconnu : proposé à l'ajout (rien n'est créé seul)
   if (b.copilote) { F.fonction = 'cdb'; $('#f-copi').value = b.copilotePersonne ? nomPersonne(b.copilotePersonne) : b.copilote; }
   $('#npf-copi-add').hidden = !F.npf.copiInconnu;
@@ -604,6 +622,7 @@ export function ouvrirSaisie(vol, opts = {}) {
     feuChoisi: 0, simulation: estSimulation(vol), // v0.35 (R85)
     ancien: vol && !(vol.hDep && vol.hArr) && (vol.tempsTotal || vol.simTemps) > 0 ? { temps: vol.tempsTotal || vol.simTemps } : null, nuitProposee: null,
     arrPos: v.arriveePosition ? { ...v.arriveePosition } : null };
+  F.attSig = undefined; F.attEsc = sommeEsc(); // v0.54 (R134) : atterrissages des escales à l'ouverture
   // v0.53 (R130) : instructeur / examinateur du vol (jamais repris d'un vol précédent)
   const ieInst = vol && v.fonction !== 'dc' && nomReel(v.nomInstructeur), ieExam = vol && nomReel(v.nomExaminateur);
   F.ie = ieInst ? { role: 'inst', nom: ieInst } : ieExam ? { role: 'exam', nom: ieExam } : null;
@@ -682,6 +701,9 @@ export function ouvrirSaisie(vol, opts = {}) {
     if (modeVoulu === 'loc' && terrain($('#f-dep').value) && terrain($('#f-arr').value)) changerMode('loc');
     if (!a) { ouvrirChoixAvion(true); $('#ac-q').value = brouillon.rechercheAvion; $('#ac-q').dispatchEvent(new Event('input')); }
   }
+  // v0.54 (R134) : vol déjà enregistré : sa répartition jour / nuit est gardée tant que ni les heures, ni les terrains, ni le
+  // total ne changent (aucun rattrapage des anciens vols)
+  if (vol && !brouillon) { F.attSig = signatureAtt(instants()); F.attEsc = sommeEsc(); }
   F.charge = false;
   $('#f-ancien').hidden = !(F.ancien && !brouillon);
   $('#f-sim').hidden = !F.simulation;
@@ -905,7 +927,15 @@ export function initSaisie({ fermer }) {
   // − / + (approches, atterrissages)
   $('#v-saisie').addEventListener('click', e => {
     const b = e.target.closest('[data-s]');
-    if (b) { const k = b.dataset.s; F.s[k] = Math.max(0, F.s[k] + Number(b.dataset.d)); sortie(k); recap(); }
+    if (b) {
+      const k = b.dataset.s, d = Number(b.dataset.d);
+      if (k === 'attJour') { F.s.attJour = Math.max(0, F.s.attJour + d); repartirAtt(); return; } // v0.54 (R134) : nouveau total, la règle répartit
+      if (k === 'attNuit') { // v0.54 (R134) : correction à la main, le total ne change pas (sauf si plus aucun atterrissage de jour)
+        if (d > 0) { if (F.s.attJour > 0) F.s.attJour--; F.s.attNuit++; } else if (F.s.attNuit > 0) { F.s.attNuit--; F.s.attJour++; }
+        return majAtt();
+      }
+      F.s[k] = Math.max(0, F.s[k] + d); sortie(k); recap();
+    }
     const c = e.target.closest('[data-c]');
     if (c) { const k = c.dataset.c; F.compteurs[k] = Math.max(0, (F.compteurs[k] || 0) + Number(c.dataset.d)); $('#c-' + k).textContent = F.compteurs[k]; }
   });

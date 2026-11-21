@@ -1,6 +1,6 @@
 // v0.52 : R126 toutes les bulles des cartes de vol ont un contour (1,5 px, taille extérieure inchangée : mesurée avec et
 // sans les règles de la v0.52), CDB et Copi en vert ; R127 / R129 « Dash 8 » affiché dans le menu et la bande, libellé
-// exact (casse respectée), choix déjà faits gardés ; R128 « Dash 8 Année » (année civile, Dash 8 réels seulement), qui
+// exact (casse respectée), choix déjà faits gardés ; R128 « Dash 8 / Année » (année civile, Dash 8 réels seulement), qui
 // repart à zéro au 1er janvier (horloge simulée). Vols, avions, trigrammes INVENTÉS. Chromium 390 px et WebKit.
 // Captures : tests/navigateur/captures/v052-*.png (non commitées). Usage : node tests/navigateur/v052.mjs
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
@@ -113,17 +113,17 @@ try {
     const bande = () => p.$$eval('#h-strip>div', l => l.map(d => ({ l: d.querySelector('span').textContent, v: d.querySelector('b').textContent, casse: getComputedStyle(d.querySelector('span')).textTransform,
       vu: d.querySelector('span').innerText })));
     const b1 = await bande();
-    verifier(JSON.stringify(b1.map(x => x.vu)) === JSON.stringify(['CL-415', 'Dash 8', 'Dash 8 CdB']) && b1.every(x => x.casse === 'none'),
+    verifier(JSON.stringify(b1.map(x => x.vu)) === JSON.stringify(['CL-415', 'Dash 8', 'Dash 8 / CdB']) && b1.every(x => x.casse === 'none'),
       `${mnom} : bande : ${b1.map(x => `« ${x.vu} »`).join(', ')} (casse respectée, choix d'avant gardés)`);
     await p.click('#h-strip'); await p.waitForSelector('#hs-modal:not([hidden])');
     const menu = await p.$$eval('#hs-typ [data-hs]', l => l.map(b => ({ l: b.textContent, cle: b.dataset.hs, on: b.getAttribute('aria-pressed') })));
-    verifier(menu.slice(0, 4).map(m => m.l).join('|') === 'Dash 8|Dash 8 CdB|Dash 8 Copi|Dash 8 Année' && menu.filter(m => m.on === 'true').map(m => m.l).sort().join('|') === 'CL-415|Dash 8|Dash 8 CdB',
+    verifier(menu.slice(0, 4).map(m => m.l).join('|') === 'Dash 8|Dash 8 / CdB|Dash 8 / Copi|Dash 8 / Année' && menu.filter(m => m.on === 'true').map(m => m.l).sort().join('|') === 'CL-415|Dash 8|Dash 8 / CdB',
       `${mnom} : menu : ${menu.map(m => m.l + (m.on === 'true' ? ' ✓' : '')).join(' ; ')}`);
 
     // ---------- R128 ----------
     await p.click('#hs-typ [data-hs="familleAnnee:Dash 8 Q400"]'); await p.waitForTimeout(150); await p.click('#hs-x');
     const b2 = await bande();
-    verifier(b2.length === 4 && b2[3].vu === 'Dash 8 Année' && b2[3].v === '4h35', `${mnom} : « Dash 8 Année » = ${b2[3]?.v} (Dash 8 réels de 2026 : 1h00 + 1h30 + 1h15 + 0h50 ; ni 2025, ni CL-415, ni simulateur)`);
+    verifier(b2.length === 4 && b2[3].vu === 'Dash 8 / Année' && b2[3].v === '4h35', `${mnom} : « Dash 8 / Année » = ${b2[3]?.v} (Dash 8 réels de 2026 : 1h00 + 1h30 + 1h15 + 0h50 ; ni 2025, ni CL-415, ni simulateur)`);
     const enr = await p.evaluate(async () => (await import('./js/etat.js')).reglage('bandeHeures'));
     verifier(enr.join('|') === [...ANCIENS_CHOIX, 'familleAnnee:Dash 8 Q400'].join('|'), `${mnom} : choix enregistrés avec les mêmes identifiants qu'avant`);
     await p.screenshot({ path: join(CAPT, `v052-bande-${mnom}.png`), clip: { x: 0, y: 0, width: 390, height: 360 } });
@@ -132,7 +132,7 @@ try {
     await p.evaluate(async () => (await import('./js/ui/carnet.js')).rafraichirCarnet());
     await p.waitForTimeout(150);
     const b3 = await bande();
-    verifier(b3[3].v === '0h40', `${mnom} : au 1er janvier 2027 : « Dash 8 Année » = ${b3[3].v} (repart à zéro, seul le vol du jour compte)`);
+    verifier(b3[3].v === '0h40', `${mnom} : au 1er janvier 2027 : « Dash 8 / Année » = ${b3[3].v} (repart à zéro, seul le vol du jour compte)`);
     const total = b3.find(x => x.vu === 'Dash 8').v;
     verifier(total === '6h55', `${mnom} : le total « Dash 8 » ne change pas avec l'année (${total} = tous les vols Dash 8 réels, toutes années)`);
     await ctx.close();

@@ -1,5 +1,30 @@
 # Journal des versions
 
+## v0.54 — 21/11/2026
+
+Remarques R132 à R135. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R132 : « Mission »** au lieu de « MISSION » sur la bulle des cartes de vol (pastille de règle dont le texte est
+« MISSION ») ; couleurs inchangées ; PDF inchangé.
+
+**R133 : toutes les bulles feu en rouge plein.** « Feu n°7 » ; plusieurs feux : « Feu n°41, 42 » ; sans numéro : « Feu ».
+Un feu repris (même numéro qu'un vol précédent) montre aussi son numéro. Plus aucune bulle feu en contour seul. Affichage
+seulement : aucune donnée ni aucun total ne change ; PDF inchangé.
+
+**R134 : atterrissages jour / nuit répartis tout seuls** à partir du total N à l'arrivée : vol fini de jour : N jour ;
+commencé de jour et fini de nuit : N−1 jour + 1 nuit ; entièrement de nuit : N nuit. « De nuit » = même règle que le temps
+de nuit, à l'heure d'arrivée sur le terrain d'arrivée. « Att. Jour » +/− change le total ; « Att. Nuit » +/− déplace un
+atterrissage entre jour et nuit (correction à la main), gardée tant que ni les heures, ni les terrains, ni le total ne
+changent. Escales : leurs atterrissages gardent leur jour / nuit (heures envoyées par NPF, ou saisis à la main). Nouveaux vols, vols
+modifiés et imports NPF ; les anciens vols ne sont pas rattrapés (ouverts sans rien changer d'heure : rien ne bouge).
+Totaux : simple somme, comme avant.
+
+**R135 : « Dash 8 / CdB », « Dash 8 / Copi », « Dash 8 / Année »** dans la liste des heures et la bande ; « Dash 8 » et
+« CL-415 » inchangés ; mêmes identifiants internes (les choix faits restent cochés) ; PDF inchangé (codes OACI).
+
+**Tests** : `tests/unitaires/v054.test.js`, `tests/navigateur/v054.mjs` ; v029 et v034 : feu repris en rouge plein ;
+v046, v052, v06 : « Dash 8 / … » ; unitaires missions, v046, v052, v06 adaptés.
+
 ## v0.53 — 21/11/2026
 
 Remarques R130 et R131. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

@@ -144,7 +144,8 @@ export function carteVol(v, voir = false) {
   const regles = pastillesRegles(v, reglage('regles'));
   // v0.31 (R70) : l'étiquette « Entraînement » a son orange franc (classe ent), comme la pastille du temps de vol
   // v0.35 (R86) : « GAAR » a sa couleur (framboise) ; les autres pastilles de règles gardent l'orange pâle commun
-  for (const p of regles) puces.push(`<span class="chip mi${p.toUpperCase() === 'ENTRAÎNEMENT' ? ' ent' : p.toUpperCase() === 'GAAR' ? ' gaar' : ''}">${esc(p)}</span>`);
+  // v0.54 (R132) : une pastille « MISSION » s'écrit « Mission »
+  for (const p of regles) puces.push(`<span class="chip mi${p.toUpperCase() === 'ENTRAÎNEMENT' ? ' ent' : p.toUpperCase() === 'GAAR' ? ' gaar' : ''}">${esc(p.trim().toUpperCase() === 'MISSION' ? 'Mission' : p)}</span>`);
   // v0.38 (R96) : largages (« N lrg… ») : contour rouge sur un vol feu, orange sur un entraînement (feu d'abord), sinon jaune
   const entrainement = regles.some(p => p.toUpperCase() === 'ENTRAÎNEMENT');
   const lrg = feu ? ' lrg-feu' : entrainement ? ' lrg-ent' : '';

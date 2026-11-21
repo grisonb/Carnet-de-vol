@@ -20,7 +20,7 @@ const VOLS = [
 test('« Dash 8 Année » : vols Dash 8 réels de l\'année en cours seulement (toutes fonctions)', () => {
   const t = calculerTotaux(VOLS, AVIONS, '2026-11-21');
   assert.equal(t.parFamilleAnnee['Dash 8 Q400'], 60 + 90);
-  assert.deepEqual(valeurBande('familleAnnee:Dash 8 Q400', t), { lib: 'Dash 8 Année', texte: '2h30' });
+  assert.deepEqual(valeurBande('familleAnnee:Dash 8 Q400', t), { lib: 'Dash 8 / Année', texte: '2h30' });
   assert.equal(t.parFamille['Dash 8 Q400'], 100 + 60 + 90 + 30, 'le total Dash ne change pas');
 });
 
@@ -34,7 +34,7 @@ test('« Dash 8 » affiché, identifiants internes inchangés : les choix déjà
   const t = calculerTotaux(VOLS, AVIONS, '2026-11-21');
   const ch = choixParType(t, [...AVIONS.values()]);
   assert.deepEqual(ch.filter(c => c.cle.endsWith(':Dash 8 Q400')).map(c => `${c.cle} = ${c.lib}`),
-    ['famille:Dash 8 Q400 = Dash 8', 'familleCdB:Dash 8 Q400 = Dash 8 CdB', 'familleCopi:Dash 8 Q400 = Dash 8 Copi', 'familleAnnee:Dash 8 Q400 = Dash 8 Année']);
+    ['famille:Dash 8 Q400 = Dash 8', 'familleCdB:Dash 8 Q400 = Dash 8 / CdB', 'familleCopi:Dash 8 Q400 = Dash 8 / Copi', 'familleAnnee:Dash 8 Q400 = Dash 8 / Année']);
   assert.deepEqual(normaliserBande(['famille:CL-415', 'famille:Dash 8 Q400', 'familleCdB:Dash 8 Q400'], [...AVIONS.values()]), ['famille:CL-415', 'famille:Dash 8 Q400', 'familleCdB:Dash 8 Q400']);
   assert.equal(valeurBande('famille:CL-415', t).lib, 'CL-415');
 });

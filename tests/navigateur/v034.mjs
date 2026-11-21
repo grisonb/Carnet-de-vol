@@ -84,7 +84,7 @@ const gras = x => Number(x.graisse) >= 700;
 function controler(nom, theme, m, avant) {
   const a = ATTENDU[theme], f = m['v-feu'], r = m['v-rep'], e = m['v-ent'], g = m['v-gaar'];
   const c = (x, y) => contraste(x, y), cartes = m['v-feu'].carte;
-  const cF = c(f.feu.fond, f.feu.encre), cC = c(r.carte, r.feu2.encre), cE = c(e.ent.fond, e.ent.encre), cG = c(g.gaar.fond, g.gaar.encre);
+  const cF = c(f.feu.fond, f.feu.encre), cC = r.feu ? c(r.feu.fond, r.feu.encre) : 0, cE = c(e.ent.fond, e.ent.encre), cG = c(g.gaar.fond, g.gaar.encre);
   verifier(f.feu.fond === ROUGE && f.feu.encre === BLANC && gras(f.feu) && cF >= 4.5, `${nom} ${theme} : « Feu n°60 » #d32f2f / blanc gras, contraste ${cF.toFixed(2)}`);
   // v0.38 (R95) : pastilles du temps : fond blanc (sombre : fond de la carte), heure et contour de la couleur du vol
   const FOND = theme === 'clair' ? BLANC : 'rgb(23, 34, 46)';
@@ -92,8 +92,9 @@ function controler(nom, theme, m, avant) {
   const pastilleDe = (x, k) => x.fond === FOND && x.encre === V[k] && x.bord === V[k] && gras(x);
   verifier(f.classe === 'feu' && pastilleDe(f.pastille, 'feu'), `${nom} ${theme} : pastille du temps feu (${f.pastille.fond} / ${f.pastille.encre})`);
   verifier(r.classe === 'feu' && pastilleDe(r.pastille, 'feu'), `${nom} ${theme} : feu repris : pastille identique`);
-  verifier(r.feu2 && r.feu2.fond === 'rgba(0, 0, 0, 0)' && r.feu2.bord === a.contourBord && r.feu2.encre === a.contourEncre && gras(r.feu2) && cC >= 4.5,
-    `${nom} ${theme} : « Feu » en contour : bord ${r.feu2.bord}, texte ${r.feu2.encre} sur ${r.carte}, contraste ${cC.toFixed(2)}`);
+  // v0.54 (R133) : « Feu » sans numéro en rouge plein, comme « Feu n°60 » ; plus aucune bulle feu en contour
+  verifier(!r.feu2 && r.feu && r.feu.fond === f.feu.fond && r.feu.encre === f.feu.encre && gras(r.feu) && cC >= 4.5,
+    `${nom} ${theme} : « Feu » sans numéro en rouge plein ${r.feu?.fond} / ${r.feu?.encre}, contraste ${cC.toFixed(2)}`);
   verifier(e.classe === 'mi' && e.ent.fond === ORANGE && e.ent.encre === BLANC && gras(e.ent) && pastilleDe(e.pastille, 'ent') && cE >= 3.9,
     `${nom} ${theme} : Entraînement (étiquette et pastille) #c8650f / blanc gras 700, contraste ${cE.toFixed(2)} (choix du pilote)`);
   verifier(g.gaar && g.gaar.fond === FRAMBOISE && g.gaar.encre === BLANC && gras(g.gaar) && cG >= 4.5, `${nom} ${theme} : GAAR framboise #d81b60 / blanc gras, contraste ${cG.toFixed(2)}`);

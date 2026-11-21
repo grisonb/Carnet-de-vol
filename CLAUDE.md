@@ -156,6 +156,11 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   Champs du vol `nomInstructeur` / `nomExaminateur` (existants). Saisie : `#ie-add`, `#ie-z` (`#ie-inst`, `#ie-exam`,
   `#ie-nom`, `#ie-res`, `#ie-x`), `F.ie` / `F.ieOrig`, `rendreIE` ; carte : `.chip.fn.fn-copi.fn-ie` ; recherche + examinateur.
   Plus `#pl-ie` / `#file-ie` (`completerIE`, plus.js), réglage PARTAGÉ `rattrapageInstExam` (bouton masqué partout).
+- v0.54 : R133 `pastilleFeu` toujours `plein: true` (« Feu n°41, 42 », feu repris avec son numéro ; `.chip.feu2` n'est plus
+  produit). R132 carte : pastille de règle « MISSION » affichée « Mission ». R134 `repartitionAtterrissages(n, nuitDebut,
+  nuitFin)` (js/nuit.js) ; saisie : `repartirAtt` (arrivée = total − escales, `F.attEsc` = escales connues), `signatureAtt`
+  (heures, terrains, escales, position d'arrivée) ; `F.attSig` posé à l'ouverture d'un vol enregistré (aucun rattrapage) ;
+  « Att. Nuit » ± = correction gardée ; NPF : escales + 1 à l'arrivée, réparti par la règle. R135 libellés « Dash 8 / CdB »…
   R131 `FONCTIONS.cdb.puce` = 'CdB'.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
@@ -368,6 +373,8 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v054.mjs` : bulles « Mission » et feu pleines, atterrissages (3 → 3/0, 1 → 0/1, 5 → 4/1, nuit
+  2 → 0/2), correction à la main gardée puis règle réappliquée, brouillon NPF fini de nuit (faux NAS), ancien vol inchangé.
 - `node tests/navigateur/v053.mjs` : Inst / Exam (saisie, bulles, lecture, recherche, sauvegarde / restauration, synchro faux
   NAS, totaux), rattrapage FlyLog (faux fichiers : rien de retrouvé, puis complété / déjà rempli / absent ; bouton masqué
   après relance et sur l'appareil synchronisé), « CdB ».

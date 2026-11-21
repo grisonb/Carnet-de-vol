@@ -30,10 +30,10 @@ test('FEU +1 : numéro suivant devant le texte tapé ; −1 enlève le dernier',
   assert.deepEqual(enleverFeu([{ t: 'GAAR', nouveauFeu: null }]).map(l => l.t), ['GAAR']);
 });
 
-test('feu repris : pas de +1, pastille contour', () => {
+test('feu repris : pas de +1, pastille rouge pleine avec son numéro (v0.54, R133)', () => {
   const lignes = lignesPourSaisie({ missions: ['FEU n°51 X'], feux: 0 });
   assert.equal(lignes[0].nouveauFeu, null);
-  assert.deepEqual(pastilleFeu({ missions: ['FEU n°51 X'], feux: 0 }), { texte: 'Feu', plein: false });
+  assert.deepEqual(pastilleFeu({ missions: ['FEU n°51 X'], feux: 0 }), { texte: 'Feu n°51', plein: true });
   assert.deepEqual(pastilleFeu({ missions: ['GAAR + FEU n°49 X'.split(' + ')[1]], feux: 1 }), { texte: 'Feu n°49', plein: true });
   assert.equal(pastilleFeu({ missions: ['ENT. TEST'], feux: 0 }), null);
 });

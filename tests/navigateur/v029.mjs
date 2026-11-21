@@ -17,7 +17,7 @@ const vol = (id, jour, heure, champs) => ({ id, date: `2026-11-${jour}`, hDep: h
   creeLe: H, modifieLe: H, ...champs });
 const VOLS = [
   vol('v-num', '14', '10:00', { missions: ['FEU n°60 ESSAI'], feux: 1 }),                    // « Feu n°60 » (pleine)
-  vol('v-rep', '14', '08:00', { missions: ['FEU n°60 ESSAI'], feux: 0 }),                    // feu repris : « Feu » en contour
+  vol('v-rep', '14', '08:00', { missions: ['FEU n°60 ESSAI'], feux: 0 }),                    // feu repris : v0.54 « Feu n°60 » rouge plein
   vol('v-ifr', '13', '10:00', { missions: ['FEU ESSAI'], feux: 0, tempsIFR: 30 }),          // « Feu » (contour) + IFR
   vol('v-ent', '12', '10:00', { missions: ['FEU n°61 ESSAI', 'ENT. OPS'], feux: 1 }),        // feu + entraînement
   vol('v-mi', '11', '10:00', { missions: ['ENT. OPS'], tempsIFR: 20 }),                     // entraînement seul (inchangé)
@@ -66,8 +66,9 @@ function controler(nomVue, c) {
   verifier(c['v-num'].classe === 'feu' && c['v-num'].pastille.encre === rougeFeu && c['v-num'].pastille.bord === rougeFeu,
     `${nomVue} : vol « Feu n°60 » : pastille couleur « Feu » (${c['v-num'].pastille.fond} / ${c['v-num'].pastille.encre})`);
   const r = c['v-rep'];
-  verifier(r.etiquette && r.etiquette.classe === 'feu2' && r.etiquette.texte === 'Feu' && r.etiquette.fond === 'rgba(0, 0, 0, 0)',
-    `${nomVue} : vol « Feu » sans numéro : l'étiquette reste en contour (fond transparent, bord ${r.etiquette?.bord})`);
+  // v0.54 (R133) : toute bulle feu est en rouge plein ; le feu repris montre son numéro
+  verifier(r.etiquette && r.etiquette.classe === 'feu' && r.etiquette.texte === 'Feu n°60' && memes(r.etiquette, ref),
+    `${nomVue} : vol « feu repris » : étiquette « ${r.etiquette?.texte} » rouge plein comme « Feu n°60 » (${r.etiquette?.fond})`);
   verifier(r.classe === 'feu' && memes(r.pastille, c['v-num'].pastille) && r.pastille.bord === c['v-num'].pastille.bord,
     `${nomVue} : vol « Feu » sans numéro : même pastille que le « Feu n°60 » (${r.pastille.fond} / ${r.pastille.encre})`);
   verifier(c['v-ifr'].classe === 'feu' && memes(c['v-ifr'].pastille, c['v-num'].pastille), `${nomVue} : « Feu » + IFR : pastille feu`);
