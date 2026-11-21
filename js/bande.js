@@ -25,6 +25,9 @@ export const BANDE_DEFAUT = ['tempsCdB', 'tempsCopi', 'tempsDC', 'tempsInst', 't
 export const TYPES_DETAILLES = ['DH8D'];
 // v0.46 (R120) : familles ayant trois choix : « Dash 8 Q400 » (le total, sans le mot « total »), « … CdB », « … Copi »
 export const FAMILLES_DETAILLEES = ['Dash 8 Q400'];
+// v0.52 (R127) : nom AFFICHÉ d'une famille (l'identifiant interne ne change pas : les choix déjà faits restent cochés)
+export const NOMS_AFFICHES = { 'Dash 8 Q400': 'Dash 8' };
+export const nomAffiche = f => NOMS_AFFICHES[f] || f;
 
 // v0.46 (R120) : choix « par type d'appareil » = un par NOM DE MODÈLE (familleAvion : DH8D -> « Dash 8 Q400 », CL2T ->
 // « CL-415 », sinon le modèle de la fiche) de mes avions (pas les simulateurs), du plus d'heures au moins.
@@ -36,8 +39,12 @@ export function choixParType(t, avions = []) {
   familles.delete('?');
   const out = [];
   for (const f of [...familles].sort((x, y) => (par[y] || 0) - (par[x] || 0) || x.localeCompare(y, 'fr'))) {
-    out.push({ cle: `famille:${f}`, lib: f });
-    if (FAMILLES_DETAILLEES.includes(f)) out.push({ cle: `familleCdB:${f}`, lib: `${f} CdB` }, { cle: `familleCopi:${f}`, lib: `${f} Copi` });
+    const n = nomAffiche(f);
+    out.push({ cle: `famille:${f}`, lib: n });
+    if (FAMILLES_DETAILLEES.includes(f)) {
+      out.push({ cle: `familleCdB:${f}`, lib: `${n} CdB` }, { cle: `familleCopi:${f}`, lib: `${n} Copi` },
+        { cle: `familleAnnee:${f}`, lib: `${n} Année` }); // v0.52 (R128) : heures de l'année civile en cours
+    }
   }
   return out;
 }
@@ -67,9 +74,10 @@ export function valeurBande(cle, t) {
   if (g) return { lib: g.lib, texte: g.nombre ? (t[cle] || 0).toLocaleString('fr-FR') : hm(t[cle] || 0) };
   const i = cle.indexOf(':'), genre = cle.slice(0, i), ty = cle.slice(i + 1);
   if (i < 0) return null;
-  if (genre === 'famille') return { lib: ty, texte: hm((t.parFamille || {})[ty] || 0) };
-  if (genre === 'familleCdB') return { lib: `${ty} CdB`, texte: hm((t.parFamilleCdB || {})[ty] || 0) };
-  if (genre === 'familleCopi') return { lib: `${ty} Copi`, texte: hm((t.parFamilleCopi || {})[ty] || 0) };
+  if (genre === 'famille') return { lib: nomAffiche(ty), texte: hm((t.parFamille || {})[ty] || 0) };
+  if (genre === 'familleCdB') return { lib: `${nomAffiche(ty)} CdB`, texte: hm((t.parFamilleCdB || {})[ty] || 0) };
+  if (genre === 'familleCopi') return { lib: `${nomAffiche(ty)} Copi`, texte: hm((t.parFamilleCopi || {})[ty] || 0) };
+  if (genre === 'familleAnnee') return { lib: `${nomAffiche(ty)} Année`, texte: hm((t.parFamilleAnnee || {})[ty] || 0) };
   if (genre === 'type') return { lib: TYPES_DETAILLES.includes(ty) ? `${ty} total` : ty, texte: hm(t.parType[ty] || 0) };
   if (genre === 'typeCdB') return { lib: `${ty} CdB`, texte: hm(t.parTypeCdB[ty] || 0) };
   if (genre === 'typeCopi') return { lib: `${ty} Copi`, texte: hm(t.parTypeCopi[ty] || 0) };

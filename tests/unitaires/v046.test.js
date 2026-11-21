@@ -29,8 +29,10 @@ test('heures inchangées : Dash 8 Q400 = ancien total DH8D, CL-415 = ancien CL2T
 
 test('menu : noms de modèles, Dash avec total / CdB / Copi, un bouton par nom pour un même code (DR40), pas de simulateur', () => {
   const ch = choixParType(t, AVIONS);
-  assert.deepEqual(ch.map(c => c.lib), ['Dash 8 Q400', 'Dash 8 Q400 CdB', 'Dash 8 Q400 Copi', 'Rallye', 'CL-415', 'DR400', 'DR400 Remorqueur ESSAI', 'C172']);
-  assert.deepEqual(['Dash 8 Q400', 'Dash 8 Q400 CdB', 'Dash 8 Q400 Copi'].map(l => valeurBande(ch.find(c => c.lib === l).cle, t).lib), ['Dash 8 Q400', 'Dash 8 Q400 CdB', 'Dash 8 Q400 Copi']);
+  // v0.52 (R127 / R128) : affiché « Dash 8 » (identifiant interne inchangé) ; + « Dash 8 Année »
+  assert.deepEqual(ch.map(c => c.lib), ['Dash 8', 'Dash 8 CdB', 'Dash 8 Copi', 'Dash 8 Année', 'Rallye', 'CL-415', 'DR400', 'DR400 Remorqueur ESSAI', 'C172']);
+  assert.deepEqual(['Dash 8', 'Dash 8 CdB', 'Dash 8 Copi'].map(l => valeurBande(ch.find(c => c.lib === l).cle, t).lib), ['Dash 8', 'Dash 8 CdB', 'Dash 8 Copi']);
+  assert.deepEqual(ch.slice(0, 4).map(c => c.cle), ['famille:Dash 8 Q400', 'familleCdB:Dash 8 Q400', 'familleCopi:Dash 8 Q400', 'familleAnnee:Dash 8 Q400']);
 });
 
 test('anciens choix convertis tout seuls, même ordre, sans doublon', () => {

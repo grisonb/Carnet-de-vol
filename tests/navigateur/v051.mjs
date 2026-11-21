@@ -95,7 +95,7 @@ try {
           const textes = m.map(c => c.parts.map(x => x.texte).join(' ')).join(' | ');
           for (const c of m) {
             const ecarts = c.morceaux.map(x => x.haut - x.bas);
-            verifier(c.h === 30 && c.parts.every(x => x.lignes === 1) && ecarts.every(e => Math.abs(e) <= 1),
+            verifier(c.h === 30 && c.parts.every(x => x.lignes === 1) && ecarts.every(e => Math.abs(e) <= 1.02) /* 1 px (+ arrondi du facteur d'échelle de la capture) */,
               `${nom} « ${c.parts.map(x => x.texte).join(' ')} » : case 30 px, chaque morceau centré (encre haut − bas : ${ecarts.map(e => e.toFixed(2)).join(' / ')} px)`);
             verifier(c.gauche >= 10 && c.droite >= 10, `${nom} « ${c.parts.map(x => x.texte).join(' ')} » : marges ≥ 10 px (${c.gauche.toFixed(1)} / ${c.droite.toFixed(1)})`);
           }

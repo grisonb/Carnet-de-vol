@@ -63,18 +63,19 @@ try {
   verifier(await p.isVisible('#hs-modal') && await p.locator('#hs-gen button').count() === 12, 'toucher la bande : fenêtre « Heures affichées en haut » (12 choix généraux)');
   const types = await p.$$eval('#hs-typ button', l => l.map(x => x.textContent));
   // v0.46 (R120) : noms de modèles (DH8D -> « Dash 8 Q400 » avec total / CdB / Copi ; DR40 -> « DR400 »)
-  verifier(types.includes('Dash 8 Q400') && types.includes('Dash 8 Q400 CdB') && types.includes('Dash 8 Q400 Copi') && types.includes('DR400') && !types.includes('SIMULATEURS'),
-    'par type : un bouton par modèle, Dash 8 Q400 / CdB / Copi ' + JSON.stringify(types));
+  // v0.52 (R127 / R128) : affiché « Dash 8 », + « Dash 8 Année »
+  verifier(types.includes('Dash 8') && types.includes('Dash 8 CdB') && types.includes('Dash 8 Copi') && types.includes('Dash 8 Année') && types.includes('DR400') && !types.includes('SIMULATEURS'),
+    'par type : un bouton par modèle, Dash 8 / CdB / Copi / Année ' + JSON.stringify(types));
   await p.locator('#hs-modal .mbox').screenshot({ path: join(CAPT, 'v06-02-choix-heures.png') });
   for (const c of ['tempsCdB', 'tempsCopi', 'tempsDC', 'tempsInst', 'tempsIFR', 'tempsNuit']) await p.click(`[data-hs="${c}"]`);
   verifier((await p.textContent('#h-strip')).includes('Touche ici pour choisir des heures à afficher'), 'rien de coché : « Touche ici pour choisir… »');
   for (const c of ['tempsNuit', 'familleCdB:Dash 8 Q400', 'vols', 'atterrissages']) await p.click(`[data-hs="${c}"]`);
   await p.click('#hs-x');
   b = await bande();
-  verifier(JSON.stringify(b.map(x => x[0])) === '["Nuit","Dash 8 Q400 CdB","Vols","Atterrissages"]', 'ordre d\'affichage = ordre coché');
+  verifier(JSON.stringify(b.map(x => x[0])) === '["Nuit","Dash 8 CdB","Vols","Atterrissages"]', 'ordre d\'affichage = ordre coché');
   verifier(b[2][1] === T['Vols'] && b[3][1] === T['Atterrissages'], 'Vols et Atterrissages = Totaux');
   await p.reload(); await p.waitForSelector('body[data-pret="1"]');
-  verifier(JSON.stringify((await bande()).map(x => x[0])) === '["Nuit","Dash 8 Q400 CdB","Vols","Atterrissages"]', 'choix mémorisé après redémarrage');
+  verifier(JSON.stringify((await bande()).map(x => x[0])) === '["Nuit","Dash 8 CdB","Vols","Atterrissages"]', 'choix mémorisé après redémarrage');
 
   console.log('Supprimer un vol par glissé');
   const carte = p.locator('.flrow', { hasText: 'Dash 8 Q400' }).first();

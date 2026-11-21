@@ -34,7 +34,7 @@ test('bande : un choix par type d\'appareil, du plus d\'heures au moins ; DH8D t
   assert.deepEqual(minutes, [...minutes].sort((a, b) => b - a), 'rangés du plus d\'heures au moins');
   assert.ok(!familles.includes('SIMULATEURS') && !ch.some(c => c.cle.startsWith('type')));
   const i = ch.findIndex(c => c.cle === 'famille:Dash 8 Q400');
-  assert.deepEqual(ch.slice(i, i + 3).map(c => c.lib), ['Dash 8 Q400', 'Dash 8 Q400 CdB', 'Dash 8 Q400 Copi']);
+  assert.deepEqual(ch.slice(i, i + 3).map(c => c.lib), ['Dash 8', 'Dash 8 CdB', 'Dash 8 Copi']); // v0.52 (R127) : affiché « Dash 8 »
   assert.equal(valeurBande('famille:Dash 8 Q400', t).texte, valeurBande('type:DH8D', t).texte);
   // valeurs DH8D recalculées à la main
   const dash = r.aCreer.filter(v => avions.get(v.avionId)?.typeOACI === 'DH8D');

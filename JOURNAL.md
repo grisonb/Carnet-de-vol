@@ -1,5 +1,27 @@
 # Journal des versions
 
+## v0.52 — 21/11/2026
+
+Remarques R126 à R129. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R126 : toutes les bulles des cartes de vol ont un contour** de 1,5 px, sans changer leur taille (mesuré avant / après).
+Fond clair : contour de la couleur du texte ; fond plein (Feu, Entraînement, GAAR, Nuit) : même teinte un peu plus foncée ;
+bulles qui avaient déjà un contour inchangées. CDB : fond #c8e6c9, texte et contour #1b5e20 ; Copi : fond #ecf6ed, texte et
+contour #43a047 (DC, Inst. inchangées). Thème sombre : verts adaptés, contour de « Nuit » gris (la bulle est noire).
+
+**R127 + R129 : « Dash 8 »** au lieu de « Dash 8 Q400 » dans la liste des heures et la bande (« Dash 8 », « Dash 8 CdB »…),
+mêmes identifiants internes : les choix faits restent cochés. La bande écrit le libellé exact de la liste (casse respectée,
+plus de MAJUSCULES forcées). PDF toujours en codes OACI.
+
+**R128 : case « Dash 8 Année »** : heures de vol sur Dash 8 (MR + MRE), toutes fonctions, de l'année civile en cours (du
+1er janvier à aujourd'hui, date du téléphone) ; simulateurs et simulations exclus ; repart à zéro au 1er janvier.
+
+**Cases OPS / IFR** (navigateurs sans text-box seulement) : centrage rendu indépendant de la position de la case (le
+changement de la bande le décalait d'un pixel dans l'ancien Chrome des tests).
+
+**Tests** : `tests/unitaires/v052.test.js`, `tests/navigateur/v052.mjs` ; v06 et v046 (unitaires et navigateur) : libellés
+« Dash 8 » ; v051 : tolérance d'arrondi d'échelle ; test rapide avec les tests des bulles et de la bande.
+
 ## v0.51 — 17/11/2026
 
 Remarque R125. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

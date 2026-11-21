@@ -101,7 +101,7 @@ let toile = null;
 function rognerSansTextBox(z) {
   toile = toile || document.createElement('canvas').getContext('2d');
   for (const s of z.querySelectorAll('.sc-l>span')) {
-    s.style.marginTop = s.style.marginBottom = '0px';
+    s.style.marginTop = s.style.marginBottom = '0px'; s.style.alignSelf = '';
     const st = getComputedStyle(s), repere = document.createElement('i');
     repere.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
     s.append(repere);
@@ -110,9 +110,17 @@ function rognerSansTextBox(z) {
     // encre mesurée sur une police de 1000 px puis ramenée à la taille (Chrome arrondit ces mesures au pixel entier)
     const taille = parseFloat(st.fontSize);
     toile.font = `${st.fontWeight} 1000px ${st.fontFamily}`;
-    const m = toile.measureText(s.textContent), asc = m.actualBoundingBoxAscent * taille / 1000, desc = m.actualBoundingBoxDescent * taille / 1000;
-    s.style.marginTop = `${-(base - asc)}px`; // la boîte du morceau = son encre : centrée dans la case par le flex
-    s.style.marginBottom = `${-(h - base - desc)}px`;
+    // hauteur des capitales (« H ») et ligne de base, comme text-box « cap alphabetic » (pas l'encre exacte du texte : la
+    // barre « / » et l'arrondi de certains chiffres la font varier d'un texte à l'autre)
+    const m = toile.measureText('H'), asc = m.actualBoundingBoxAscent * taille / 1000, desc = 0;
+    // v0.52 : posé en haut de la case, ligne de base au centre de l'encre, calée sur un pixel de l'ÉCRAN (coordonnées de la
+    // page : l'ancien Chrome y cale le texte ; sinon le centrage dépendait de la position exacte de la case)
+    const dpr = devicePixelRatio || 1, caseHaut = s.parentElement.getBoundingClientRect().top;
+    const ideale = caseHaut + (s.parentElement.clientHeight - asc - desc) / 2 + asc, calee = Math.round(ideale * dpr) / dpr;
+    s.style.alignSelf = 'flex-start';
+    s.style.marginTop = `${calee - caseHaut - base}px`;
+    s.style.marginBottom = '0px';
+    void h;
   }
 }
 

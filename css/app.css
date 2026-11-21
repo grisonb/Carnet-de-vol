@@ -896,3 +896,25 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 @supports (text-box:trim-both cap alphabetic){.sc-l>span{text-box:trim-both cap alphabetic}}
 /* sans text-box : même rognage en marges négatives (en em : valables à toutes les tailles), mesuré au pixel */
 @supports not (text-box:trim-both cap alphabetic){.sc-l>span{margin-top:var(--sc-rh,-0.18em);margin-bottom:var(--sc-rb,-0.11em)}}
+
+/* v0.52 (R126) : TOUTES les bulles des cartes de vol ont un contour de 1,5 px (bord 1 px, déjà là mais transparent, + liseré
+   0,5 px en ombre sans flou : la taille extérieure ne change pas). Fond clair : contour de la couleur du texte ; fond plein
+   coloré : la même teinte ~15 % plus foncée. Les bulles qui avaient déjà un contour ne changent pas.
+   CDB : fond #c8e6c9, texte et contour #1b5e20 ; Copi : fond #ecf6ed, texte et contour #43a047 (DC, Inst.… : inchangées). */
+:root .flight .chips .chip.fn,:root .flight .chips .chip.mi:not(.ent):not(.gaar),:root .flight .chips .chip.ifr,:root .flight .chips .chip.hl:not(.lrg-feu):not(.lrg-ent){border-color:currentColor;box-shadow:0 0 0 .5px currentColor}
+.chips .chip.fn.fn-cdb{background:#c8e6c9;color:#1b5e20}
+.chips .chip.fn.fn-copi{background:#ecf6ed;color:#43a047}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chips .chip.fn.fn-cdb{background:#1e3b21;color:#a5d6a7}:root:not([data-theme="light"]) .chips .chip.fn.fn-copi{background:#17291a;color:#81c784}}
+:root[data-theme="dark"] .chips .chip.fn.fn-cdb{background:#1e3b21;color:#a5d6a7}
+:root[data-theme="dark"] .chips .chip.fn.fn-copi{background:#17291a;color:#81c784}
+.chips .chip.feu{--bord-plein:#b32828}
+.chips .chip.mi.ent{--bord-plein:#aa560d}
+.chips .chip.mi.gaar{--bord-plein:#b81752}
+.chips .chip.nuit{--bord-plein:#202b30}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chips .chip.nuit{--bord-plein:#5b6b73}}
+:root[data-theme="dark"] .chips .chip.nuit{--bord-plein:#5b6b73}
+/* (« :root .flight » : plus précis que les règles de couleur des étiquettes pleines, qui remettaient le bord en transparent) */
+:root .flight .chips .chip.feu,:root .flight .chips .chip.mi.ent,:root .flight .chips .chip.mi.gaar,:root .flight .chips .chip.nuit{border-color:var(--bord-plein);box-shadow:0 0 0 .5px var(--bord-plein)}
+
+/* v0.52 (R129) : la bande des heures écrit le libellé EXACT de la liste (majuscules et minuscules respectées) */
+#v-carnet .hstrip span{text-transform:none}

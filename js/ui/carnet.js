@@ -132,8 +132,10 @@ export function carteVol(v, voir = false) {
   const f = FONCTIONS[v.fonction] || FONCTIONS.cdb;
   const autre = v[f.champ];
   // Couleurs : fonction violet, missions orange, IFR bleu, nuit foncé, feu rouge, largages jaune
-  const puces = [`<span class="chip fn">${esc(f.puce)}</span>`];
-  if (autre && autre !== 'SELF') puces.push(`<span class="chip fn">${esc(f.puceAutre)} ${esc(autre)}</span>`);
+  // v0.52 (R126) : bulle CdB (vert foncé) et Copi (vert clair) reconnaissables ; DC, Inst., Élève… gardent le violet
+  const fnClasse = t => (/^cdb/i.test(t) ? ' fn-cdb' : /^copi/i.test(t) ? ' fn-copi' : '');
+  const puces = [`<span class="chip fn${fnClasse(f.puce)}">${esc(f.puce)}</span>`];
+  if (autre && autre !== 'SELF') puces.push(`<span class="chip fn${fnClasse(f.puceAutre)}">${esc(f.puceAutre)} ${esc(autre)}</span>`);
   const feu = pastilleFeu(v);
   if (feu) puces.push(`<span class="chip ${feu.plein ? 'feu' : 'feu2'}">${esc(feu.texte)}</span>`);
   const regles = pastillesRegles(v, reglage('regles'));
@@ -282,7 +284,7 @@ export function allerAuDernierVol() {
 // ---------- Bande d'heures (mêmes calculs que l'écran Totaux) ----------
 // v0.31 (R71) : avec une période, la bande d'heures et le TOTAL du haut ne comptent que ses vols
 let cacheTotaux = { cle: '', t: null };
-const cleTotaux = () => `${etat.revision}|${periode ? periode.du + '|' + periode.au : ''}`;
+const cleTotaux = () => `${etat.revision}|${periode ? periode.du + '|' + periode.au : ''}|${aujourdhui()}`; // v0.52 : + le jour (« Année »)
 const volsDuHaut = () => (periode ? etat.vols.filter(dansPeriode) : etat.vols);
 function totauxCarnet() {
   if (cacheTotaux.cle !== cleTotaux()) cacheTotaux = { cle: cleTotaux(), t: calculerTotaux(volsDuHaut(), etat.avions) };

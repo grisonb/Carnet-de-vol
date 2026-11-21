@@ -151,6 +151,13 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
+  ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
+  de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.
+  R128 clé `familleAnnee:<famille>` (familles détaillées) ; `t.parFamilleAnnee` (totaux.js, `calculerTotaux(vols, avions,
+  aujourdhui)`) ; clé du cache des totaux de l'accueil + le jour. R129 `#v-carnet .hstrip span{text-transform:none}`.
+  Socle sans text-box (`rognerSansTextBox`) : centré sur la hauteur des capitales (« H », comme text-box), ligne de base
+  calée sur un pixel de l'écran en coordonnées de la page (le centrage ne dépend plus de la position de la case).
 - v0.51 : R125 `.sc-l` en flex (hauteur de la case), chaque `span` rogné (`text-box` sinon `rognerSansTextBox` : ligne de base
   mesurée avec un repère + encre mesurée sur une police de 1000 px) et centré seul ; `ajusterSocle` (js/ui/socle.js, appelé
   par `afficherSocle` et `ajusterEntete`) : `--sc-t` / `--sc-j` / `--sc-e` arrondis au pixel, × largeur / largeur à 360 px
@@ -355,6 +362,8 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v052.mjs` : contours et taille des bulles (avec / sans les règles v0.52), CDB / Copi, « Dash 8 » et
+  casse de la bande, choix gardés, « Dash 8 Année » (horloge simulée, 1er janvier), Chromium et WebKit.
 - `node tests/navigateur/v051.mjs` : centrage de CHAQUE morceau à l'encre (couleur de la case lue dans son style, bords de la
   capture ignorés), marges ≥ 10 px, tailles ; 360 / 393 / 412 px, ×2 / ×3, Chromium (repli), WebKit (text-box) et WebKit
   forcé sur le repli. `V051_SONDE=1` : tout mesurer sans s'arrêter.

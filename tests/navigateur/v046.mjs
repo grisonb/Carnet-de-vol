@@ -147,7 +147,7 @@ try {
 
       // R120 : bande de l'accueil (anciens choix convertis tout seuls)
       const bande = await p.$$eval('#h-strip>div', l => l.map(d => ({ v: d.querySelector('b').textContent, l: d.querySelector('span').textContent, txt: getComputedStyle(d.querySelector('span')).textTransform })));
-      verifier(JSON.stringify(bande.map(b => b.l)) === JSON.stringify(['CL-415', 'Dash 8 Q400', 'Dash 8 Q400 CdB'])
+      verifier(JSON.stringify(bande.map(b => b.l)) === JSON.stringify(['CL-415', 'Dash 8', 'Dash 8 CdB']) // v0.52 : « Dash 8 »
         && bande[0].v === hm(200) && bande[1].v === hm(90 + 120) && bande[2].v === hm(90),
         `${nom} : anciens choix (CL2T, DH8D total, DH8D CdB) -> ${bande.map(b => `« ${b.l} » ${b.v}`).join(', ')} (Dash MR + MRE regroupés)`);
       const coupes = await p.$$eval('#h-strip span, #h-strip b', l => l.filter(e => e.scrollWidth > e.clientWidth + 0.5 || e.getClientRects().length > 1).map(e => e.textContent));
@@ -157,11 +157,11 @@ try {
       // R120 : menu « Choisir les heures affichées »
       await p.click('#h-strip'); await p.waitForSelector('#hs-modal:not([hidden])');
       const menu = await p.$$eval('#hs-typ [data-hs]', l => l.map(b => ({ l: b.textContent, cle: b.dataset.hs, on: b.getAttribute('aria-pressed') })));
-      verifier(JSON.stringify(menu.map(m => m.l)) === JSON.stringify(['Dash 8 Q400', 'Dash 8 Q400 CdB', 'Dash 8 Q400 Copi', 'CL-415', 'Rallye', 'DR400', 'DR400 Remorqueur ESSAI'])
-        && menu.filter(m => m.on === 'true').map(m => m.l).sort().join('|') === ['CL-415', 'Dash 8 Q400', 'Dash 8 Q400 CdB'].sort().join('|'),
+      verifier(JSON.stringify(menu.map(m => m.l)) === JSON.stringify(['Dash 8', 'Dash 8 CdB', 'Dash 8 Copi', 'Dash 8 Année', 'CL-415', 'Rallye', 'DR400', 'DR400 Remorqueur ESSAI'])
+        && menu.filter(m => m.on === 'true').map(m => m.l).sort().join('|') === ['CL-415', 'Dash 8', 'Dash 8 CdB'].sort().join('|'),
         `${nom} : menu par type d'appareil : ${menu.map(m => m.l + (m.on === 'true' ? ' ✓' : '')).join(' ; ')}`);
       const ordre = await p.$$eval('#hs-ordre .pname', l => l.map(e => e.textContent));
-      verifier(JSON.stringify(ordre) === JSON.stringify(['CL-415', 'Dash 8 Q400', 'Dash 8 Q400 CdB']), `${nom} : ordre d'affichage gardé (${ordre.join(', ')})`);
+      verifier(JSON.stringify(ordre) === JSON.stringify(['CL-415', 'Dash 8', 'Dash 8 CdB']), `${nom} : ordre d'affichage gardé (${ordre.join(', ')})`);
       await p.screenshot({ path: join(CAPT, `v046-menu-${mnom}-${largeur}.png`) });
       if (mnom === 'Chrome' && largeur === 390) {
         // cocher « Rallye » : enregistré avec les nouvelles clés, ordre gardé

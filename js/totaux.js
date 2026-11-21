@@ -1,7 +1,7 @@
 // Totaux : accueil (TOTAL HdV, 3/7/30 jours), écran Totaux, Contrôle import.
 
 import { colonnesAvion, COMPTEURS, estSimulation, familleAvion } from './modele.js';
-import { ajouterJours } from './temps.js';
+import { ajouterJours, aujourdhui as aujourdhuiLocal } from './temps.js';
 
 export const RUBRIQUES = [
   { cle: 'vols', titre: 'Vols', genre: 'nombre', groupe: 'heures' },
@@ -37,6 +37,7 @@ export function totauxVides() {
   const t = Object.fromEntries(RUBRIQUES.map(r => [r.cle, 0]));
   t.parEtiquette = {}; t.parAvion = {}; t.parType = {}; t.parTypeCdB = {}; t.parTypeCopi = {};
   t.parFamille = {}; t.parFamilleCdB = {}; t.parFamilleCopi = {}; // v0.46 (R120) : par nom de modèle (bande d'heures)
+  t.parFamilleAnnee = {}; // v0.52 (R128) : par nom de modèle, année civile en cours (1er janvier -> aujourd'hui)
   return t;
 }
 
@@ -80,9 +81,17 @@ export function ajouterVol(t, v, avions) {
   return t;
 }
 
-export function calculerTotaux(vols, avions) {
+export function calculerTotaux(vols, avions, aujourdhui = aujourdhuiLocal()) {
   const t = totauxVides();
   for (const v of vols) if (!estSimulation(v)) ajouterVol(t, v, avions); // v0.35 (R85) : simulation jamais comptée
+  // v0.52 (R128) : heures de l'année civile en cours par famille (toutes fonctions ; simulateurs et simulations exclus) ;
+  // repart à zéro le 1er janvier (date du téléphone ; date du vol = celle du carnet, UTC)
+  const debut = `${aujourdhui.slice(0, 4)}-01-01`;
+  for (const v of vols) {
+    if (estSimulation(v) || !v.date || v.date < debut || v.date > aujourdhui) continue;
+    const fa = familleAvion(avions.get(v.avionId));
+    if (fa) t.parFamilleAnnee[fa] = (t.parFamilleAnnee[fa] || 0) + (v.tempsTotal || 0);
+  }
   return t;
 }
 
