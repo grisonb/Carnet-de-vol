@@ -151,6 +151,12 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `.fl-bloc.t-feu|feu2|mi|ifr|sable` (`couleurTemps` dans js/ui/carnet.js : feu > Entraînement > IFR > sable, mêmes règles
   et mêmes couleurs CSS que les étiquettes) (R66). Plus de bouton flottant : `#fab` = « + » rond vert dans `.tabs`, à droite
   de « Plus » (actif depuis toutes les vues ; saisie modifiée : « Abandonner la saisie ? » puis nouveau vol, `apresAbandon`) (R67).
+- v0.53 : R130 `js/inst-exam.js` (`ROLES_IE`, `nomReel` : « SELF » = vide, `instExamDuVol` : pas d'« Inst » en fonction dc,
+  `completerInstExam` : clé date + hDep + dep + arr, vols du fichier avec copi ET inst / exam, champ vide seulement).
+  Champs du vol `nomInstructeur` / `nomExaminateur` (existants). Saisie : `#ie-add`, `#ie-z` (`#ie-inst`, `#ie-exam`,
+  `#ie-nom`, `#ie-res`, `#ie-x`), `F.ie` / `F.ieOrig`, `rendreIE` ; carte : `.chip.fn.fn-copi.fn-ie` ; recherche + examinateur.
+  Plus `#pl-ie` / `#file-ie` (`completerIE`, plus.js), réglage PARTAGÉ `rattrapageInstExam` (bouton masqué partout).
+  R131 `FONCTIONS.cdb.puce` = 'CdB'.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.
@@ -362,6 +368,9 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v053.mjs` : Inst / Exam (saisie, bulles, lecture, recherche, sauvegarde / restauration, synchro faux
+  NAS, totaux), rattrapage FlyLog (faux fichiers : rien de retrouvé, puis complété / déjà rempli / absent ; bouton masqué
+  après relance et sur l'appareil synchronisé), « CdB ».
 - `node tests/navigateur/v052.mjs` : contours et taille des bulles (avec / sans les règles v0.52), CDB / Copi, « Dash 8 » et
   casse de la bande, choix gardés, « Dash 8 Année » (horloge simulée, 1er janvier), Chromium et WebKit.
 - `node tests/navigateur/v051.mjs` : centrage de CHAQUE morceau à l'encre (couleur de la case lue dans son style, bords de la

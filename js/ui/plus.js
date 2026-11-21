@@ -1,7 +1,7 @@
 // Écran Plus : exports, sauvegarde, import FlyLog, contrôle import, types, avions, personnes, stockage.
 
 import { $, esc, toast, proposerFichier, lireFichierTexte, ouvrirOutil, fermerOutil, pause } from './commun.js';
-import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer, enregistrerAvions } from '../etat.js';
+import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer, enregistrerAvions, enregistrerVol, enConsultation } from '../etat.js';
 import { lireFichesAvions, changementsFiches, appliquerFiches } from '../fiches-avions.js';
 import { analyserFlyLog } from '../flylog.js';
 import { calculerTotaux, filtrerPeriode, bornesPeriode } from '../totaux.js';
@@ -18,6 +18,7 @@ import { ouvrirPersonne, ouvrirLibelles } from './saisie.js';
 import { ouvrirChoixBande } from './carnet.js';
 import { resumeCartes } from './carte.js';
 import { resumeSocle } from './socle.js';
+import { completerInstExam } from '../inst-exam.js';
 import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas } from './nas.js';
 import { ecranSynchro, resumeSynchroActuel } from './synchro.js';
 import { copieNasAJour, depuis } from '../copieur.js';
@@ -143,6 +144,32 @@ async function restaurerFichier() {
     await restaurer(d);
     fermerOutil(); toast('Carnet restauré');
   });
+}
+
+// ---------- v0.53 (R130) : compléter instructeur / examinateur depuis FlyLog (usage unique) ----------
+// Vols du fichier avec un copi ET un instructeur ou examinateur, retrouvés par date + début bloc + terrains ; champ rempli
+// seulement s'il est vide ; rien d'autre n'est créé ni modifié. Le bouton disparaît (réglage partagé : aussi sur les autres
+// appareils) dès qu'au moins un vol est complété — ou quand tous ces vols sont retrouvés et déjà remplis (plus rien à faire).
+async function completerIE() {
+  const f = await lireFichierTexte($('#file-ie'));
+  $('#file-ie').value = '';
+  if (!f) return;
+  const c = ouvrirOutil('Instructeur / examinateur', '<p class="prog">Lecture du fichier…</p>');
+  await pause();
+  const r = completerInstExam(f.texte, etat.vols);
+  if (!r.ok) { c.innerHTML = `<p class="koc">${esc(r.message)}</p>`; return; }
+  for (const m of r.modifs) {
+    const v = etat.vols.find(x => x.id === m.id);
+    if (v) await enregistrerVol({ ...v, ...m.champs });
+  }
+  const fini = r.completes > 0 || (r.concernes > 0 && !r.absents.length);
+  if (fini) await enregistrerReglage('rattrapageInstExam', new Date().toISOString());
+  const ligne = a => `<li>${esc(dateFr(a.date))}${a.hDep ? ' · ' + esc(a.hDep) : ''} · ${esc(a.dep)} › ${esc(a.arr)}</li>`;
+  c.innerHTML = `<div class="sec"><p class="${r.completes ? 'okc' : ''}" style="font-size:17px;font-weight:700">${r.completes} vol${r.completes > 1 ? 's' : ''} complété${r.completes > 1 ? 's' : ''}</p>
+    <p class="hint">${r.concernes} vol${r.concernes > 1 ? 's' : ''} du fichier avec un copi et un instructeur ou examinateur${r.deja ? ` · ${r.deja} déjà rempli${r.deja > 1 ? 's' : ''} dans le carnet (pas modifié${r.deja > 1 ? 's' : ''})` : ''}.</p>
+    ${r.absents.length ? `<h3>Non retrouvé${r.absents.length > 1 ? 's' : ''} dans le carnet (${r.absents.length})</h3><ul>${r.absents.map(ligne).join('')}</ul>` : ''}
+    <p class="hint">${fini ? 'Terminé : ce bouton ne sera plus proposé.' : 'Rien n\'a été complété : le bouton reste disponible.'}</p></div>`;
+  majPlus();
 }
 
 // ---------- Import FlyLog ----------
@@ -314,6 +341,7 @@ export async function majPlus() {
   $('#pl-sync-s').textContent = resumeSynchroActuel();
   resumeCartes().then(t => { $('#pl-cartes-s').textContent = t; });
   $('#pl-socle-s').textContent = resumeSocle();
+  $('#pl-ie').hidden = !!reglage('rattrapageInstExam') || enConsultation(); // v0.53 (R130) : usage unique
   const p = await persiste();
   $('#pl-stock-s').textContent = p === null ? 'Protection non disponible sur ce navigateur'
     : p ? 'Protégé contre l\'effacement automatique' : 'Non protégé : fais des sauvegardes';
@@ -344,6 +372,8 @@ export function initPlus() {
   $('#pl-import').addEventListener('click', () => $('#file-flylog').click());
   $('#file-flylog').addEventListener('change', importer);
   $('#pl-ctrl').addEventListener('click', ecranControle);
+  $('#pl-ie').addEventListener('click', () => $('#file-ie').click()); // v0.53 (R130)
+  $('#file-ie').addEventListener('change', completerIE);
   $('#file-ref').addEventListener('change', chargerReference);
   $('#rules-open').addEventListener('click', ouvrirRegles);
   $('#pl-types').addEventListener('click', ecranTypes);

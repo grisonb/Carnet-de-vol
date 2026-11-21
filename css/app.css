@@ -918,3 +918,15 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 
 /* v0.52 (R129) : la bande des heures écrit le libellé EXACT de la liste (majuscules et minuscules respectées) */
 #v-carnet .hstrip span{text-transform:none}
+
+/* v0.53 (R130) : ligne facultative « Inst / Exam » + personne, sous l'autre pilote ; en lecture seule : ni le lien ni la croix */
+.ie-add{display:block;margin:6px 0 2px}
+.ie-z{margin-top:8px}
+.ie-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ie-x{width:36px;height:36px}
+#v-saisie.lecture .ie-add,#v-saisie.lecture .ie-x{display:none}
+#v-saisie .ie-seg button[disabled]{opacity:.4}
+/* carte du vol : bulle « Inst XXX » / « Exam XXX » de la même couleur que Copi (fond #ecf6ed, texte et contour #43a047) */
+/* même présentation que la case de l'autre pilote (R117) */
+#ie-nom{font-size:20px;font-weight:700;line-height:22.4px;height:46.4px}
+#ie-nom::placeholder{font-size:16px;font-weight:400}

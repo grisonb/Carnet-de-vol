@@ -134,6 +134,14 @@
       <div class="field" id="f-copi-z"><label for="f-copi" id="f-copi-l">Copi</label>
         <div class="pwrap"><input id="f-copi" autocapitalize="characters" autocomplete="off" placeholder="Trigramme, prénom ou nom"><button type="button" class="plus" id="p-add" aria-label="Ajouter une personne" style="margin:0"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.75 4h2.5v16h-2.5zM4 10.75h16v2.5H4z"/></svg></button></div>
         <div id="p-res" class="acres" hidden></div></div>
+      <!-- v0.53 (R130) : instructeur ou examinateur EN PLUS de l'autre pilote (facultatif ; aucune heure ne change) -->
+      <button type="button" class="linkbtn ie-add" id="ie-add">+ Instructeur / Examinateur</button>
+      <div class="field ie-z" id="ie-z" hidden>
+        <div class="ie-tete"><div class="seg mini ie-seg" role="group" aria-label="Rôle"><button type="button" id="ie-inst" aria-pressed="true">Inst</button><button type="button" id="ie-exam" aria-pressed="false">Exam</button></div>
+          <button type="button" class="xbtn ie-x" id="ie-x" aria-label="Retirer l'instructeur / examinateur"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
+        <div class="pwrap"><input id="ie-nom" autocapitalize="characters" autocomplete="off" placeholder="Trigramme, prénom ou nom" aria-label="Instructeur ou examinateur"></div>
+        <div id="ie-res" class="acres" hidden></div>
+      </div>
       <p class="hint" id="f-fn-h"></p>
     </div>
 
@@ -241,6 +249,8 @@
       <div class="pcard">
         <button type="button" class="prow2" id="pl-import"><span class="pi pi-rq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5zM19 9h-4V3H9v6H5l7 7z" transform="rotate(180 12 12)"/></svg></span><span class="ptx"><b>Importer FlyLog</b><small>Une seule fois · résumé avant d'enregistrer</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-ctrl"><span class="pi pi-rq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span><span class="ptx"><b>Contrôle import</b><small>Totaux des vols importés de FlyLog</small></span><span class="pch" aria-hidden="true">›</span></button>
+        <!-- v0.53 (R130) : à usage unique (disparaît dès qu'il a complété des vols ; réglage partagé « rattrapageInstExam ») -->
+        <button type="button" class="prow2" id="pl-ie" hidden><span class="pi pi-rq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-2.67 0-8 1.34-8 4v2h11v-2c0-.7.2-1.37.55-2H12zm7-1v3h3v2h-3v3h-2v-3h-3v-2h3v-3z"/></svg></span><span class="ptx"><b>Compléter instructeur / examinateur depuis FlyLog</b><small>Vols avec un copi ET un instructeur ou examinateur</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
       <h3 class="pgrp">Téléphone</h3>
       <div class="pcard">
@@ -251,6 +261,7 @@
     <input type="file" id="file-flylog" accept=".csv,text/csv" hidden>
     <input type="file" id="file-restore" accept=".json,application/json" hidden>
     <input type="file" id="file-ref" accept=".json,application/json" hidden>
+    <input type="file" id="file-ie" accept=".csv,text/csv" hidden>
   </section>
 </div>
 

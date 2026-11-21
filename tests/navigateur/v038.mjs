@@ -83,10 +83,10 @@ function controlerCartes(nom, theme, m, tailles) {
     `${nom} ${theme} : « lrg » rouge (feu), orange (entraînement), jaune (autres : ${m['v-ord'].lrg.fond})`);
   verifier(['v-feu', 'v-gaar', 'v-ent', 'v-ifr', 'v-ord'].every(id => blanc2(m[id].att, C.ink)), `${nom} ${theme} : « N att » fond blanc, texte et contour noirs`);
   const ifr = m['v-ifr'];
-  verifier(ifr.ordre.join(' | ') === 'CDB | Copi ZZX | 1 att | IFR 1h20 | 3 appr | Nuit 0h40 | 1 att nuit', `${nom} ${theme} : vol IFR : ${ifr.ordre.join(' | ')}`);
+  verifier(ifr.ordre.join(' | ') === 'CdB | Copi ZZX | 1 att | IFR 1h20 | 3 appr | Nuit 0h40 | 1 att nuit' /* v0.53 : « CdB » */, `${nom} ${theme} : vol IFR : ${ifr.ordre.join(' | ')}`);
   verifier(blanc2(ifr.appr, C.ifr), `${nom} ${theme} : « 3 appr » bleu IFR, contour 2 px`);
   verifier(ifr.attNuit.fond === ifr.nuit.fond && ifr.attNuit.encre === ifr.nuit.encre, `${nom} ${theme} : « 1 att nuit » comme « Nuit 0h40 » (${ifr.attNuit.fond} / ${ifr.attNuit.encre})`);
-  verifier(m['v-nuit'].ordre.join(' | ') === 'CDB | Copi ZZX | 2 att nuit' && !m['v-nuit'].att, `${nom} ${theme} : seulement de nuit : « 2 att nuit » seul`);
+  verifier(m['v-nuit'].ordre.join(' | ') === 'CdB | Copi ZZX | 2 att nuit' && !m['v-nuit'].att, `${nom} ${theme} : seulement de nuit : « 2 att nuit » seul`);
   verifier(m['v-feu'].feu.fond === 'rgb(211, 47, 47)' && m['v-gaar'].gaar.fond === 'rgb(216, 27, 96)' && m['v-ent'].ent.fond === 'rgb(200, 101, 15)'
     && ifr.ifr.fond === (theme === 'clair' ? 'rgb(230, 238, 247)' : 'rgb(26, 42, 60)'), `${nom} ${theme} : étiquettes Feu, GAAR, Entraînement, IFR inchangées`);
 }

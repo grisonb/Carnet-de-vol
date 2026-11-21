@@ -1,5 +1,22 @@
 # Journal des versions
 
+## v0.53 — 21/11/2026
+
+Remarques R130 et R131. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R130 : instructeur ou examinateur EN PLUS du copi.** Fiche d'un vol, « Ma fonction » : lien « + Instructeur /
+Examinateur » -> ligne facultative (Inst / Exam, personne avec les suggestions du copi, croix pour la retirer). Carte du
+vol : bulle « Inst XXX » / « Exam XXX » juste après le copi, couleur Copi. Fiche en lecture : la personne et son rôle.
+Recherche : aussi par instructeur et examinateur. Aucune heure ni aucun total ne change ; PDF inchangé. Champs du vol
+déjà existants depuis la v0.1 (`nomInstructeur`, `nomExaminateur` : import FlyLog, tableur CSV, sauvegarde, synchro ;
+carnet.php range le vol tel quel). « SELF » et l'instructeur d'une double commande (déjà affiché « Instr. ») ne font pas
+de bulle en plus. Plus › Import FlyLog : « Compléter instructeur / examinateur depuis FlyLog » (vols avec un copi ET un
+instructeur ou examinateur ; champ rempli seulement s'il est vide ; à usage unique, mémorisé avec les réglages).
+
+**R131 : « CdB »** au lieu de « CDB » sur la bulle de fonction (couleurs inchangées ; PDF inchangé).
+
+**Tests** : `tests/unitaires/v053.test.js`, `tests/navigateur/v053.mjs` ; v038 et v052 : « CdB » ; test complet.
+
 ## v0.52 — 21/11/2026
 
 Remarques R126 à R129. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

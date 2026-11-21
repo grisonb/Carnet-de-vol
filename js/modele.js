@@ -22,7 +22,7 @@ export function compteursRanges(conf) {
 }
 
 export const FONCTIONS = {
-  cdb: { bouton: 'CdB', autre: 'Copi', puce: 'CDB', puceAutre: 'Copi', champ: 'nomCopi', temps: 'tempsCdB',
+  cdb: { bouton: 'CdB', autre: 'Copi', puce: 'CdB', /* v0.53 (R131) : « CdB » (était « CDB ») */ puceAutre: 'Copi', champ: 'nomCopi', temps: 'tempsCdB',
     libelle: 'Commandant de bord', aide: 'Carnet EASA : temps en colonne CdB, nom du CdB = SELF.', ajout: 'un copi' },
   copi: { bouton: 'Copi.', autre: 'CdB', puce: 'Copi.', puceAutre: 'CdB', champ: 'nomCdB', temps: 'tempsCopi',
     libelle: 'Copilote', aide: 'Carnet EASA : temps en colonne Copilote, nom du CdB = la personne ci-dessus.', ajout: 'un CdB' },

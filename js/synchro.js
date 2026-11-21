@@ -13,7 +13,8 @@ export const MAGASINS = ['vols', 'avions', 'personnes', 'reglages'];
 export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMasquees', 'terrainsPerso', 'regles', 'compteurs',
   'bandeHeures', 'titulaire', 'typesPerso', 'reference',
   'doublonsVus', // v0.24 : paires « Garder les deux » (même choix sur les deux appareils)
-  'socleAdresse']; // v0.48 (R122) : adresse de la web app du socle OPS / IFR (revient seule sur un nouvel appareil)
+  'socleAdresse', // v0.48 (R122) : adresse de la web app du socle OPS / IFR (revient seule sur un nouvel appareil)
+  'rattrapageInstExam']; // v0.53 (R130) : « Compléter instructeur / examinateur depuis FlyLog » déjà fait (bouton masqué partout)
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)
 export const PAR_PAGE = 1000;      // éléments par page reçue
 export const ELEMENT_MAX = 60000;  // le NAS refuse un élément de plus de 64 Ko (une photo laissée dans une fiche…)

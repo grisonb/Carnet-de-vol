@@ -99,7 +99,8 @@ try {
     const pleines = nouvelles.filter(b => /feu|ent|nuit/.test(b.classe));
     verifier(pleines.length >= 3 && pleines.every(b => b.bord === plein[/feu/.test(b.classe) ? 'feu' : /ent/.test(b.classe) ? 'ent' : 'nuit']),
       `${mnom} : fond plein (${pleines.map(b => b.t).join(', ')}) : contour de la même teinte, plus foncée`);
-    const cdb = apres.find(b => b.t === 'CDB'), copi = apres.find(b => b.t === 'Copi ZZX'), cdbAutre = apres.find(b => b.t === 'CdB ZZY'), copiFn = apres.find(b => b.t === 'Copi.');
+    const cdb = apres.find(b => b.t === 'CdB'), // v0.53 (R131) : « CdB »
+      copi = apres.find(b => b.t === 'Copi ZZX'), cdbAutre = apres.find(b => b.t === 'CdB ZZY'), copiFn = apres.find(b => b.t === 'Copi.');
     verifier(cdb.fond === 'rgb(200, 230, 201)' && cdb.encre === 'rgb(27, 94, 32)' && cdb.bord === 'rgb(27, 94, 32)' && cdbAutre.fond === cdb.fond && cdbAutre.encre === cdb.encre,
       `${mnom} : CDB (et « CdB ZZY ») : fond #c8e6c9, texte et contour #1b5e20`);
     verifier(copi.fond === 'rgb(236, 246, 237)' && copi.encre === 'rgb(67, 160, 71)' && copi.bord === 'rgb(67, 160, 71)' && copiFn.fond === copi.fond,

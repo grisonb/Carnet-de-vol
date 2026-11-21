@@ -20,6 +20,7 @@ import { initAvions } from './avions.js';
 import { ouvrirRegles } from './regles.js';
 import { brouillonNpf } from '../npf.js';
 import { ignorerVolNpf, volNpfEnregistre } from './npf.js';
+import { ROLES_IE, nomReel } from '../inst-exam.js';
 
 let F = null;          // brouillon du vol en cours
 let quitter = () => {};
@@ -284,7 +285,33 @@ function choisirFonction(r) {
   $('#f-fn-h').textContent = f.aide;
   $('#p-add').setAttribute('aria-label', 'Ajouter ' + f.ajout);
   $('#f-copi-z').hidden = !champPersonneVisible(avion(), r);
+  rendreIE();
   recap();
+}
+// ---------- v0.53 (R130) : instructeur ou examinateur EN PLUS de l'autre pilote (facultatif ; aucune heure ne change) ----------
+// F.ie = { role: 'inst' | 'exam', nom } ou null ; F.ieOrig = rôle chargé du vol (pour vider l'ancien champ si on change).
+// En double commande, l'instructeur est déjà l'autre pilote : seul « Exam » est possible.
+function rendreIE() {
+  if (!F) return;
+  if (F.ie && F.ie.role === 'inst' && F.fonction === 'dc') F.ie.role = 'exam';
+  $('#ie-add').hidden = !!F.ie;
+  $('#ie-z').hidden = !F.ie;
+  $('#ie-inst').disabled = F.fonction === 'dc';
+  if (F.ie) {
+    $('#ie-inst').setAttribute('aria-pressed', String(F.ie.role === 'inst'));
+    $('#ie-exam').setAttribute('aria-pressed', String(F.ie.role === 'exam'));
+    if ($('#ie-nom').value !== F.ie.nom) $('#ie-nom').value = F.ie.nom;
+  } else { $('#ie-nom').value = ''; $('#ie-res').hidden = true; }
+}
+function rendrePersonnesIE() {
+  const q = normaliser($('#ie-nom').value), r = $('#ie-res');
+  if (!q || etat.personnes.some(p => normaliser(nomPersonne(p)) === q)) { r.hidden = true; return; }
+  const m = etat.personnes.filter(p => normaliser(`${p.tri} ${p.prenom} ${p.nom}`).includes(q)).slice(0, 6);
+  r.innerHTML = m.map(p => {
+    const complet = [p.prenom, p.nom].filter(Boolean).join(' ');
+    return `<button type="button" class="pitem" data-p="${esc(nomPersonne(p))}"><b>${esc(nomPersonne(p))}</b><span>${p.tri && complet ? esc(complet) : ''}</span></button>`;
+  }).join('');
+  r.hidden = !m.length;
 }
 // Avion monopilote : pas de « Copi. » (CdB, DC, Inst.) et pas de champ de personne en CdB
 function appliquerEquipage() {
@@ -577,6 +604,10 @@ export function ouvrirSaisie(vol, opts = {}) {
     feuChoisi: 0, simulation: estSimulation(vol), // v0.35 (R85)
     ancien: vol && !(vol.hDep && vol.hArr) && (vol.tempsTotal || vol.simTemps) > 0 ? { temps: vol.tempsTotal || vol.simTemps } : null, nuitProposee: null,
     arrPos: v.arriveePosition ? { ...v.arriveePosition } : null };
+  // v0.53 (R130) : instructeur / examinateur du vol (jamais repris d'un vol précédent)
+  const ieInst = vol && v.fonction !== 'dc' && nomReel(v.nomInstructeur), ieExam = vol && nomReel(v.nomExaminateur);
+  F.ie = ieInst ? { role: 'inst', nom: ieInst } : ieExam ? { role: 'exam', nom: ieExam } : null;
+  F.ieOrig = F.ie ? F.ie.role : null;
   $('#npf-zone').hidden = true;
   // v0.27 (R64) : TOUTES les cases repartent de zéro (le formulaire sert à chaque vol : sans cela, « Temps IFR » et
   // « Temps nuit » tapés dans le vol précédent restaient affichés, et étaient enregistrés avec le vol suivant)
@@ -696,7 +727,7 @@ function bloquerEnLecture(e) {
 const CHAMPS = ['#f-date', '#f-dep', '#f-arr', '#f-t0', '#f-t1', '#f-copi', '#f-rem', '#c-ifr', '#c-nuit', '#c-col', '#c-fn'];
 function empreinte() {
   return JSON.stringify([CHAMPS.map(c => $(c).value), F.mode, F.escales, F.avionId, F.etiquettes, F.fonction,
-    F.lignes.map(l => l.t), F.compteurs, F.s, F.ifr]);
+    F.lignes.map(l => l.t), F.compteurs, F.s, F.ifr, F.ie]);
 }
 export const saisieModifiee = () => !!F && !lecture && F.empreinte !== undefined && empreinte() !== F.empreinte;
 export function abandonnerSaisie() { F = null; quitter(); }
@@ -752,6 +783,12 @@ async function enregistrer() {
   if (F.fonction === 'copi') { v.nomCdB = qui; }
   if (F.fonction === 'dc') { v.nomInstructeur = qui; v.nomCdB = qui; }
   if (F.fonction === 'inst') { v.nomEleve = qui; v.nomCdB = 'SELF'; }
+  // v0.53 (R130) : instructeur / examinateur en plus (le champ de l'autre rôle, s'il était celui chargé, est vidé)
+  const ie = F.ie && nomReel(F.ie.nom) ? F.ie : null;
+  for (const [role, { champ }] of Object.entries(ROLES_IE)) {
+    if (role === 'inst' && F.fonction === 'dc') continue; // en double commande, nomInstructeur = l'autre pilote
+    if (role === F.ieOrig || (ie && ie.role === role)) v[champ] = ie && ie.role === role ? ie.nom.trim() : '';
+  }
   v.tempsNuit = nuit; v.tempsIFR = ifr; v.regleIFR = F.ifr;
   v.approches = F.s.approches + approchesEscales(F.escales); v.attJour = F.s.attJour; v.attNuit = F.s.attNuit; // R63 : total
   v.missions = F.lignes.map(l => l.t.trim()).filter(Boolean);
@@ -939,6 +976,13 @@ export function initSaisie({ fermer }) {
   // fonction et personnes
   segs('#f-fn', b => choisirFonction(b.dataset.r));
   $('#f-copi').addEventListener('input', rendrePersonnes);
+  // v0.53 (R130)
+  $('#ie-add').addEventListener('click', () => { if (!F) return; F.ie = { role: F.fonction === 'dc' ? 'exam' : 'inst', nom: '' }; rendreIE(); setTimeout(() => $('#ie-nom').focus(), 30); });
+  $('#ie-x').addEventListener('click', () => { if (!F) return; F.ie = null; rendreIE(); });
+  $('#ie-inst').addEventListener('click', () => { if (F && F.ie && F.fonction !== 'dc') { F.ie.role = 'inst'; rendreIE(); } });
+  $('#ie-exam').addEventListener('click', () => { if (F && F.ie) { F.ie.role = 'exam'; rendreIE(); } });
+  $('#ie-nom').addEventListener('input', () => { if (F && F.ie) F.ie.nom = $('#ie-nom').value; rendrePersonnesIE(); });
+  $('#ie-res').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && F && F.ie) { F.ie.nom = b.dataset.p; $('#ie-nom').value = b.dataset.p; $('#ie-res').hidden = true; } });
   $('#p-res').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { $('#f-copi').value = b.dataset.p; $('#p-res').hidden = true; recap(); } });
   $('#p-add').addEventListener('click', () => ouvrirPersonne(null));
   for (const x of ['#pm-pre', '#pm-nom', '#pm-tri']) $(x).addEventListener('input', verifierPersonne);

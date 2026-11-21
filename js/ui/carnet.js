@@ -7,6 +7,7 @@
 import { $, esc, codeAvecDrapeau } from './commun.js';
 import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret } from '../etat.js';
 import { activerGlisser } from './glisser.js';
+import { instExamDuVol, ROLES_IE } from '../inst-exam.js';
 import { ajusterSocle } from './socle.js';
 import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
@@ -33,7 +34,7 @@ function texteRecherche(v) {
   if (t === undefined) {
     const a = avionDe(v);
     t = normaliser([v.dep, v.arr, ...(v.escales || []).map(e => e.code), a && a.immat, a && a.nom, a && a.modele,
-      v.indicatif, ...(v.missions || []), v.remarques, v.nomCdB, v.nomCopi, v.nomEleve, v.nomInstructeur,
+      v.indicatif, ...(v.missions || []), v.remarques, v.nomCdB, v.nomCopi, v.nomEleve, v.nomInstructeur, v.nomExaminateur, // v0.53 : + examinateur
       ...(v.etiquettes || [])].filter(Boolean).join(' '));
     index.set(v, t);
   }
@@ -136,6 +137,8 @@ export function carteVol(v, voir = false) {
   const fnClasse = t => (/^cdb/i.test(t) ? ' fn-cdb' : /^copi/i.test(t) ? ' fn-copi' : '');
   const puces = [`<span class="chip fn${fnClasse(f.puce)}">${esc(f.puce)}</span>`];
   if (autre && autre !== 'SELF') puces.push(`<span class="chip fn${fnClasse(f.puceAutre)}">${esc(f.puceAutre)} ${esc(autre)}</span>`);
+  // v0.53 (R130) : instructeur / examinateur en plus, juste après l'autre pilote, couleur Copi
+  for (const x of instExamDuVol(v)) puces.push(`<span class="chip fn fn-copi fn-ie">${ROLES_IE[x.role].puce} ${esc(x.nom)}</span>`);
   const feu = pastilleFeu(v);
   if (feu) puces.push(`<span class="chip ${feu.plein ? 'feu' : 'feu2'}">${esc(feu.texte)}</span>`);
   const regles = pastillesRegles(v, reglage('regles'));

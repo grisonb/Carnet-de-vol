@@ -95,7 +95,7 @@ try {
   verifier(JSON.stringify(lignes) === JSON.stringify([['Sauvegarde de secours', 'Restaurer une sauvegarde', 'Copie sur le NAS', 'Restaurer depuis le NAS', 'Synchro du carnet'], // v0.23 : Synchro du carnet
     ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet'],
     ['Mes avions', "Types d'avion", 'Importer des fiches avions', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Personnes', 'Cartes de vol', 'Socle OPS / IFR'], // v0.48 (R122)
-    ['Importer FlyLog', 'Contrôle import'], ['Stockage']]), 'toutes les entrées, rangées dans leur section');
+    ['Importer FlyLog', 'Contrôle import', 'Compléter instructeur / examinateur depuis FlyLog'], ['Stockage']] /* v0.53 (R130) */), 'toutes les entrées, rangées dans leur section');
   const forme = await p.$$eval('#v-plus .prow2', l => l.map(r => {
     const b = r.querySelector('.ptx b').getBoundingClientRect(), s = r.querySelector('.ptx small'), sr = s.getBoundingClientRect();
     const ic = r.querySelector('.pi svg'), ch = r.querySelector('.pch');
