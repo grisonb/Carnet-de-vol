@@ -126,7 +126,7 @@ try {
   console.log('Compteurs et libellés dans la saisie');
   await p.click('#fab');
   await p.click('#ac-cur'); await p.fill('#ac-q', 'xaaa'); await p.click('#ac-res .acitem');
-  verifier(await p.isHidden('#feu-row') && await p.locator('#ctrs .step').count() === 1, 'DR400 : ni Feux ni compteur Dash (v0.56 : « Amerrissages SEP » seul, type SEP)');
+  verifier(await p.isHidden('#feu-row') && await p.locator('#ctrs .step').count() === 0, 'DR400 : aucun compteur (v0.57 : « Amerrissages SEP » plus coché d\'office)');
   await p.locator('.c-mi').screenshot({ path: join(CAPT, 'v06-05-mission-non-dh8d.png') });
   await p.click('#ac-cur'); await p.fill('#ac-q', 'xzzb'); await p.click('#ac-res .acitem');
   verifier(await p.isVisible('#feu-row') && (await p.textContent('#fire-next')).includes('n°8'), 'DH8D : Feux (prochain : n°8 = plus grand n° importé + 1) et compteurs');

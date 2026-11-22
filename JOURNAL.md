@@ -1,5 +1,17 @@
 # Journal des versions
 
+## v0.57 — 22/11/2026
+
+Remarque R147. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R147 : « Amerrissages SEP » n'est plus coché d'office** sur les types monomoteurs piston (DR400, C172, CAP 10…) : il n'est
+plus dans les compteurs de départ d'aucun type (`departDuType`). Seuls les types jamais réglés changent : un type ou un
+avion réglé à la main (fiche type, fiche avion, « Pour cet avion » / « Pour le type ») garde son choix. Un vol où il a une
+valeur l'affiche toujours ; aucune valeur, aucun total ne change. Dash 8 et CL-415 inchangés.
+
+**Tests** : `tests/unitaires/v057.test.js`, `tests/navigateur/v057.mjs` ; anciens tests adaptés (parcours, v06, v056) ;
+test complet ; contrôle local avec le vrai fichier.
+
 ## v0.56 — 22/11/2026
 
 Remarques R144 à R146. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

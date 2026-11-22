@@ -183,6 +183,7 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `#ctr-panel` supprimés. Fiche type `#te-cps`, fiche avion `#fi-cpsec` (`#fi-cp-sw`, `#fi-cps`). Totaux : `t.parCompteur`
   (créés), `valeurCompteur`. CSV : `colonnesTableur(liste)`. R145 ordre de Plus, `#pl-compteurs`. R146 `lireDerniereVersionNas`
   / `derniereVersionGardee` (ui/nas.js), réglage privé `nasDerniereVersion`.
+- v0.57 : R147 `departDuType` ne coche plus `amerrSEP` pour les types SEP (aucun type ne l'a de départ).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

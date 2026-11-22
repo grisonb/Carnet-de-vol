@@ -45,18 +45,16 @@ export function deplacer(ordre, liste, i, d) {
 
 // Code du type d'un avion (les simulateurs ensemble : « SIM »)
 export const codeType = a => (!a ? '' : a.sim ? 'SIM' : String(a.typeOACI || '').trim().toUpperCase());
-const estSEP = c => !!c && c.equipage === 'SP' && c.moteurs === 'SE' && c.moteur === 'P';
 
 // Compteurs de départ d'un type (tant que son choix n'a jamais été changé) :
 //   DH8D (Dash 8 MR et MRE) : ce que l'app affichait jusqu'ici (Feux + les compteurs allumés dans l'ancien réglage)
 //   CL2T (CL-415)            : Feux, Écopages, Amerrissages CL, Largages copi CL
-//   types SEP (monopilote monomoteur piston) : Amerrissages SEP
-//   les autres (et les simulateurs) : aucun. Largages para : aucun type.
+//   les autres (et les simulateurs) : aucun. Largages para et Amerrissages SEP : aucun type (v0.57, R147 : Amerrissages SEP
+//   n'est plus coché d'office sur les monomoteurs piston ; un type ou un avion réglé à la main garde son choix).
 export function departDuType(code, carac, ancien) {
   code = String(code || '').toUpperCase();
   if (code === 'DH8D') return [FEUX, ...compteursRanges(ancien).filter(c => c.cle !== FEUX && c.on).map(c => c.cle)];
   if (code === 'CL2T') return [FEUX, 'ecopages', 'amerrCL', 'largCopiCL'];
-  if (code !== 'SIM' && estSEP(carac)) return ['amerrSEP'];
   return [];
 }
 export function compteursDuType(code, carac, parType, ancien) {

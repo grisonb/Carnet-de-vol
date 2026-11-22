@@ -142,8 +142,8 @@ try {
   verifier(await p.inputValue('#f-copi') === 'XYZ', 'personne ajoutée et choisie');
 
   console.log('Compteurs selon l\'avion (DH8D seulement)');
-  // v0.56 (R144) : type SEP (DR400) : « Amerrissages SEP » par défaut, pas de Feux
-  verifier(await p.isHidden('#feu-row') && JSON.stringify(await p.$$eval('#ctrs .step', l => l.map(s => s.firstElementChild.textContent))) === '["Amerrissages SEP"]', 'avion SEP (DR400) : seulement « Amerrissages SEP » (ni Feux)');
+  // v0.57 (R147) : DR400 : aucun compteur par défaut (« Amerrissages SEP » n'est plus coché d'office)
+  verifier(await p.isHidden('#feu-row') && await p.locator('#ctrs .step').count() === 0, 'avion non-DH8D (DR400) : aucun compteur (ni Feux)');
   await p.click('#ac-cur'); await p.fill('#ac-q', 'xzzb'); await p.click('#ac-res .acitem');
   // v0.37 (R91) : la ligne « Feux » est rangée dans la liste des compteurs : on compte les compteurs hors Feux
   verifier(await p.isVisible('#feu-row') && await p.isVisible('#ctr-open') && await p.locator('#ctrs .step:not(#feu-row)').count() === 2, 'DH8D : Feux et compteurs affichés');
@@ -166,8 +166,8 @@ try {
   verifier(await p.locator('#ctrs .step:not(#feu-row)').count() === 3, 'compteur supplémentaire affiché (choix des compteurs)'); // v0.37 : hors Feux
   await p.click('[data-c="largCdbDash"][data-d="1"]'); await p.click('[data-c="largCdbDash"][data-d="1"]');
   await p.click('#ac-cur'); await p.fill('#ac-q', 'xtst'); await p.click('#ac-res .acitem');
-  // v0.56 (R144) : Feux et Largages CdB Dash (remplis), Largages copi Dash (ajouté à ce vol), Amerrissages SEP (type SEP)
-  verifier(await p.isVisible('#feu-row') && await p.locator('#ctrs .step:not(#feu-row)').count() === 3,
+  // v0.56 (R144) : Feux et Largages CdB Dash (remplis), Largages copi Dash (ajouté à ce vol) ; v0.57 : pas d'Amerrissages SEP
+  verifier(await p.isVisible('#feu-row') && await p.locator('#ctrs .step:not(#feu-row)').count() === 2,
     'retour sur un avion non-DH8D : les compteurs déjà remplis restent visibles (rien n\'est perdu)');
   verifier((await p.textContent('#rec-x')).includes('XYZ'), 'temps du carnet : nom de l\'instructeur');
   verifier((await p.textContent('#r-col-l')) === 'Mono-pilote SE', 'temps du carnet : colonne avion');

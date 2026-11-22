@@ -175,7 +175,7 @@ try {
   verifier(JSON.stringify(await affiches(A.p)) === '["Feux","Largages copi CL","Écopages","Amerrissages CL"]', `CL-415 : ${(await affiches(A.p)).join(', ')}`);
   await fermerVol(A.p);
   await ouvrirVol(A.p, 'v9');
-  verifier(JSON.stringify(await affiches(A.p)) === '["Amerrissages SEP"]', `DR400 (SEP) : ${(await affiches(A.p)).join(', ')}`);
+  verifier(JSON.stringify(await affiches(A.p)) === '["Amerrissages SEP"]', `DR400 avec 2 amerrissages (valeur : affiché ; v0.57 : plus coché d'office) : ${(await affiches(A.p)).join(', ')}`);
   await fermerVol(A.p);
 
   console.log('R144 : Plus › Compteurs');

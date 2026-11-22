@@ -39,7 +39,7 @@ test('R144 : compteurs de départ par type (ce que l\'app affichait, sinon la pr
   const regleUtilisateur = COMPTEURS_DEFAUT.map(c => ({ ...c, on: ['largCdbDash', 'largInstrCdbDash', 'largCopiDash'].includes(c.cle) }));
   assert.deepEqual(departDuType('DH8D', {}, regleUtilisateur), ['feux', 'largCdbDash', 'largInstrCdbDash', 'largCopiDash']);
   assert.deepEqual(departDuType('CL2T', {}, COMPTEURS_DEFAUT), ['feux', 'ecopages', 'amerrCL', 'largCopiCL']);
-  assert.deepEqual(departDuType('DR40', SEP, COMPTEURS_DEFAUT), ['amerrSEP']);
+  assert.deepEqual(departDuType('DR40', SEP, COMPTEURS_DEFAUT), [], 'v0.57 (R147) : plus d\'Amerrissages SEP d\'office');
   assert.deepEqual(departDuType('BE58', { equipage: 'SP', moteurs: 'ME', moteur: 'P' }, COMPTEURS_DEFAUT), []);
   assert.deepEqual(departDuType('SIM', SEP, COMPTEURS_DEFAUT), []);
   assert.ok(!['DH8D', 'CL2T', 'DR40'].some(t => departDuType(t, SEP, COMPTEURS_DEFAUT).includes('largPara')), 'Largages para : aucun type');
