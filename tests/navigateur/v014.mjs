@@ -77,7 +77,7 @@ try {
   verifier(avions.length > 1 && avions.every(a => a.photo === PHOTO), `${avions.length} avions avec une photo sur le téléphone`);
 
   console.log('Copie NAS sans les photos (R35)');
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   verifier((await p.textContent('#ou-c .hint')).includes('sans les photos d\'avion'), 'l\'écran dit que la copie ne contient pas les photos');
   await p.fill('#nas-adr', ADRESSE_NAS); await p.fill('#nas-mdp', MDP_NAS); await p.click('#nas-ok');
   for (let i = 0; i < 40 && !nas.copies.length; i++) await p.waitForTimeout(250);
@@ -99,7 +99,7 @@ try {
   await p.click('#ou-x');
 
   console.log('Restaurer depuis le NAS : les photos du téléphone sont gardées');
-  await p.click('#pl-nas-rest'); await p.waitForSelector('#rn-l .nasv');
+  await p.click('#pl-restore'); await p.click('#rs-nas'); await p.waitForSelector('#rn-l .nasv');
   await p.click('#rn-l .nasv');
   verifier((await p.textContent('#rn-photos')) === 'Les photos d\'avion du téléphone sont gardées.', 'confirmation : « Les photos d\'avion du téléphone sont gardées. »');
   await p.screenshot({ path: join(CAPT, 'v014-01-restaurer-confirmation.png') });

@@ -160,7 +160,7 @@ try {
   await A.p.screenshot({ path: join(CAPT, 'v048-01-reglage.png') });
   // NAS + synchro de référence, puis enregistrement de l'adresse
   await A.p.click('#ou-x');
-  await A.p.click('#pl-nas'); await A.p.fill('#nas-adr', ADRESSE_NAS); await A.p.fill('#nas-mdp', nas.mdp); await A.p.click('#nas-ok'); await A.p.waitForTimeout(400); await A.p.click('#ou-x');
+  await A.p.click('#pl-sync'); await A.p.click('#sy-nas'); await A.p.fill('#nas-adr', ADRESSE_NAS); await A.p.fill('#nas-mdp', nas.mdp); await A.p.click('#nas-ok'); await A.p.waitForTimeout(400); await A.p.click('#ou-x');
   await A.p.click('#pl-sync'); await A.p.click('#sy-ref'); await A.p.click('#sr-ok');
   await A.p.waitForFunction(() => { const e = document.querySelector('#sr-res'); return e && e.textContent.trim() && !/en cours|Envoi :|Réception :|prêt \?/.test(e.textContent); }, null, { timeout: 60000 }); await A.p.click('#ou-x');
   await A.p.click('#pl-socle'); await A.p.fill('#so-adr', ADRESSE_SOCLE); await A.p.click('#so-ok');
@@ -227,7 +227,7 @@ try {
   await A.p.clock.runFor(2000); await A.p.waitForTimeout(800);
   verifier([...nas.el.keys()].includes('reglages/socleAdresse'), 'adresse envoyée au NAS par la synchro de A');
   const B = await appareil('B');
-  await B.p.click('.tabs button[data-v="plus"]'); await B.p.click('#pl-nas'); await B.p.fill('#nas-adr', ADRESSE_NAS); await B.p.fill('#nas-mdp', nas.mdp); await B.p.click('#nas-ok'); await B.p.waitForTimeout(400); await B.p.click('#ou-x');
+  await B.p.click('.tabs button[data-v="plus"]'); await B.p.click('#pl-sync'); await B.p.click('#sy-nas'); await B.p.fill('#nas-adr', ADRESSE_NAS); await B.p.fill('#nas-mdp', nas.mdp); await B.p.click('#nas-ok'); await B.p.waitForTimeout(400); await B.p.click('#ou-x');
   await B.p.click('#pl-sync'); await B.p.click('#sy-mod'); await B.p.click('#sc-ok');
   await B.p.waitForFunction(() => { const e = document.querySelector('#sc-res'); return e && e.textContent.trim() && !/en cours|Envoi :|Réception :|prêt \?/.test(e.textContent); }, null, { timeout: 60000 }); await B.p.click('#ou-x');
   await B.p.click('.tabs button[data-v="carnet"]');

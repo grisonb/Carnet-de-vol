@@ -104,7 +104,7 @@ async function modifier(p, id, action) {
 }
 const fini = (p, sel) => p.waitForFunction(s => { const e = document.querySelector(s); return e && e.textContent.trim() && !/en cours|Envoi :|Réception :|prêt \?/.test(e.textContent); }, sel, { timeout: 60000 });
 async function rejoindre(p, role) {
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas'); await p.fill('#nas-adr', ADRESSE_NAS); await p.fill('#nas-mdp', nas.mdp); await p.click('#nas-ok'); await p.waitForTimeout(400); await p.click('#ou-x');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas'); await p.fill('#nas-adr', ADRESSE_NAS); await p.fill('#nas-mdp', nas.mdp); await p.click('#nas-ok'); await p.waitForTimeout(400); await p.click('#ou-x');
   await p.click('#pl-sync');
   if (role === 'ref') { await p.click('#sy-ref'); await p.click('#sr-ok'); await fini(p, '#sr-res'); } else { await p.click('#sy-mod'); await p.click('#sc-ok'); await fini(p, '#sc-res'); }
   await p.click('#ou-x'); await p.click('.tabs button[data-v="carnet"]');
@@ -172,31 +172,10 @@ try {
   verifier(nas.el.get('vols/v1')?.donnees?.nomInstructeur === 'ZZB' && (await volDe(B.p, 'v1'))?.nomInstructeur === 'ZZB', 'synchro : le vol garde son instructeur au NAS et sur l\'appareil B');
   verifier((await bulles(B.p, 'v1'))[2]?.t === 'Inst ZZB', 'appareil B : bulle « Inst ZZB »');
 
-  console.log('Rattrapage depuis FlyLog (usage unique)');
+  // v0.55 (R142) : le bouton « Compléter instructeur / examinateur depuis FlyLog » est retiré de Plus
   await A.p.click('.tabs button[data-v="plus"]'); await A.p.waitForTimeout(200);
-  verifier(await A.p.isVisible('#pl-ie'), 'Plus › Import FlyLog : bouton « Compléter instructeur / examinateur depuis FlyLog »');
-  await A.p.setInputFiles('#file-ie', fichiers.autre); await A.p.waitForSelector('#ou-x'); await A.p.waitForTimeout(400);
-  const r0 = await A.p.textContent('.outil, #outil, body');
-  verifier(/0 vol complété/.test(r0) && /Non retrouvé/.test(r0) && /le bouton reste disponible/.test(r0), 'fichier sans vol du carnet : 0 vol complété, vol listé « non retrouvé », bouton gardé');
-  await A.p.click('#ou-x'); await A.p.waitForTimeout(200);
-  verifier(await A.p.isVisible('#pl-ie'), 'après un essai sans vol complété : le bouton est toujours là');
-  const avant = { v2: await volDe(A.p, 'v2'), v4: await volDe(A.p, 'v4') };
-  await A.p.setInputFiles('#file-ie', fichiers.bon); await A.p.waitForSelector('#ou-x'); await A.p.waitForTimeout(400);
-  const r1 = await A.p.textContent('body');
-  await A.p.screenshot({ path: join(CAPT, 'v053-rattrapage.png') });
-  const v2 = await volDe(A.p, 'v2'), v3 = await volDe(A.p, 'v3'), v4 = await volDe(A.p, 'v4');
-  verifier(/2 vols complétés/.test(r1) && /1 déjà rempli/.test(r1) && /04\/03\/2025/.test(r1), 'bon fichier : « 2 vols complétés », 1 déjà rempli, le vol absent (04/03/2025) listé');
-  const { nomInstructeur: i2, modifieLe: m2, ...reste2 } = v2, { nomInstructeur: i2a, modifieLe: m2a, ...reste2a } = avant.v2;
-  verifier(i2 === 'ZZB' && v3.nomExaminateur === 'ZZC' && JSON.stringify(reste2) === JSON.stringify(reste2a), 'v2 : instructeur ZZB, v3 : examinateur ZZC ; rien d\'autre ne change');
-  verifier(v4.nomInstructeur === 'ZZD' && JSON.stringify(v4) === JSON.stringify(avant.v4), 'v4 déjà rempli (ZZD) : pas modifié du tout');
-  await A.p.click('#ou-x'); await A.p.waitForTimeout(200);
-  verifier(await A.p.isHidden('#pl-ie'), 'après un rattrapage réussi : le bouton a disparu');
-  await A.p.reload(); await A.p.waitForSelector('body[data-pret="1"]'); await A.p.click('.tabs button[data-v="plus"]'); await A.p.waitForTimeout(200);
-  verifier(await A.p.isHidden('#pl-ie'), 'après relance de l\'app : toujours disparu');
-  await A.p.click('.tabs button[data-v="carnet"]'); await actualiser(A.p); await actualiser(B.p);
-  await B.p.click('.tabs button[data-v="plus"]'); await B.p.waitForTimeout(200);
-  verifier(await B.p.isHidden('#pl-ie') && (await volDe(B.p, 'v2'))?.nomInstructeur === 'ZZB', 'appareil B synchronisé : bouton disparu aussi, vols complétés reçus');
-  verifier(await totaux(A.p) === t0, 'rattrapage : tous les totaux identiques');
+  verifier(!(await A.p.$('#pl-ie')) && !(await A.p.$('#file-ie')), 'Plus : plus de bouton « Compléter instructeur / examinateur »');
+  verifier(await totaux(A.p) === t0, 'tous les totaux identiques');
 
   verifier(!bloquees.length, 'aucun appel hors de cet ordinateur' + (bloquees.length ? ' : ' + [...new Set(bloquees)].slice(0, 5).join(' ') : ''));
   verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.slice(0, 5).join(' | ') : ''));

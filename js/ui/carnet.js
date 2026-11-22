@@ -5,7 +5,7 @@
 // quand on remonte) ; bouton « ↑ Dernier vol » pour revenir en haut en un geste.
 
 import { $, esc, codeAvecDrapeau } from './commun.js';
-import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret } from '../etat.js';
+import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret, nomAfficheVol } from '../etat.js';
 import { activerGlisser } from './glisser.js';
 import { instExamDuVol, ROLES_IE } from '../inst-exam.js';
 import { ajusterSocle } from './socle.js';
@@ -136,9 +136,10 @@ export function carteVol(v, voir = false) {
   // v0.52 (R126) : bulle CdB (vert foncé) et Copi (vert clair) reconnaissables ; DC, Inst., Élève… gardent le violet
   const fnClasse = t => (/^cdb/i.test(t) ? ' fn-cdb' : /^copi/i.test(t) ? ' fn-copi' : '');
   const puces = [`<span class="chip fn${fnClasse(f.puce)}">${esc(f.puce)}</span>`];
-  if (autre && autre !== 'SELF') puces.push(`<span class="chip fn${fnClasse(f.puceAutre)}">${esc(f.puceAutre)} ${esc(autre)}</span>`);
+  // v0.55 (R136) : nom selon la règle d'affichage (trigramme, sinon nom, sinon prénom) ; le vol garde son texte
+  if (autre && autre !== 'SELF') puces.push(`<span class="chip fn${fnClasse(f.puceAutre)}">${esc(f.puceAutre)} ${esc(nomAfficheVol(autre))}</span>`);
   // v0.53 (R130) : instructeur / examinateur en plus, juste après l'autre pilote, couleur Copi
-  for (const x of instExamDuVol(v)) puces.push(`<span class="chip fn fn-copi fn-ie">${ROLES_IE[x.role].puce} ${esc(x.nom)}</span>`);
+  for (const x of instExamDuVol(v)) puces.push(`<span class="chip fn fn-copi fn-ie">${ROLES_IE[x.role].puce} ${esc(nomAfficheVol(x.nom))}</span>`);
   const feu = pastilleFeu(v);
   if (feu) puces.push(`<span class="chip ${feu.plein ? 'feu' : 'feu2'}">${esc(feu.texte)}</span>`);
   const regles = pastillesRegles(v, reglage('regles'));

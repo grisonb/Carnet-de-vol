@@ -7,6 +7,7 @@ import { definirTerrainsPerso } from './terrains.js';
 import { BANDE_DEFAUT } from './bande.js';
 import { REGLES_DEFAUT, missionsConnues } from './missions.js';
 import { REGLAGES_PRIVES } from './sauvegarde.js';
+import { indexPersonnes, nomAffiche, personneDuTexte } from './personnes.js';
 import { REGLAGES_PARTAGES } from './synchro.js';
 
 export const etat = {
@@ -146,6 +147,29 @@ export async function enregistrerPersonne(p) {
   prevenir();
 }
 
+// v0.55 (R136) : fiche personne corrigée : la fiche et les vols où elle apparaît, en une seule écriture
+export async function enregistrerPersonneEtVols(p, vols) {
+  if (refuseEnConsultation()) return false;
+  horodater(p);
+  for (const v of vols) horodater(v);
+  await db.enregistrer({ personnes: [p], vols });
+  const i = etat.personnes.findIndex(x => x.id === p.id);
+  if (i >= 0) etat.personnes[i] = p; else etat.personnes.unshift(p);
+  for (const v of vols) { const k = etat.vols.findIndex(x => x.id === v.id); if (k >= 0) etat.vols[k] = v; }
+  prevenir();
+}
+
+// v0.55 (R136) : index « texte enregistré dans un vol -> personne » (refait seulement si le carnet a changé)
+let indexCache = null, indexCle = null;
+export function indexDesPersonnes() {
+  if (!indexCache || indexCle !== etat.revision || indexCache.liste !== etat.personnes || indexCache.n !== etat.personnes.length) {
+    indexCache = { index: indexPersonnes(etat.personnes), liste: etat.personnes, n: etat.personnes.length };
+    indexCle = etat.revision;
+  }
+  return indexCache.index;
+}
+export const nomAfficheVol = texte => nomAffiche(texte, indexDesPersonnes());
+
 export async function supprimerPersonne(id) {
   if (refuseEnConsultation()) return false;
   await db.supprimer('personnes', id);
@@ -173,9 +197,14 @@ export async function contenuComplet() {
   return { vols, avions, personnes, suppressions, reglages };
 }
 
+// Réglages partagés qui étaient privés avant : une sauvegarde sans eux n'efface pas la valeur du téléphone
+const GARDES_SI_VIDES = ['cartesMotDePasse'];
 export async function restaurer(donnees) {
   // Mots de passe, adresse et état de la copie NAS ne sont pas dans la sauvegarde : on garde ceux du téléphone
   const prives = REGLAGES_PRIVES.filter(k => etat.reglages[k] !== undefined).map(k => [k, etat.reglages[k]]);
+  // v0.55 (R138) : réglage devenu partagé, absent (ou vide) d'une sauvegarde plus ancienne : celui du téléphone est gardé
+  const fichier = new Map((donnees.reglages || []).map(r => [r.cle, r.valeur]));
+  for (const k of GARDES_SI_VIDES) if (etat.reglages[k] && !fichier.get(k)) prives.push([k, etat.reglages[k]]);
   await db.remplacerTout({ ...donnees, reglages: (donnees.reglages || []).filter(r => !REGLAGES_PRIVES.includes(r.cle)) });
   for (const [k, v] of prives) await db.ecrireReglage(k, v);
   await charger();
@@ -184,4 +213,4 @@ export async function restaurer(donnees) {
 
 export const avionDe = vol => etat.avions.get(vol.avionId) || null;
 export const listeMissions = () => missionsConnues(etat.vols, reglage('missionsAjoutees'), reglage('missionsMasquees'));
-export const trouverPersonne = nom => etat.personnes.find(p => nomPersonne(p).toUpperCase() === String(nom).toUpperCase());
+export const trouverPersonne = nom => personneDuTexte(nom, indexDesPersonnes()) || etat.personnes.find(p => nomPersonne(p).toUpperCase() === String(nom).toUpperCase());

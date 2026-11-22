@@ -23,7 +23,7 @@ const FICHIERS = [
   'js/fuseaux.js', 'js/missions.js', 'js/modele.js', 'js/nuit.js', 'js/pdf.js', 'js/sauvegarde.js',
   'js/temps.js', 'js/terrains.js', 'js/totaux.js', 'js/types-avion.js', 'js/version.js', 'js/numero-version.js',
   'js/ui/avions.js', 'js/ui/carnet.js', 'js/ui/commun.js', 'js/ui/plus.js', 'js/ui/regles.js',
-  'js/ui/saisie.js', 'js/ui/totaux.js', 'js/ui/terrain-perso.js', 'js/ui/glisser.js', 'js/ui/suppression.js', 'js/bande.js', 'js/traces.js', 'js/ui/carte.js', 'js/recherche.js', 'js/ui/retour.js', 'js/copieur.js', 'js/ui/nas.js', 'js/npf.js', 'js/ui/npf.js', 'js/fiches-avions.js', 'js/photos-web.js', 'js/ui/photo-web.js', 'js/synchro.js', 'js/ui/synchro.js', 'js/kml.js', 'js/demenagement.js', 'js/cadrage.js', 'js/ui/cadrage.js', 'js/socle.js', 'js/ui/socle.js', 'js/inst-exam.js',
+  'js/ui/saisie.js', 'js/ui/totaux.js', 'js/ui/terrain-perso.js', 'js/ui/glisser.js', 'js/ui/suppression.js', 'js/bande.js', 'js/traces.js', 'js/ui/carte.js', 'js/recherche.js', 'js/ui/retour.js', 'js/copieur.js', 'js/ui/nas.js', 'js/npf.js', 'js/ui/npf.js', 'js/photos-web.js', 'js/ui/photo-web.js', 'js/synchro.js', 'js/ui/synchro.js', 'js/kml.js', 'js/demenagement.js', 'js/cadrage.js', 'js/ui/cadrage.js', 'js/socle.js', 'js/ui/socle.js', 'js/inst-exam.js', 'js/personnes.js', 'js/trace-import.js',
   'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'vendor/jspdf.umd.min.js', 'ressources/terrains.json',
   'icones/icon-192.png', 'icones/icon-512.png', 'icones/apple-touch-icon.png', 'icones/favicon-32.png', 'icones/favicon.ico',

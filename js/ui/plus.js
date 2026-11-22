@@ -1,8 +1,9 @@
-// Écran Plus : exports, sauvegarde, import FlyLog, contrôle import, types, avions, personnes, stockage.
+// Écran Plus : exports, sauvegarde, contrôle import, types, avions, personnes, stockage.
+// v0.55 (R141 / R142) : « Importer des fiches avions », « Importer FlyLog » et « Compléter instructeur / examinateur »
+// retirés (aucune donnée ne change).
 
 import { $, esc, toast, proposerFichier, lireFichierTexte, ouvrirOutil, fermerOutil, pause } from './commun.js';
-import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer, enregistrerAvions, enregistrerVol, enConsultation } from '../etat.js';
-import { lireFichesAvions, changementsFiches, appliquerFiches } from '../fiches-avions.js';
+import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer } from '../etat.js';
 import { analyserFlyLog } from '../flylog.js';
 import { calculerTotaux, filtrerPeriode, bornesPeriode } from '../totaux.js';
 import { comparerReference } from '../controle.js';
@@ -10,7 +11,8 @@ import { creerSauvegarde, texteSauvegarde, lireSauvegarde, nomFichier, texteTabl
 import { paginer, dessinerPDF, totauxVides, totauxPDF } from '../pdf.js';
 import { hm, aujourdhui, dateFr } from '../temps.js';
 import { TYPES, MOTEUR, SURFACE, typesAffiches } from '../types-avion.js';
-import { nomPersonne, volsReels } from '../modele.js';
+import { volsReels } from '../modele.js';
+import { afficherPersonne } from '../personnes.js';
 import { VERSION } from '../version.js';
 import { ouvrirRegles } from './regles.js';
 import { ouvrirFlotte, typesConnus, definirTypes } from './avions.js';
@@ -18,7 +20,6 @@ import { ouvrirPersonne, ouvrirLibelles } from './saisie.js';
 import { ouvrirChoixBande } from './carnet.js';
 import { resumeCartes } from './carte.js';
 import { resumeSocle } from './socle.js';
-import { completerInstExam } from '../inst-exam.js';
 import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas } from './nas.js';
 import { ecranSynchro, resumeSynchroActuel } from './synchro.js';
 import { copieNasAJour, depuis } from '../copieur.js';
@@ -111,7 +112,7 @@ async function sauvegardeFaite() {
 function ecranSauvegarde() {
   const d = reglage('derniereSauvegarde');
   const c = ouvrirOutil('Sauvegarde de secours', `
-    <p class="hint" style="font-size:15px">Un seul fichier avec tout : vols, avions (photos comprises), personnes, missions, étiquettes, règles et réglages. (La copie automatique sur le NAS, elle, ne contient pas les photos.) L'app sait le réimporter à l'identique (Plus › Restaurer une sauvegarde).</p>
+    <p class="hint" style="font-size:15px">Un seul fichier avec tout : vols, avions (photos comprises), personnes, missions, étiquettes, règles et réglages. (La copie automatique sur le NAS, elle, ne contient pas les photos.) L'app sait le réimporter à l'identique (Plus › Restaurer › Depuis un fichier).</p>
     <p>Dernière sauvegarde : <b>${d ? dateFr(d.slice(0, 10)) : 'jamais'}</b></p>
     <button type="button" class="bigbtn" id="sv-dl">Enregistrer dans Téléchargements</button>
     <button type="button" class="bigbtn second" id="sv-sh">Partager (Google Drive…)</button>
@@ -124,6 +125,31 @@ function ecranSauvegarde() {
     const r = await proposerFichier(await fichierSauvegarde(), nomFichier('sauvegarde-carnet-de-vol', 'json'), { partager: true });
     if (r !== 'annule') { await sauvegardeFaite(); toast('Sauvegarde partagée'); }
   });
+}
+
+// v0.55 (R140) : Plus › Restaurer : depuis un fichier (sauvegarde de secours) ou depuis une version gardée sur le NAS
+// (les deux restaurations d'avant, inchangées derrière)
+function ecranRestaurer() {
+  const c = ouvrirOutil('Restaurer', `
+    <p class="hint" style="font-size:15px">Remplace tout le carnet par une version gardée. Tu vois le résumé avant de confirmer.</p>
+    <button type="button" class="bigbtn" id="rs-fichier">Depuis un fichier ›</button>
+    <button type="button" class="bigbtn second" id="rs-nas">Depuis une version du NAS ›</button>`);
+  c.querySelector('#rs-fichier').addEventListener('click', () => $('#file-restore').click());
+  c.querySelector('#rs-nas').addEventListener('click', ecranRestaurerNas);
+}
+
+// v0.55 (R140) : sous-titre de « Synchro du carnet » : « Synchronisé · version gardée il y a X » (X = dernière copie
+// automatique sur le NAS, qui continue exactement comme avant)
+const ECHECS_COPIE = ['refuse', 'trop-gros', 'stockage', 'abimee', 'bloque', 'origine', 'introuvable'];
+const copieEnEchec = (conf, e) => conf.configuree && conf.auto && ECHECS_COPIE.includes(e.statut) && (!!e.enAttente || e.statut === 'refuse');
+export function resumeLigneSynchro() {
+  const conf = configNas(), nas = etatNas();
+  if (!conf.configuree) return 'NAS à régler · synchro et versions gardées';
+  const sy = resumeSynchroActuel(), synchro = /^Synchronisé/.test(sy) ? 'Synchronisé' : sy;
+  if (copieEnEchec(conf, nas)) return `${synchro} · copie sur le NAS : ${resumeCopieNas()}`;
+  if (nas.derniereCopie) return `${synchro} · version gardée ${depuis(nas.derniereCopie)}`;
+  if (reglage('synchroRole') && reglage('synchroRole') !== 'reference') return synchro; // les copies partent du téléphone
+  return `${synchro} · ${conf.auto ? 'aucune version gardée pour l\'instant' : 'copie automatique arrêtée'}`;
 }
 
 async function restaurerFichier() {
@@ -146,33 +172,7 @@ async function restaurerFichier() {
   });
 }
 
-// ---------- v0.53 (R130) : compléter instructeur / examinateur depuis FlyLog (usage unique) ----------
-// Vols du fichier avec un copi ET un instructeur ou examinateur, retrouvés par date + début bloc + terrains ; champ rempli
-// seulement s'il est vide ; rien d'autre n'est créé ni modifié. Le bouton disparaît (réglage partagé : aussi sur les autres
-// appareils) dès qu'au moins un vol est complété — ou quand tous ces vols sont retrouvés et déjà remplis (plus rien à faire).
-async function completerIE() {
-  const f = await lireFichierTexte($('#file-ie'));
-  $('#file-ie').value = '';
-  if (!f) return;
-  const c = ouvrirOutil('Instructeur / examinateur', '<p class="prog">Lecture du fichier…</p>');
-  await pause();
-  const r = completerInstExam(f.texte, etat.vols);
-  if (!r.ok) { c.innerHTML = `<p class="koc">${esc(r.message)}</p>`; return; }
-  for (const m of r.modifs) {
-    const v = etat.vols.find(x => x.id === m.id);
-    if (v) await enregistrerVol({ ...v, ...m.champs });
-  }
-  const fini = r.completes > 0 || (r.concernes > 0 && !r.absents.length);
-  if (fini) await enregistrerReglage('rattrapageInstExam', new Date().toISOString());
-  const ligne = a => `<li>${esc(dateFr(a.date))}${a.hDep ? ' · ' + esc(a.hDep) : ''} · ${esc(a.dep)} › ${esc(a.arr)}</li>`;
-  c.innerHTML = `<div class="sec"><p class="${r.completes ? 'okc' : ''}" style="font-size:17px;font-weight:700">${r.completes} vol${r.completes > 1 ? 's' : ''} complété${r.completes > 1 ? 's' : ''}</p>
-    <p class="hint">${r.concernes} vol${r.concernes > 1 ? 's' : ''} du fichier avec un copi et un instructeur ou examinateur${r.deja ? ` · ${r.deja} déjà rempli${r.deja > 1 ? 's' : ''} dans le carnet (pas modifié${r.deja > 1 ? 's' : ''})` : ''}.</p>
-    ${r.absents.length ? `<h3>Non retrouvé${r.absents.length > 1 ? 's' : ''} dans le carnet (${r.absents.length})</h3><ul>${r.absents.map(ligne).join('')}</ul>` : ''}
-    <p class="hint">${fini ? 'Terminé : ce bouton ne sera plus proposé.' : 'Rien n\'a été complété : le bouton reste disponible.'}</p></div>`;
-  majPlus();
-}
-
-// ---------- Import FlyLog ----------
+// ---------- Import FlyLog (v0.55, R141 : sans bouton ; fichier caché #file-flylog, utilisé par les tests) ----------
 async function importer() {
   const f = await lireFichierTexte($('#file-flylog'));
   $('#file-flylog').value = '';
@@ -289,9 +289,9 @@ function ecranPersonnes() {
   const rendre = () => {
     const q = $('#pe-q').value.trim().toUpperCase();
     const L = etat.personnes.filter(p => !q || `${p.tri} ${p.prenom} ${p.nom}`.toUpperCase().includes(q))
-      .sort((a, b) => nomPersonne(a).localeCompare(nomPersonne(b)));
+      .sort((a, b) => afficherPersonne(a).localeCompare(afficherPersonne(b)));
     $('#pe-n').textContent = `${nombre(L.length)} personne${L.length > 1 ? 's' : ''}`;
-    $('#pe-l').innerHTML = L.slice(0, 200).map(p => `<button type="button" class="pitem" data-pe="${esc(p.id)}"><b>${esc(nomPersonne(p))}</b><span>${esc(p.tri ? [p.prenom, p.nom].filter(Boolean).join(' ') : '')}</span></button>`).join('')
+    $('#pe-l').innerHTML = L.slice(0, 200).map(p => `<button type="button" class="pitem" data-pe="${esc(p.id)}"><b>${esc(afficherPersonne(p))}</b><span>${esc(p.tri ? [p.prenom, p.nom].filter(Boolean).join(' ') : p.nom ? p.prenom || '' : '')}</span></button>`).join('')
       + (L.length > 200 ? '<p class="hint">Affine la recherche pour voir les autres.</p>' : '');
   };
   rendre();
@@ -337,11 +337,9 @@ export async function majPlus() {
   $('#pl-save-s').textContent = `Dernière : ${d ? dateFr(d.slice(0, 10)) : 'jamais'} · Téléchargements ou Google Drive`;
   $('#pl-tit-s').textContent = reglage('titulaire') || 'Nom imprimé sur le PDF';
   verifierRappel();
-  $('#pl-nas-s').textContent = resumeCopieNas();
-  $('#pl-sync-s').textContent = resumeSynchroActuel();
+  $('#pl-sync-s').textContent = resumeLigneSynchro();
   resumeCartes().then(t => { $('#pl-cartes-s').textContent = t; });
   $('#pl-socle-s').textContent = resumeSocle();
-  $('#pl-ie').hidden = !!reglage('rattrapageInstExam') || enConsultation(); // v0.53 (R130) : usage unique
   const p = await persiste();
   $('#pl-stock-s').textContent = p === null ? 'Protection non disponible sur ce navigateur'
     : p ? 'Protégé contre l\'effacement automatique' : 'Non protégé : fais des sauvegardes';
@@ -350,83 +348,52 @@ export async function majPlus() {
 // Encart « sauvegarde » en haut de Plus : jaune s'il n'y a jamais eu de sauvegarde ou plus de 7 jours, sinon neutre
 const ICONE_SAUVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></svg>';
 const ICONE_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+const ICONE_ALERTE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z"/></svg>';
+// Copie qui ne part plus (NAS injoignable) depuis plus d'un jour, ou jamais partie
+const copieBloquee = (conf, e, maintenant = Date.now()) => conf.configuree && conf.auto && !!e.enAttente && ['injoignable', 'horsLigne'].includes(e.statut)
+  && (!e.derniereCopie || maintenant - Date.parse(e.derniereCopie) > 864e5) && !!e.dernierEssai;
 export function verifierRappel() {
   // Copie automatique sur le NAS qui marche : encart vert « Copié sur le NAS il y a X min »
-  const nas = etatNas();
-  const e = copieNasAJour(configNas(), nas)
-    ? { ok: true, titre: `Copié sur le NAS ${depuis(nas.derniereCopie)}`, texte: 'Copie automatique à jour.' }
-    : etatSauvegarde(reglage('derniereSauvegarde'));
-  $('#pl-bk').classList.toggle('ok', e.ok);
-  $('#pl-bk-i').innerHTML = e.ok ? ICONE_OK : ICONE_SAUVE;
+  // v0.55 (R140) : copie refusée par le NAS (ou bloquée depuis plus d'un jour) : encart rouge d'alerte, bouton « Voir »
+  const conf = configNas(), nas = etatNas();
+  let e;
+  if (copieEnEchec(conf, nas)) e = { alerte: true, titre: 'Copie sur le NAS en échec', texte: resumeCopieNas() };
+  else if (copieBloquee(conf, nas)) e = { alerte: true, titre: nas.derniereCopie ? `Pas de copie sur le NAS depuis ${depuis(nas.derniereCopie).replace(/^il y a /, '')}` : 'Pas encore de copie sur le NAS', texte: resumeCopieNas() };
+  else if (copieNasAJour(conf, nas)) e = { ok: true, titre: `Copié sur le NAS ${depuis(nas.derniereCopie)}`, texte: 'Copie automatique à jour.' };
+  else e = etatSauvegarde(reglage('derniereSauvegarde'));
+  $('#pl-bk').classList.toggle('ok', !!e.ok);
+  $('#pl-bk').classList.toggle('alerte', !!e.alerte);
+  $('#pl-bk').setAttribute('role', e.alerte ? 'alert' : 'status');
+  $('#pl-bk-i').innerHTML = e.alerte ? ICONE_ALERTE : e.ok ? ICONE_OK : ICONE_SAUVE;
   $('#pl-bk-t').textContent = e.titre;
   $('#pl-bk-s').textContent = e.texte;
-  $('#pl-bk-go').hidden = e.ok;
+  $('#pl-bk-go').hidden = !!e.ok;
+  $('#pl-bk-go').textContent = e.alerte ? 'Voir' : 'Sauvegarder';
+  $('#pl-bk-go').dataset.mode = e.alerte ? 'nas' : 'sauvegarde';
 }
 
 export function initPlus() {
   $('#pl-pdf').addEventListener('click', ecranPDF);
   $('#pl-csv').addEventListener('click', ecranCSV);
   $('#pl-save').addEventListener('click', ecranSauvegarde);
-  $('#pl-restore').addEventListener('click', () => $('#file-restore').click());
+  $('#pl-restore').addEventListener('click', ecranRestaurer);
   $('#file-restore').addEventListener('change', restaurerFichier);
-  $('#pl-import').addEventListener('click', () => $('#file-flylog').click());
+  // v0.55 (R141) : plus de bouton « Importer FlyLog » ; le fichier caché reste le chargeur des tests (faux FlyLog)
   $('#file-flylog').addEventListener('change', importer);
   $('#pl-ctrl').addEventListener('click', ecranControle);
-  $('#pl-ie').addEventListener('click', () => $('#file-ie').click()); // v0.53 (R130)
-  $('#file-ie').addEventListener('change', completerIE);
   $('#file-ref').addEventListener('change', chargerReference);
   $('#rules-open').addEventListener('click', ouvrirRegles);
   $('#pl-types').addEventListener('click', ecranTypes);
-  $('#pl-fiches').addEventListener('click', ecranFichesAvions);
   $('#pl-avions').addEventListener('click', () => ouvrirFlotte(''));
   $('#pl-pers').addEventListener('click', ecranPersonnes);
   $('#pl-tit').addEventListener('click', ecranTitulaire);
-  $('#pl-bk-go').addEventListener('click', ecranSauvegarde);
+  $('#pl-bk-go').addEventListener('click', e => (e.currentTarget.dataset.mode === 'nas' ? ecranNas() : ecranSauvegarde()));
   $('#pl-heures').addEventListener('click', ouvrirChoixBande);
   $('#pl-libelles').addEventListener('click', ouvrirLibelles);
   $('#pl-stockage').addEventListener('click', ecranStockage);
-  $('#pl-nas').addEventListener('click', ecranNas);
-  $('#pl-nas-rest').addEventListener('click', ecranRestaurerNas);
   $('#pl-sync').addEventListener('click', ecranSynchro);
-  document.addEventListener('synchro-etat', () => { $('#pl-sync-s').textContent = resumeSynchroActuel(); });
+  document.addEventListener('synchro-etat', () => { $('#pl-sync-s').textContent = resumeLigneSynchro(); });
   // État de la copie NAS changé (copie faite, NAS injoignable…) : sous-titre et encart à jour
-  document.addEventListener('nas-etat', () => { $('#pl-nas-s').textContent = resumeCopieNas(); verifierRappel(); });
+  document.addEventListener('nas-etat', () => { $('#pl-sync-s').textContent = resumeLigneSynchro(); verifierRappel(); });
   $('#ou-x').addEventListener('click', fermerOutil);
-}
-
-// ---------- R49 : Importer des fiches avions (Nom, Indicatif radio, Modèle) ----------
-// Fichier choisi sur le téléphone (Téléchargements, Drive…) ; aperçu de ce qui change ; rien n'est modifié avant
-// « Appliquer ». Ne crée aucun avion, ne touche à aucun vol ni au type OACI.
-function ecranFichesAvions() {
-  const c = ouvrirOutil('Importer des fiches avions', `
-    <p class="hint" style="font-size:15px">Un petit fichier texte (.csv ou .txt), une ligne par avion :<br><b>immatriculation, nom, indicatif radio, modèle</b><br>Seuls le nom, l'indicatif et le modèle des avions déjà dans ta flotte sont remplis (une case vide ne change rien). Aucun avion n'est créé, aucun vol n'est modifié.</p>
-    <label class="bigbtn" for="fa-fichier" style="text-align:center">Choisir le fichier</label>
-    <input type="file" id="fa-fichier" accept=".csv,.txt,text/csv,text/plain" hidden>
-    <div id="fa-apercu"></div>`);
-  c.querySelector('#fa-fichier').addEventListener('change', async e => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    const { fiches, erreurs } = lireFichesAvions(await f.text());
-    const { modifs, introuvables, identiques } = changementsFiches(fiches, [...etat.avions.values()]);
-    const zone = c.querySelector('#fa-apercu');
-    zone.innerHTML = `<div class="sec"><h3>Ce qui va changer</h3>
-        ${modifs.length ? modifs.map(m => `<div class="fa-avion"><b>${esc(m.avion.immat)}</b>${m.changements.map(x =>
-          `<div class="fa-ch">${esc(x.libelle)} : <s>${esc(x.avant || 'vide')}</s> → <b>${esc(x.apres)}</b></div>`).join('')}</div>`).join('')
-          : '<p class="hint">Rien à changer.</p>'}
-        ${identiques.length ? `<p class="hint">Déjà à jour : ${esc(identiques.join(', '))}</p>` : ''}
-        ${introuvables.length ? `<p class="koc">Introuvable${introuvables.length > 1 ? 's' : ''} dans ta flotte (ignoré${introuvables.length > 1 ? 's' : ''}) : ${esc(introuvables.join(', '))}</p>` : ''}
-        ${erreurs.map(x => `<p class="koc">${esc(x)}</p>`).join('')}
-      </div>
-      ${modifs.length ? `<button type="button" class="bigbtn" id="fa-ok">Appliquer à ${modifs.length} avion${modifs.length > 1 ? 's' : ''}</button>` : ''}
-      <button type="button" class="bigbtn second annuler" id="fa-no">Annuler</button>`;
-    zone.querySelector('#fa-no').addEventListener('click', fermerOutil);
-    const ok = zone.querySelector('#fa-ok');
-    if (ok) ok.addEventListener('click', async () => {
-      ok.disabled = true;
-      await enregistrerAvions(appliquerFiches(modifs));
-      fermerOutil();
-      toast(`${modifs.length} fiche${modifs.length > 1 ? 's' : ''} avion mise${modifs.length > 1 ? 's' : ''} à jour`);
-    });
-    e.target.value = '';
-  });
 }

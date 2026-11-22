@@ -203,7 +203,9 @@ try {
 
   console.log('R71 : période dans la loupe');
   const tousTotal = await T.textContent('#h-total');
-  await T.click('.tabs button[data-v="totaux"]'); await T.waitForSelector('#t-h .tline');
+  await T.click('.tabs button[data-v="totaux"]');
+  await T.click('#v-totaux [data-sec="h"] .sec-t'); // v0.55 (R143) : sections fermées au départ ; « Heures » reste ouverte ensuite
+  await T.waitForSelector('#t-h .tline');
   const totauxAvant = await T.innerText('#t-h');
   await T.click('.tabs button[data-v="carnet"]');
   await T.click('#q-open');

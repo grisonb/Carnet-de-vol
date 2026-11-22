@@ -12,7 +12,8 @@
 // - v0.31 (R73) : fond Plan (OpenStreetMap) ou Photo (photos aériennes IGN, ORTHOIMAGERY.ORTHOPHOTOS), en ligne
 //   seulement ; jamais gardées dans le cache hors ligne (le service worker ne garde que les fichiers de l'app).
 
-import { $, esc, toast, ouvrirOutil, fermerOutil, proposerFichier, PARTAGE } from './commun.js';
+import { $, esc, toast, ouvrirOutil, fermerOutil, proposerFichier, PARTAGE, CROIX } from './commun.js';
+import { lireTraceFichier, traceImportee, decoderPoints } from '../trace-import.js';
 import { kmlDuVol } from '../kml.js';
 import { etat, reglage, enregistrerReglage, enregistrerAvions, lireTrace, ecrireTrace, avionDe, enregistrerVol, enConsultation, ecrireReglageDiscret } from '../etat.js';
 import { terrain } from '../terrains.js';
@@ -78,6 +79,11 @@ async function remplirCodes(ix) {
 
 // ---------- Trace d'un vol ----------
 async function etatDuVol(vol) {
+  // v0.55 (R139) : trace importée rangée avec le vol : elle s'affiche à la place de la trace ADS-B
+  if (vol && vol.traceImportee && !vol.brouillon) {
+    const points = decoderPoints(vol.traceImportee);
+    if (points.length >= 2) return { code: 'ok', texte: '', stockee: { points }, importee: true };
+  }
   const stockee = vol && vol.id ? await lireTrace(vol.id) : null;
   const e = etatCarte({ vol, avion: avionDe(vol || {}), motDePasse: motDePasse(), index, stockee, aujourdhui: aujourdhui() });
   return { ...e, stockee };
@@ -411,13 +417,14 @@ async function dessiner(conteneur, vol, points, interactif) {
   return carte;
 }
 
-// ---------- Bloc « Carte du vol » de la saisie ----------
+// ---------- Bloc « Trace du vol » de la saisie (v0.55, R137 : « Carte du vol » avant) ----------
 let volAffiche = null, feuxChanges = false;
 export async function afficherCarteVol(vol) {
   volAffiche = vol;
   const mini = $('#carte-mini'), txt = $('#carte-txt');
   mini.hidden = true; txt.textContent = '';
   $('#carte-source').textContent = SOURCE;
+  majImport(vol);
   if (!vol) { txt.textContent = (await etatDuVol(null)).texte; return; }
   const feux = positionsNpf(vol) ? [1] : []; // v0.17 : feux, arrivée ou pélicandrome sans code (positions NPF)
   // Brouillon NPF pas encore enregistré : seulement les positions reçues
@@ -435,20 +442,57 @@ export async function afficherCarteVol(vol) {
   if (volAffiche !== vol) return;
   if (e.code === 'ok') {
     txt.textContent = '';
+    if (e.importee) $('#carte-source').textContent = 'Trace importée d\'un fichier · elle ne change jamais tes heures.';
     mini.hidden = false;
-    try { await dessiner(mini, vol, e.stockee.points, false); } catch { mini.hidden = true; txt.textContent = 'Carte indisponible.'; }
+    try { await dessiner(mini, vol, e.stockee.points, false); } catch { mini.hidden = true; txt.textContent = 'Trace indisponible.'; }
   } else if (feux.length) await dessinerFeux(vol, titreNpf + (e.code === 'aTelecharger' ? TEXTE_RESEAU : e.texte));
   else txt.textContent = e.code === 'aTelecharger' ? TEXTE_RESEAU : e.texte;
 }
+// ---------- v0.55 (R139) : importer la trace d'un vol (fichier) ----------
+// Bouton « Importer » : vol enregistré seulement (même sans trace ADS-B), jamais en consultation ; ligne « Trace importée »
+// avec une croix pour la retirer (la trace ADS-B revient, si elle existe).
+function majImport(vol) {
+  const v = vol && vol.id && !vol.brouillon ? volParId(vol.id) : null;
+  $('#tr-imp').hidden = !v || enConsultation();
+  const t = v && v.traceImportee;
+  $('#tr-info').hidden = !t;
+  if (t) {
+    $('#tr-nom').textContent = `Trace importée : ${t.nom || t.format} (${t.format}, ${t.n.toLocaleString('fr-FR')} points${t.nOrigine > t.n ? ` sur ${t.nOrigine.toLocaleString('fr-FR')}` : ''})`;
+    $('#tr-x').hidden = enConsultation();
+  }
+}
+async function importerTrace() {
+  const f = $('#file-trace').files && $('#file-trace').files[0];
+  $('#file-trace').value = '';
+  const vol = volAffiche && volAffiche.id ? volParId(volAffiche.id) : null;
+  if (!f || !vol || enConsultation()) return;
+  let r;
+  try { r = await lireTraceFichier(f.name, new Uint8Array(await f.arrayBuffer())); } catch { r = { ok: false, message: 'Fichier illisible : rien n\'a changé.' }; }
+  if (!r.ok) { toast(r.message, 4500); return; }
+  const { traceImportee: ancienne, ...sansTrace } = vol;
+  const t = traceImportee(r.points, { nom: f.name, format: r.format }, sansTrace);
+  if (await enregistrerVol({ ...sansTrace, traceImportee: t }) === false) return;
+  toast(`Trace importée : ${t.n.toLocaleString('fr-FR')} points`);
+  afficherCarteVol(volParId(vol.id));
+}
+async function retirerTrace() {
+  const vol = volAffiche && volAffiche.id ? volParId(volAffiche.id) : null;
+  if (!vol || !vol.traceImportee || enConsultation()) return;
+  const { traceImportee: ancienne, ...sansTrace } = vol;
+  if (await enregistrerVol(sansTrace) === false) return;
+  toast('Trace importée retirée');
+  afficherCarteVol(volParId(vol.id));
+}
+
 // Carte avec les seules positions des feux (pas de trace ADS-B)
 async function dessinerFeux(vol, texte) {
   const mini = $('#carte-mini'), txt = $('#carte-txt');
   if (volAffiche !== vol) return;
   txt.textContent = texte;
   mini.hidden = false;
-  try { await dessiner(mini, vol, [], false); } catch { mini.hidden = true; txt.textContent = 'Carte indisponible.'; }
+  try { await dessiner(mini, vol, [], false); } catch { mini.hidden = true; txt.textContent = 'Trace indisponible.'; }
 }
-const TEXTE_RESEAU = 'La carte s\'affichera quand le téléphone aura du réseau.';
+const TEXTE_RESEAU = 'La trace s\'affichera quand le téléphone aura du réseau.';
 
 async function pleinEcran() {
   if (!volAffiche || $('#carte-mini').hidden) return;
@@ -462,8 +506,8 @@ async function pleinEcran() {
   await dessiner($('#carte-grande'), volAffiche, e.code === 'ok' ? e.stockee.points : [], true);
 }
 
-// ---------- Plus › Cartes de vol ----------
-// Sous-titre de la ligne « Cartes de vol » dans Plus (sans réseau : index déjà rangé sur le téléphone)
+// ---------- Plus › Traces des vols (v0.55, R137 : « Cartes de vol » avant) ----------
+// Sous-titre de la ligne « Traces des vols » dans Plus (sans réseau : index déjà rangé sur le téléphone)
 export async function resumeCartes() {
   if (!motDePasse()) return 'Mot de passe à saisir · traces ADS-B';
   let ix = null;
@@ -481,12 +525,11 @@ function ecranCartes() {
   const etatServeur = ix ? `Dernière archive lue par le serveur : ${dateFr(ix.derniereArchive)} · `
     + `${Object.keys(ix.traces || {}).length} avion(s) avec des traces`
     + (ix.rattrapage ? ` · rattrapage : ${ix.rattrapage.reste} jour(s) restant(s) sur ${ix.rattrapage.total}` : '') : 'Pas encore de contact avec le serveur.';
-  const c = ouvrirOutil('Cartes de vol', `<div class="sec">
-      <p class="hint" style="font-size:15px">La carte d'un vol montre sa trace ADS-B (archives adsb.lol, récupérées chaque nuit par ton serveur). Elle sert seulement à voir le vol : elle ne change jamais tes heures.</p>
-      <div class="field"><label for="cv-mdp">Mot de passe des cartes</label><input id="cv-mdp" type="password" autocomplete="off" value="${esc(motDePasse())}"></div>
+  const c = ouvrirOutil('Traces des vols', `<div class="sec">
+      <p class="hint" style="font-size:15px">Traces ADS-B (archives adsb.lol, récupérées chaque nuit par ton serveur).</p>
+      <div class="field"><label for="cv-mdp">Mot de passe des traces</label><input id="cv-mdp" type="password" autocomplete="off" value="${esc(motDePasse())}"></div>
       <div class="row2"><button type="button" class="ghost" id="cv-test">Tester</button><button type="button" class="ghost primary" id="cv-ok">Enregistrer</button></div>
       <p id="cv-res" class="hint" role="status"></p>
-      <p class="hint">Gardé seulement sur ce téléphone : il n'est ni dans le tableur CSV, ni dans la sauvegarde de secours (à retaper après une restauration sur un autre téléphone).</p>
     </div>
     <div class="sec"><h3>État</h3>
       <p id="cv-etat">${esc(etatServeur)}</p>
@@ -513,6 +556,10 @@ function ecranCartes() {
 
 export function initCarte() {
   $('#carte-mini').addEventListener('click', pleinEcran);
+  $('#tr-x').innerHTML = CROIX;
+  $('#tr-imp').addEventListener('click', () => $('#file-trace').click());
+  $('#file-trace').addEventListener('change', importerTrace);
+  $('#tr-x').addEventListener('click', retirerTrace);
   $('#carte-zone').addEventListener('keydown', e => { if (e.key === 'Enter') pleinEcran(); });
   $('#cp-x').addEventListener('click', () => {
     $('#carte-plein').hidden = true;

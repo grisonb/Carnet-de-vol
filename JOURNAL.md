@@ -1,5 +1,45 @@
 # Journal des versions
 
+## v0.55 — 22/11/2026
+
+Remarques R136 à R143. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R136 : fiche personne modifiable.** Plus › Personnes : un appui sur un nom ouvre la fiche (Nom, Prénom, Trigramme ;
+Enregistrer / Annuler) ; elle passe maintenant devant l'écran Personnes (elle s'ouvrait derrière). Une correction s'applique
+à tous les vols avec cette personne (copi, autre pilote, instructeur, examinateur, élève) : seuls ces champs changent.
+À l'écran (bulles, fiche vol, listes, suggestions) : trigramme, sinon nom, sinon prénom ; un vol enregistré avant avec
+« Prénom Nom » affiche la règle sans être modifié. PDF : imprime toujours le nom enregistré dans le vol (code inchangé).
+Les fiches personnes passaient déjà par la synchro NAS et la sauvegarde.
+
+**R137 : « Trace » au lieu de « Carte »** pour la trajectoire : « TRACE DU VOL », Plus › « Traces des vols » (même titre
+d'écran, texte court « Traces ADS-B (archives adsb.lol, récupérées chaque nuit par ton serveur). »), « Mot de passe des
+traces », messages de la section.
+
+**R138 : mot de passe des traces partagé** (réglage `cartesMotDePasse` dans REGLAGES_PARTAGES) : synchro NAS (le plus récent
+gagne, un vide d'origine n'écrase rien, rattrapage automatique des appareils déjà synchronisés), sauvegarde de secours et
+restauration (une ancienne sauvegarde sans lui ne l'efface pas). Pas dans le CSV.
+
+**R139 : importer la trace d'un vol.** Fiche vol › Trace du vol › « Importer » (GPX, KML / gx:Track, KMZ, IGC, GeoJSON,
+CSV latitude / longitude / heure). Fichier illisible ou sans point : message, rien ne change. Trace rangée avec le vol
+(`traceImportee` : simplifiée à 1 500 points au plus, encodée ; vol ≤ 50 000 caractères), affichée à la place de la trace
+ADS-B ; la croix la retire (la trace ADS-B revient). Synchro (envois découpés sous 3 Mo), sauvegarde, copie NAS : oui ;
+CSV, PDF : non. Jamais d'heure modifiée. carnet.php v5 inchangé (élément ≤ 64 Ko, envoi ≤ 4 Mo : respectés).
+
+**R140 : Plus › Sauvegarde en 3 lignes** : Sauvegarde de secours ; Synchro du carnet (« Synchronisé · version gardée il y
+a X ») ; Restaurer (« Depuis un fichier » / « Depuis une version du NAS »). Réglages du NAS (adresse, mot de passe, copie
+automatique) : Synchro du carnet › « NAS : adresse, mot de passe, copie automatique ». Copie automatique inchangée. Bandeau
+du haut gardé ; copie refusée par le NAS (ou bloquée depuis plus d'un jour) : bandeau rouge d'alerte, bouton « Voir ».
+
+**R141 + R142 : retirés de Plus** : « Importer des fiches avions », « Importer FlyLog », « Compléter instructeur /
+examinateur depuis FlyLog ». Aucune donnée ne change. (Le chargeur caché de fichier FlyLog reste pour les tests.)
+
+**R143 : Totaux** : sections repliables (fermées au départ, celles laissées ouvertes retenues sur cet appareil : réglage
+privé `totauxOuverts`) ; nouvelle section « Trigrammes » (vols et heures ensemble, dernier vol ; personnes avec trigramme,
+tous rôles ; simulateur exclu ; selon la période choisie). Aucun total existant ne change.
+
+**Tests** : `tests/unitaires/v055.test.js`, `tests/navigateur/v055.mjs` ; anciens tests adaptés (v08, v09, v010, v016b,
+v019, v022, v023, v053 et clics « Copie sur le NAS » / « Restaurer depuis le NAS ») ; test complet.
+
 ## v0.54 — 21/11/2026
 
 Remarques R132 à R135. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

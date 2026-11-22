@@ -30,7 +30,8 @@ Serveur : `https://vps-3c305ff2.vps.ovh.net/carnet-traces/` (index.json + traces
 de l'utilisateur « carnet » (jamais dans le dépôt). Installation, script et retour arrière : dossier privé
 `../donnees-privees/vps-carnet-traces/`. Toute modification du VPS : montrer d'abord, attendre l'OK tapé.
 Les codes ADS-B et immatriculations réels ne sont JAMAIS dans le dépôt (servis par le VPS derrière le mot de passe).
-IndexedDB v2 : magasin `traces` (hors sauvegarde). Le mot de passe (`cartesMotDePasse`) est exclu de la sauvegarde.
+IndexedDB v2 : magasin `traces` (hors sauvegarde). v0.55 (R138) : le mot de passe (`cartesMotDePasse`) est un réglage PARTAGÉ
+(synchro, sauvegarde ; une ancienne sauvegarde sans lui ne l'efface pas : `GARDES_SI_VIDES` dans etat.js).
 
 ## Copie automatique sur le NAS (v0.10)
 
@@ -104,8 +105,9 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   entrée porte son niveau `{ carnet: n }` et un `history.go()` de l'app est reconnu à son niveau d'arrivée (`cible`),
   même en retard — ne jamais revenir à un simple délai).
 - `js/recherche.js` : recherche de vols par date (jour / mois / année, formats français).
-- `js/fiches-avions.js` : import de fiches avions (immat -> Nom, Indicatif radio, Modèle ; Plus › Importer des fiches
-  avions). Le fichier réel du pilote est dans `../donnees-privees/` (jamais dans le dépôt).
+- `js/personnes.js` (v0.55) : `afficherPersonne` (trigramme, sinon nom, sinon prénom), `formesPersonne`, `indexPersonnes`,
+  `nomAffiche`, `volsACorriger`, `totauxTrigrammes`. `js/trace-import.js` (v0.55) : lecture GPX / KML / KMZ / IGC / GeoJSON /
+  CSV, `simplifier`, `encoderPoints` / `decoderPoints`, `traceImportee`. (`js/fiches-avions.js` supprimé en v0.55.)
 - Saisie : nouveau vol = arrivée du dernier vol -> `arriveeParDefaut` (modele.js : FMEP si départ FMEP, sinon `BASE` LFTW ; suit le
   départ tant que `F.arrAuto`, v0.20) ; bouton « LF » (réglage `prefixeLF`) dans `champOACI`.
 - Boutons × : constante `CROIX` (`commun.js`, croix dessinée) dans un bouton `.xbtn` ou `.x` (rond rouge).
@@ -162,6 +164,15 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   (heures, terrains, escales, position d'arrivée) ; `F.attSig` posé à l'ouverture d'un vol enregistré (aucun rattrapage) ;
   « Att. Nuit » ± = correction gardée ; NPF : escales + 1 à l'arrivée, réparti par la règle. R135 libellés « Dash 8 / CdB »…
   R131 `FONCTIONS.cdb.puce` = 'CdB'.
+- v0.55 : R136 fiche personne `#p-modal` (Nom, Prénom, Trigramme ; z-index 30, devant `#outil`) ; `enregistrerPersonneEtVols`,
+  `indexDesPersonnes` / `nomAfficheVol` (etat.js) ; saisie : `montrerNom` + `F.affOrig` / `texteGarde` (texte enregistré
+  gardé tant qu'on n'y touche pas). R137 « Trace du vol » / « Traces des vols ». R139 vol `traceImportee` { nom, format, n,
+  nOrigine, t0, pts, importeLe } ; carte.js `etatDuVol` (importée d'abord), `majImport`, `#tr-imp`, `#file-trace`, `#tr-info`,
+  `#tr-x` ; saisie `enregistrer()` reprend `traceImportee` de la dernière version ; `lots(liste, n, octets)` + `ENVOI_OCTETS`.
+  R140 Plus : `#pl-save`, `#pl-sync` (`resumeLigneSynchro`), `#pl-restore` (`ecranRestaurer` : `#rs-fichier` / `#rs-nas`) ;
+  `#sy-nas` (ui/synchro.js) ouvre `ecranNas` ; `verifierRappel` : classe `alerte` (`copieEnEchec`, `copieBloquee`), bouton
+  `#pl-bk-go` mode `nas`. R141 / R142 : `#pl-fiches`, `#pl-import`, `#pl-ie` retirés (`#file-flylog` caché gardé pour les
+  tests). R143 Totaux `.sec.repli` (`.sec-t`, `poserSections`), réglage privé `totauxOuverts`, `#t-tri`.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.
@@ -373,6 +384,10 @@ BOMBING et TRANSPORT s'excluent sur un vol. Suggestions de missions masquées : 
 - `node tests/navigateur/v039.mjs` : changement d'adresse (les deux adresses servies, nouvelle en ligne ou non : écran « déménagé », aucune écriture, aucune demande au faux NAS, sauvegarde, bouton, caches séparés, icônes et nom), téléphone et iPad.
 - `node tests/navigateur/v041.mjs` : écran de lancement bleu nuit (manifeste, écran interne plein écran puis retiré), contour et ombre des cartes (clair / sombre, simulation), téléphone 390 / 360 px, PC, iPad.
 - `node tests/navigateur/v042.mjs` : interrupteur « Afficher 3, 7 et 30 jours » (défaut, éteint, réouverture, réglage privé, totaux inchangés) ; date en tête des cartes (390 / 360 px clair / sombre, trajet long, PC, iPad).
+- `node tests/navigateur/v055.mjs` : fiche personne ABC -> ABD (tous les rôles, autres champs intacts, appareil B), règle
+  d'affichage ; « Trace » ; mot de passe des traces (B, sauvegarde, restauration C, pas dans le CSV) ; import GPX / KML / KMZ /
+  IGC / GeoJSON / CSV, invalides, croix -> ADS-B, 50 000 points, synchro, restauration ; Sauvegarde 3 lignes, restaurer
+  fichier / version NAS, copie automatique, alerte ; outils retirés ; Totaux repliables + Trigrammes. Faux NAS v5.
 - `node tests/navigateur/v054.mjs` : bulles « Mission » et feu pleines, atterrissages (3 → 3/0, 1 → 0/1, 5 → 4/1, nuit
   2 → 0/2), correction à la main gardée puis règle réappliquée, brouillon NPF fini de nuit (faux NAS), ancien vol inchangé.
 - `node tests/navigateur/v053.mjs` : Inst / Exam (saisie, bulles, lecture, recherche, sauvegarde / restauration, synchro faux

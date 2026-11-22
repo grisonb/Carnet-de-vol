@@ -2,7 +2,8 @@
 
 import { $, $$, esc, segs, choisir, toast, toastAction, codeAvecDrapeau, PLUS, MOINS, CROIX } from './commun.js';
 import { etat, reglage, enregistrerReglage, ecrireReglageDiscret, enregistrerVol, supprimerVol, enregistrerPersonne, supprimerPersonne,
-  listeMissions, trouverPersonne, enregistrerAvion, enConsultation } from '../etat.js';
+  listeMissions, trouverPersonne, enregistrerAvion, enConsultation, enregistrerPersonneEtVols, nomAfficheVol } from '../etat.js';
+import { afficherPersonne, volsACorriger } from '../personnes.js';
 import { ouvrirAjoutTerrain } from './terrain-perso.js';
 import { estSimulation, volVide, FONCTIONS, TEMPS_FONCTION, COMPTEURS, colonnesAvion, personneVide, nomPersonne, ligneAvion,
   etiquettesDeLAvion, etiquettesPourAvion, basculerEtiquette, fonctionsPossibles, champPersonneVisible, compteursAffiches, compteursRanges, BASE, arriveeParDefaut } from '../modele.js';
@@ -321,11 +322,10 @@ function rendreIE() {
 }
 function rendrePersonnesIE() {
   const q = normaliser($('#ie-nom').value), r = $('#ie-res');
-  if (!q || etat.personnes.some(p => normaliser(nomPersonne(p)) === q)) { r.hidden = true; return; }
+  if (!q || etat.personnes.some(p => normaliser(afficherPersonne(p)) === q)) { r.hidden = true; return; }
   const m = etat.personnes.filter(p => normaliser(`${p.tri} ${p.prenom} ${p.nom}`).includes(q)).slice(0, 6);
   r.innerHTML = m.map(p => {
-    const complet = [p.prenom, p.nom].filter(Boolean).join(' ');
-    return `<button type="button" class="pitem" data-p="${esc(nomPersonne(p))}"><b>${esc(nomPersonne(p))}</b><span>${p.tri && complet ? esc(complet) : ''}</span></button>`;
+    return `<button type="button" class="pitem" data-p="${esc(afficherPersonne(p))}"><b>${esc(afficherPersonne(p))}</b><span>${esc(detailPersonne(p))}</span></button>`;
   }).join('');
   r.hidden = !m.length;
 }
@@ -339,18 +339,26 @@ function appliquerEquipage() {
 }
 function rendrePersonnes() {
   const q = normaliser($('#f-copi').value), r = $('#p-res');
-  if (!q || etat.personnes.some(p => normaliser(nomPersonne(p)) === q)) { r.hidden = true; return; }
+  if (!q || etat.personnes.some(p => normaliser(afficherPersonne(p)) === q)) { r.hidden = true; return; }
   const m = etat.personnes.filter(p => normaliser(`${p.tri} ${p.prenom} ${p.nom}`).includes(q)).slice(0, 6);
   r.innerHTML = m.map(p => {
-    const complet = [p.prenom, p.nom].filter(Boolean).join(' ');
-    return `<button type="button" class="pitem" data-p="${esc(nomPersonne(p))}"><b>${esc(nomPersonne(p))}</b><span>${p.tri && complet ? esc(complet) : ''}</span></button>`;
+    return `<button type="button" class="pitem" data-p="${esc(afficherPersonne(p))}"><b>${esc(afficherPersonne(p))}</b><span>${esc(detailPersonne(p))}</span></button>`;
   }).join('') || '<p class="hint">Personne de ce nom. Touche « + » pour l\'ajouter.</p>';
   r.hidden = false;
 }
 let personneEditee = null;
+// v0.55 (R136) : règle d'affichage (trigramme, sinon nom, sinon prénom) ; le texte enregistré est retenu dans F.affOrig
+function montrerNom(texte) {
+  const vu = nomAfficheVol(texte);
+  if (F && vu !== texte) F.affOrig.set(vu, texte);
+  return vu;
+}
+const texteGarde = t => (F && F.affOrig && F.affOrig.has(t) ? F.affOrig.get(t) : t);
+// Sous la personne dans les listes : ce qui n'est pas déjà affiché (prénom et nom sous un trigramme, prénom sous un nom)
+const detailPersonne = p => (p.tri ? [p.prenom, p.nom].filter(Boolean).join(' ') : p.nom ? p.prenom || '' : '');
 export function ouvrirPersonne(p = null, titre = null) {
   personneEditee = p;
-  $('#pm-t').textContent = titre || (p ? 'Modifier ' + nomPersonne(p) : 'Ajouter ' + FONCTIONS[F?.fonction || 'cdb'].ajout);
+  $('#pm-t').textContent = titre || (p ? 'Modifier ' + afficherPersonne(p) : 'Ajouter ' + FONCTIONS[F?.fonction || 'cdb'].ajout);
   $('#pm-pre').value = p ? p.prenom : ''; $('#pm-nom').value = p ? p.nom : ''; $('#pm-tri').value = p ? p.tri : '';
   if (!p && F && !$('#v-saisie').hidden) {
     const v = $('#f-copi').value.trim();
@@ -360,7 +368,7 @@ export function ouvrirPersonne(p = null, titre = null) {
   $('#pm-del').hidden = !p;
   verifierPersonne();
   $('#p-modal').hidden = false;
-  setTimeout(() => $('#pm-pre').focus(), 50);
+  setTimeout(() => $('#pm-nom').focus(), 50);
 }
 function verifierPersonne() { $('#pm-ok').disabled = !['#pm-pre', '#pm-nom', '#pm-tri'].some(x => $(x).value.trim()); }
 
@@ -574,7 +582,7 @@ function appliquerNpf(n, vol) {
   const e = sommeEsc();
   F.s.attJour = e.j + 1; F.s.attNuit = e.n; F.attEsc = e; F.attSig = undefined;
   // Copilote : la personne retrouvée par son trigramme ; trigramme inconnu : proposé à l'ajout (rien n'est créé seul)
-  if (b.copilote) { F.fonction = 'cdb'; $('#f-copi').value = b.copilotePersonne ? nomPersonne(b.copilotePersonne) : b.copilote; }
+  if (b.copilote) { F.fonction = 'cdb'; $('#f-copi').value = b.copilotePersonne ? afficherPersonne(b.copilotePersonne) : b.copilote; }
   $('#npf-copi-add').hidden = !F.npf.copiInconnu;
   $('#npf-copi-add').textContent = `+ Ajouter ${F.npf.copiInconnu} à mes personnes`;
   // v0.31 (R72) : flammes déplacées ou supprimées à la main sur ce vol : gardées, sauf si on demande de reprendre celles de NPF
@@ -625,7 +633,9 @@ export function ouvrirSaisie(vol, opts = {}) {
   F.attSig = undefined; F.attEsc = sommeEsc(); // v0.54 (R134) : atterrissages des escales à l'ouverture
   // v0.53 (R130) : instructeur / examinateur du vol (jamais repris d'un vol précédent)
   const ieInst = vol && v.fonction !== 'dc' && nomReel(v.nomInstructeur), ieExam = vol && nomReel(v.nomExaminateur);
-  F.ie = ieInst ? { role: 'inst', nom: ieInst } : ieExam ? { role: 'exam', nom: ieExam } : null;
+  // v0.55 (R136) : nom montré selon la règle d'affichage ; tant qu'on n'y touche pas, le texte enregistré reste tel quel
+  F.affOrig = new Map();
+  F.ie = ieInst ? { role: 'inst', nom: montrerNom(ieInst) } : ieExam ? { role: 'exam', nom: montrerNom(ieExam) } : null;
   F.ieOrig = F.ie ? F.ie.role : null;
   $('#npf-zone').hidden = true;
   // v0.27 (R64) : TOUTES les cases repartent de zéro (le formulaire sert à chaque vol : sans cela, « Temps IFR » et
@@ -657,7 +667,7 @@ export function ouvrirSaisie(vol, opts = {}) {
     }
     $('#f-date').value = date; $('#f-dep').value = vol.dep; $('#f-arr').value = vol.arr;
     $('#f-t0').value = heureH(t0); $('#f-t1').value = heureH(t1);
-    $('#f-copi').value = v[FONCTIONS[F.fonction].champ] === 'SELF' ? '' : (v[FONCTIONS[F.fonction].champ] || '');
+    $('#f-copi').value = v[FONCTIONS[F.fonction].champ] === 'SELF' ? '' : montrerNom(v[FONCTIONS[F.fonction].champ] || '');
     $('#f-rem').value = vol.remarques || '';
   } else {
     $('#f-title').textContent = 'Nouveau vol'; $('#f-sub').textContent = '';
@@ -671,7 +681,7 @@ export function ouvrirSaisie(vol, opts = {}) {
     $('#f-t0').value = ''; $('#f-t1').value = '';
     F.avionId = dernier ? dernier.avionId : ([...etat.avions.values()][0]?.id || null);
     F.etiquettes = dernier ? [...(dernier.etiquettes || [])] : [];
-    $('#f-copi').value = dernier && dernier.nomCopi && dernier.nomCopi !== 'SELF' ? dernier.nomCopi : '';
+    $('#f-copi').value = dernier && dernier.nomCopi && dernier.nomCopi !== 'SELF' ? montrerNom(dernier.nomCopi) : '';
     $('#f-rem').value = '';
     F.s = { approches: 0, attJour: 1, attNuit: 0 };
   }
@@ -800,7 +810,7 @@ async function enregistrer() {
   for (const k of TEMPS_FONCTION) if (changee) v[k] = 0;
   v[f.temps] = a.sim ? 0 : fn;
   v.fonction = F.fonction;
-  const qui = champPersonneVisible(a, F.fonction) ? $('#f-copi').value.trim() : '';
+  const qui = texteGarde(champPersonneVisible(a, F.fonction) ? $('#f-copi').value.trim() : '');
   if (F.fonction === 'cdb') { v.nomCdB = 'SELF'; v.nomCopi = qui; }
   if (F.fonction === 'copi') { v.nomCdB = qui; }
   if (F.fonction === 'dc') { v.nomInstructeur = qui; v.nomCdB = qui; }
@@ -809,7 +819,7 @@ async function enregistrer() {
   const ie = F.ie && nomReel(F.ie.nom) ? F.ie : null;
   for (const [role, { champ }] of Object.entries(ROLES_IE)) {
     if (role === 'inst' && F.fonction === 'dc') continue; // en double commande, nomInstructeur = l'autre pilote
-    if (role === F.ieOrig || (ie && ie.role === role)) v[champ] = ie && ie.role === role ? ie.nom.trim() : '';
+    if (role === F.ieOrig || (ie && ie.role === role)) v[champ] = ie && ie.role === role ? texteGarde(ie.nom.trim()) : '';
   }
   v.tempsNuit = nuit; v.tempsIFR = ifr; v.regleIFR = F.ifr;
   v.approches = F.s.approches + approchesEscales(F.escales); v.attJour = F.s.attJour; v.attNuit = F.s.attNuit; // R63 : total
@@ -825,6 +835,8 @@ async function enregistrer() {
   if (actuel) {
     if (actuel.feuxPositions) v.feuxPositions = structuredClone(actuel.feuxPositions); else delete v.feuxPositions;
     if (actuel.feuxRetouches) v.feuxRetouches = true;
+    // v0.55 (R139) : trace importée (ou retirée) pendant que ce vol était ouvert : celle de la dernière version enregistrée
+    if (actuel.traceImportee) v.traceImportee = actuel.traceImportee; else delete v.traceImportee;
   }
   if (npf) {
     v.npfId = npf.id; v.npfExporteLe = npf.exporteLe;
@@ -1026,9 +1038,11 @@ export function initSaisie({ fermer }) {
   $('#pm-ok').addEventListener('click', async () => {
     const p = personneEditee ? { ...personneEditee } : personneVide();
     p.prenom = $('#pm-pre').value.trim(); p.nom = $('#pm-nom').value.trim(); p.tri = $('#pm-tri').value.trim().toUpperCase();
-    await enregistrerPersonne(p);
+    // v0.55 (R136) : fiche corrigée : tous les vols avec cette personne reçoivent son nouveau nom (ces champs seulement)
+    if (personneEditee) await enregistrerPersonneEtVols(p, volsACorriger(etat.vols, personneEditee, p, etat.personnes));
+    else await enregistrerPersonne(p);
     $('#p-modal').hidden = true;
-    if (F && !$('#v-saisie').hidden && !personneEditee) { $('#f-copi').value = nomPersonne(p); $('#p-res').hidden = true; recap(); }
+    if (F && !$('#v-saisie').hidden && !personneEditee) { $('#f-copi').value = afficherPersonne(p); $('#p-res').hidden = true; recap(); }
     document.dispatchEvent(new CustomEvent('personnes-modifiees'));
   });
 

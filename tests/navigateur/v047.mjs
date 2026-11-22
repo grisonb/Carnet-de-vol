@@ -98,7 +98,7 @@ try {
     const t = db.transaction('avions', 'readwrite'); t.objectStore('avions').put(a); await new Promise(ok => { t.oncomplete = ok; }); db.close();
   });
   await p.reload(); await p.waitForSelector('body[data-pret="1"]');
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE); await p.fill('#nas-mdp', nas.mdp); await p.click('#nas-ok'); await p.waitForTimeout(400); await p.click('#ou-x');
   await p.click('#pl-sync'); await p.click('#sy-ref'); await p.click('#sr-ok');
   await p.waitForFunction(() => { const e = document.querySelector('#sr-res'); return e && e.textContent.trim() && !/en cours|Envoi :|Réception :|prêt \?/.test(e.textContent); }, null, { timeout: 60000 });

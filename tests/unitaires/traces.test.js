@@ -48,7 +48,7 @@ test('chaque cas a son texte', () => {
   assert.equal(t({ vol: { ...vol, date: '2025-09-01', hDep: '10:00', hArr: '11:00' } }).texte, 'Pas de trace pour ce vol (avion non capté).');
   assert.equal(t({ vol: { ...vol, date: '2025-09-01', hDep: '10:00', hArr: '11:00', dep: 'FMEP', arr: 'FMEP' } }).texte, 'La Réunion n\'est pas couverte par adsb.lol.');
   assert.equal(t({ vol: { ...vol, date: '2022-05-01' } }).texte, 'Pas d\'archive ADS-B avant mars 2023.');
-  assert.equal(t({ motDePasse: '' }).texte, 'Saisis le mot de passe des cartes dans Plus.');
+  assert.equal(t({ motDePasse: '' }).texte, 'Saisis le mot de passe des traces dans Plus.' /* v0.55 (R137) */);
   assert.equal(t({}).code, 'aTelecharger');
   assert.equal(t({ vol: { ...vol, date: '2025-09-02', hDep: '10:00', hArr: '11:00' } }).code, 'attente', 'jour pas encore lu par le serveur');
   assert.equal(t({ index: null }).code, 'horsLigne');
@@ -83,9 +83,10 @@ test('vols des 30 derniers jours (hors aujourd\'hui) pour la recherche en arriè
   assert.deepEqual(volsRecents([v('2026-11-05'), v('2026-11-04'), v('2026-10-06'), v('2026-10-05')], '2026-11-05').map(x => x.id), ['2026-11-04', '2026-10-06']);
 });
 
-test('mot de passe des cartes : jamais dans la sauvegarde de secours', () => {
+// v0.55 (R138) : le mot de passe des traces est devenu un réglage partagé : il EST dans la sauvegarde de secours
+test('mot de passe des traces : dans la sauvegarde de secours (v0.55)', () => {
   const s = creerSauvegarde({ vols: [], avions: [], personnes: [], reglages: [{ cle: 'cartesMotDePasse', valeur: 'secret-essai' }, { cle: 'titulaire', valeur: 'X' }] });
   const texte = texteSauvegarde(s);
-  assert.ok(!texte.includes('secret-essai'));
-  assert.deepEqual(lireSauvegarde(texte).donnees.reglages.map(r => r.cle), ['titulaire']);
+  assert.ok(texte.includes('secret-essai'));
+  assert.deepEqual(lireSauvegarde(texte).donnees.reglages.map(r => r.cle), ['cartesMotDePasse', 'titulaire']);
 });

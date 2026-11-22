@@ -66,7 +66,8 @@ p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR
 
 const onglet = v => p.click(`.tabs button[data-v="${v}"]`);
 const attendre = ms => p.waitForTimeout(ms);
-const sousTitre = () => p.textContent('#pl-nas-s');
+// v0.55 (R140) : la ligne « Copie sur le NAS » a quitté Plus : son résumé (même texte, même logique) est lu dans l'app
+const sousTitre = () => p.evaluate(async () => (await import('./js/ui/nas.js')).resumeCopieNas());
 const intrusif = () => p.evaluate(() => !!document.querySelector('.modal:not([hidden])') || !document.getElementById('toast').hidden);
 const base = (code, arg) => p.evaluate(async ([code, arg]) => {
   const db = await new Promise(ok => { const r = indexedDB.open('carnet-de-vol'); r.onsuccess = () => ok(r.result); });
@@ -119,7 +120,7 @@ try {
   verifier(await sousTitre() === 'Pas configurée', 'Plus › Copie sur le NAS : « Pas configurée »');
   await modifier(); await attendre(6000);
   verifier(nas.envois === 0, 'pas configurée : aucune copie ne part');
-  await p.click('#pl-nas');
+  await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.screenshot({ path: join(CAPT, 'v010-01-nas-pas-configuree.png') });
   await p.fill('#nas-adr', ADRESSE_NAS); await p.fill('#nas-mdp', 'mauvais');
   await p.click('#nas-test'); await p.waitForFunction(() => /refusé|OK|injoignable/.test(document.getElementById('nas-res').textContent));
@@ -139,8 +140,9 @@ try {
   const c1 = nas.copies[0];
   verifier(c1.d.format === 'carnet-de-vol-sauvegarde' && c1.vols === volsDepart && c1.d.nombres.vols === volsDepart, `copie complète (${volsDepart} vols, même contenu que la sauvegarde de secours)`);
   verifier(c1.d.avions.length === avions.length && c1.d.reglages.some(r => r.cle === 'bandeHeures'), 'avions et réglages compris');
-  for (const s of [MDP_NAS, MDP_CARTES, ADRESSE_NAS, 'nasEtat', 'nasMotDePasse'])
+  for (const s of [MDP_NAS, ADRESSE_NAS, 'nasEtat', 'nasMotDePasse'])
     verifier(!c1.texte.includes(s), `la copie ne contient pas « ${s.slice(0, 22)} »`);
+  verifier(c1.texte.includes(MDP_CARTES), 'v0.55 (R138) : le mot de passe des traces (réglage partagé) est dans la copie');
   verifier(c1.corps[0] === 0x1f && c1.corps[1] === 0x8b && c1.corps.length < c1.texte.length / 3, `compressée (gzip) : ${c1.corps.length} octets pour ${c1.texte.length}`);
   await attendre(400);
   verifier((await p.textContent('#nas-etat')) === 'Dernière copie : à l\'instant', 'écran : « Dernière copie : à l\'instant »');
@@ -167,7 +169,7 @@ try {
   verifier(await sousTitre() === 'En attente (NAS injoignable)', 'Plus : « En attente (NAS injoignable) »');
   verifier(!(await intrusif()), 'aucune fenêtre ni message affiché');
   verifier(await p.evaluate(() => document.getElementById('pl-bk').classList.contains('ok')), 'encart toujours vert (dernière copie de moins d\'un jour)');
-  await p.click('#pl-nas');
+  await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.screenshot({ path: join(CAPT, 'v010-04-nas-en-attente.png') });
   await p.click('#ou-x');
   await onglet('carnet');
@@ -188,27 +190,27 @@ try {
   verifier(await sousTitre() === 'Dernière copie : à l\'instant', '  puis « Dernière copie : à l\'instant »');
 
   console.log('Mot de passe refusé');
-  await p.click('#pl-nas'); await p.fill('#nas-mdp', 'mauvais'); await p.click('#nas-ok'); await attendre(3000);
+  await p.click('#pl-sync'); await p.click('#sy-nas'); await p.fill('#nas-mdp', 'mauvais'); await p.click('#nas-ok'); await attendre(3000);
   await p.click('#ou-x');
   verifier(await sousTitre() === 'Mot de passe refusé : à corriger', 'Plus : « Mot de passe refusé : à corriger »');
   verifier(!(await intrusif()), '  sans fenêtre ni message');
   const e0 = nas.envois;
   await attendre(4000);
   verifier(nas.envois === e0, '  pas d\'essais répétés avec un mauvais mot de passe');
-  await p.click('#pl-nas'); await p.fill('#nas-mdp', MDP_NAS); await p.click('#nas-ok');
+  await p.click('#pl-sync'); await p.click('#sy-nas'); await p.fill('#nas-mdp', MDP_NAS); await p.click('#nas-ok');
   await attendreCopies(n0 + 2, 8000);
   verifier(nas.copies.length === n0 + 2, 'bon mot de passe : la copie repart');
   await p.click('#ou-x');
 
   console.log('Copie automatique arrêtée, « Copier maintenant »');
-  await p.click('#pl-nas'); await p.click('#nas-auto');
+  await p.click('#pl-sync'); await p.click('#sy-nas'); await p.click('#nas-auto');
   verifier(await p.getAttribute('#nas-auto', 'aria-checked') === 'false', 'interrupteur « Copie automatique » arrêté');
   await p.click('#ou-x');
   const n1 = nas.copies.length;
   await modifier(); await attendre(7000);
   verifier(nas.copies.length === n1, 'copie automatique arrêtée : rien ne part');
   verifier((await sousTitre()).startsWith('Copie automatique arrêtée'), 'Plus : « Copie automatique arrêtée · … »');
-  await p.click('#pl-nas'); await p.click('#nas-go');
+  await p.click('#pl-sync'); await p.click('#sy-nas'); await p.click('#nas-go');
   await p.waitForFunction(() => /Copie faite|NAS|Enregistre/.test(document.getElementById('nas-go-res').textContent));
   verifier((await p.textContent('#nas-go-res')).startsWith('Copie faite') && nas.copies.length === n1 + 1, '« Copier maintenant » : ' + await p.textContent('#nas-go-res'));
   await p.click('#nas-auto');
@@ -220,7 +222,7 @@ try {
   await p.fill('#f-t0', '1000'); await p.fill('#f-t1', '1100'); await p.click('#save');
   await attendreCopies(n1 + 2, 10000);
   verifier(nas.copies.at(-1).vols === volsDepart + 1, `vol ajouté : nouvelle copie avec ${volsDepart + 1} vols`);
-  await onglet('plus'); await p.click('#pl-nas-rest');
+  await onglet('plus'); await p.click('#pl-restore'); await p.click('#rs-nas');
   await p.waitForSelector('#rn-l .nasv');
   const lignes = await p.$$eval('#rn-l .nasv', l => l.map(b => b.textContent));
   verifier(lignes.length === nas.copies.length, `liste des versions gardées : ${lignes.length}`);

@@ -92,7 +92,7 @@ try {
   const volsDepart = VOLS_INVENTES.length;
 
   console.log('Erreurs lisibles malgré le serveur web du Synology (protocole 2)');
-  await p.click('#pl-nas');
+  await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE_NAS); await p.fill('#nas-mdp', 'mauvais');
   verifier(await tester() === 'Mot de passe refusé.', 'mauvais mot de passe : « Mot de passe refusé. » (et plus « NAS injoignable »)');
   verifier(nas.requetes.at(-1).includes('action=test') && nas.requetes.at(-1).includes('v=2'), 'l\'app demande le protocole 2 (&v=2)');
@@ -139,7 +139,7 @@ try {
   console.log('Ancien carnet.php (avant protocole 2) : l\'app v0.12 marche quand même');
   nas.protocole = 1; nas.zlib = true;
   await p.click('#ou-x').catch(() => {});
-  await p.click('#pl-nas');
+  await p.click('#pl-sync'); await p.click('#sy-nas');
   verifier(await tester() === 'OK : le NAS répond (1 copie gardée).', 'Tester : OK');
   verifier(/^Copie faite/.test(await copier()), 'copie acceptée par l\'ancien script');
   await p.fill('#nas-mdp', 'mauvais'); await p.click('#nas-ok'); await p.waitForTimeout(500);

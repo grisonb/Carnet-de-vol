@@ -86,7 +86,7 @@ const etatPage = p => p.evaluate(async () => {
     titulaire: e.etat.reglages.titulaire || '', photo: [...e.etat.avions.values()].some(a => a.photo) };
 });
 const configurerNas = async p => {
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE); await p.fill('#nas-mdp', MDP); await p.click('#nas-ok'); await p.waitForTimeout(300); await p.click('#ou-x');
 };
 const attendre = (p, ms) => p.waitForTimeout(ms);
@@ -165,7 +165,7 @@ try {
   });
   verifier(refus.r === false && !refus.ecrit && refus.toast === 'Consultation : les modifications se font sur le téléphone.', 'écriture forcée : refusée, rien d\'écrit, message');
   await P.click('.tabs button[data-v="plus"]');
-  for (const id of ['#pl-import', '#pl-restore', '#pl-nas-rest', '#pl-pers', '#pl-fiches']) verifier(!(await P.isVisible(id)), `Plus : ${id} caché`);
+  for (const id of ['#pl-restore', '#pl-pers', '#pl-ctrl']) verifier(!(await P.isVisible(id)), `Plus : ${id} caché`); // v0.55 : import FlyLog, fiches et « Restaurer depuis le NAS » n'existent plus dans Plus
   await P.screenshot({ path: join(CAPT, 'v023-06-pc-plus.png'), fullPage: true });
 
   console.log('Téléphone : modification (saisie), suppression, réglage du carnet');
@@ -195,7 +195,7 @@ try {
   await attendre(T, 7000);
   verifier(!nas.el.has('vols/hors-ligne-1'), 'pas de réseau : rien ne part');
   await T.click('.tabs button[data-v="plus"]');
-  verifier(await T.textContent('#pl-sync-s') === '1 en attente d\'envoi (pas de réseau)', `Plus : ${await T.textContent('#pl-sync-s')}`);
+  verifier((await T.textContent('#pl-sync-s')).startsWith('1 en attente d\'envoi (pas de réseau)') /* v0.55 (R140) : « · version gardée … » en plus */, `Plus : ${await T.textContent('#pl-sync-s')}`);
   await T.screenshot({ path: join(CAPT, 'v023-07-tel-attente.png') });
   await tel.ctx.setOffline(false);
   await T.evaluate(() => dispatchEvent(new Event('online')));
@@ -207,7 +207,7 @@ try {
 
   console.log('Téléphone : arrêt puis réactivation (rien d\'identique n\'est renvoyé)');
   await T.click('#pl-sync'); await T.click('#sy-stop'); await T.click('#sa-ok');
-  verifier(await T.textContent('#pl-sync-s') === 'Arrêtée', 'envoi arrêté');
+  verifier((await T.textContent('#pl-sync-s')).startsWith('Arrêtée') /* v0.55 (R140) : « · version gardée … » en plus */, 'envoi arrêté');
   const n1 = nas.envois.length;
   await T.click('#pl-sync'); await T.click('#sy-ref'); await T.click('#sr-ok'); await fini(T, '#sr-res');
   verifier(await T.textContent('#sr-res') === `Synchronisé : rien de reçu, rien à envoyer (${(await etatPage(T)).vols.toLocaleString('fr-FR')} vols).` && nas.envois.length === n1,

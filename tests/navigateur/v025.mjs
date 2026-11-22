@@ -93,7 +93,7 @@ const volDe = (p, id) => p.evaluate(async id => (await import('./js/etat.js')).e
 const modifier = (p, id, champs) => p.evaluate(async ([id, champs]) => { const e = await import('./js/etat.js'); return e.enregistrerVol({ ...e.etat.vols.find(v => v.id === id), ...champs }); }, [id, champs]);
 const ajouter = (p, vol) => p.evaluate(async v => { const e = await import('./js/etat.js'); return e.enregistrerVol(v); }, vol);
 const configurerNas = async p => {
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE); await p.fill('#nas-mdp', nas.mdp); await p.click('#nas-ok'); await attendre(p, 300); await p.click('#ou-x');
 };
 const onglet = (p, v) => p.click(`.tabs button[data-v="${v}"]`);
@@ -200,7 +200,7 @@ try {
   await ajouter(I, { ...vols[6], id: 'ipad-hors-ligne', date: '2026-11-10', remarques: 'IPAD HORS LIGNE', creeLe: undefined });
   await attendre(I, 6500);
   await onglet(I, 'plus');
-  verifier(await I.textContent('#pl-sync-s') === '1 en attente d\'envoi (pas de réseau)', `Plus : « ${await I.textContent('#pl-sync-s')} »`);
+  verifier((await I.textContent('#pl-sync-s')).startsWith('1 en attente d\'envoi (pas de réseau)') /* v0.55 (R140) : « · version gardée … » en plus */, `Plus : « ${await I.textContent('#pl-sync-s')} »`);
   await ipad.ctx.setOffline(false);
   await I.evaluate(() => dispatchEvent(new Event('online'))); await attendre(I, 3000);
   await sync(I); await sync(T); await sync(P);

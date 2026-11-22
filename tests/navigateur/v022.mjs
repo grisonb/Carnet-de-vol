@@ -85,7 +85,7 @@ try {
   await p.waitForSelector('#im-ok'); await p.click('#im-ok'); await p.waitForSelector('.ctab'); await p.click('#ou-x');
 
   console.log('Copie sur le NAS configurée avec le mot de passe d\'origine');
-  await p.click('#pl-nas');
+  await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE); await p.fill('#nas-mdp', ORIGINE_MDP); await p.click('#nas-ok');
   verifier(await tester() === 'OK : le NAS répond (0 copie gardée).', 'Tester : OK');
   verifier(await p.isVisible('#nas-chg') && await p.textContent('#nas-chg') === 'Changer le mot de passe ›', 'lien « Changer le mot de passe › »');
@@ -130,13 +130,13 @@ try {
   const res = await copier();
   verifier(res === 'Mot de passe refusé.', `Copier maintenant avec l'ancien : « ${res} »`);
   await p.click('#ou-x'); await attendre(300);
-  verifier(await p.textContent('#pl-nas-s') === 'Mot de passe refusé : à corriger', 'Plus : « Mot de passe refusé : à corriger »');
+  verifier(await p.evaluate(async () => (await import('./js/ui/nas.js')).resumeCopieNas()) === 'Mot de passe refusé : à corriger', 'Plus : « Mot de passe refusé : à corriger »');
   const n = nas.requetes.length;
   await p.evaluate(() => { dispatchEvent(new Event('online')); document.dispatchEvent(new Event('visibilitychange')); });
   await attendre(2500);
   await p.reload(); await p.waitForSelector('body[data-pret="1"]'); await attendre(4500);
   verifier(nas.requetes.length === n, `mot de passe refusé : plus AUCUN appel automatique (retour du réseau, retour dans l'app, réouverture) : ${nas.requetes.length - n}`);
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-mdp', NOUVEAU); await p.click('#nas-ok'); await attendre(300);
   verifier(/^OK : le NAS répond/.test(await tester()), 'nouveau mot de passe retapé : OK');
 

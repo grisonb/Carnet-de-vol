@@ -147,33 +147,10 @@ try {
   verifier(await terrains() === ' → ', 'vol NPF sans terrains : cases vides à compléter (pas de terrain par défaut)');
   await p.click('#cancel');
 
-  console.log('R49 : Plus › Importer des fiches avions');
-  const avant = { avions: await tout('avions'), vols: await tout('vols') };
-  const fichier = join(CAPT, 'fiches-avions-essai.csv');
-  writeFileSync(fichier, 'immatriculation,nom,indicatif radio,modèle\nF-XZZA,M91,ESSAI 91,Modele essai Q\nF-XZZZ,M99,ESSAI 99,X\n');
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-fiches');
-  await p.setInputFiles('#fa-fichier', fichier);
-  await p.waitForSelector('#fa-apercu .fa-avion');
-  const ap = await p.$eval('#fa-apercu', e => e.innerText.replace(/\s+/g, ' '));
-  verifier(ap.includes('F-XZZA') && ap.includes('Nom : vide → M91') && ap.includes('Indicatif radio : vide → ESSAI 91') && ap.includes('Modèle : Modele essai → Modele essai Q'),
-    'aperçu : F-XZZA, Nom vide → M91, Indicatif, Modèle');
-  verifier(ap.includes('Introuvable dans ta flotte (ignoré) : F-XZZZ'), 'avion introuvable signalé, ignoré');
-  await p.screenshot({ path: join(CAPT, 'v016b-03-fiches-apercu.png') });
-  await p.click('#fa-no');
-  verifier(JSON.stringify(await tout('avions')) === JSON.stringify(avant.avions), 'Annuler : aucun avion modifié');
-  await p.click('#pl-fiches'); await p.setInputFiles('#fa-fichier', fichier); await p.waitForSelector('#fa-ok');
-  await p.click('#fa-ok'); await p.waitForSelector('#outil', { state: 'hidden' });
-  const apres = { avions: await tout('avions'), vols: await tout('vols') };
-  const a1 = apres.avions.find(a => a.id === 'a1'), a1av = avant.avions.find(a => a.id === 'a1');
-  verifier(a1.nom === 'M91' && a1.indicatif === 'ESSAI 91' && a1.modele === 'Modele essai Q' && a1.typeOACI === 'DH8D', 'Appliquer : Nom, Indicatif, Modèle remplis ; type OACI inchangé');
-  const sansHorodatage = a => { const { modifieLe, nom, indicatif, modele, ...r } = a; return JSON.stringify(r); };
-  verifier(sansHorodatage(a1) === sansHorodatage(a1av), '  rien d\'autre ne change sur cet avion');
-  verifier(apres.avions.length === avant.avions.length && JSON.stringify(apres.avions.find(a => a.id === 'a2')) === JSON.stringify(avant.avions.find(a => a.id === 'a2')),
-    'aucun avion créé, l\'autre avion intact');
-  verifier(JSON.stringify(apres.vols) === JSON.stringify(avant.vols), 'aucun vol touché');
-  await p.click('.tabs button[data-v="carnet"]'); await nouveauVol();
-  verifier((await p.textContent('#ac-reg')) === 'M91' || (await p.textContent('#ac-cur')).includes('M91'), 'la saisie affiche le nouveau nom « M91 »');
-  await p.click('#cancel');
+  // v0.55 (R141) : « Importer des fiches avions » retiré de Plus : l'entrée n'existe plus, aucun avion ne change
+  await p.click('.tabs button[data-v="plus"]');
+  verifier(!(await p.$('#pl-fiches')), 'Plus : plus d\'« Importer des fiches avions »');
+  await p.click('.tabs button[data-v="carnet"]');
 
   verifier(!bloquees.length, 'aucun appel hors de cet ordinateur' + (bloquees.length ? ' : ' + bloquees.join(' ') : ''));
   verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));

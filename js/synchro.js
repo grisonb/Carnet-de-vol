@@ -14,8 +14,10 @@ export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMas
   'bandeHeures', 'titulaire', 'typesPerso', 'reference',
   'doublonsVus', // v0.24 : paires « Garder les deux » (même choix sur les deux appareils)
   'socleAdresse', // v0.48 (R122) : adresse de la web app du socle OPS / IFR (revient seule sur un nouvel appareil)
-  'rattrapageInstExam']; // v0.53 (R130) : « Compléter instructeur / examinateur depuis FlyLog » déjà fait (bouton masqué partout)
+  'rattrapageInstExam', // v0.53 (R130) : « Compléter instructeur / examinateur depuis FlyLog » déjà fait (bouton masqué partout)
+  'cartesMotDePasse']; // v0.55 (R138) : mot de passe des traces (avant : propre à chaque appareil)
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)
+export const ENVOI_OCTETS = 3000000; // v0.55 : un envoi reste sous 3 Mo (le NAS : 4 Mo au plus)
 export const PAR_PAGE = 1000;      // éléments par page reçue
 export const ELEMENT_MAX = 60000;  // le NAS refuse un élément de plus de 64 Ko (une photo laissée dans une fiche…)
 export const PERIODE_CONSULTATION = 120000; // le PC regarde s'il y a du nouveau toutes les 2 min (app ouverte)
@@ -124,9 +126,17 @@ export function trierRecus(elements) {
   return { mettre, enlever };
 }
 
-export function lots(liste, n) {
+// v0.55 (R139) : un lot ne dépasse pas non plus `octets` caractères (le NAS refuse un envoi de plus de 4 Mo ; un vol avec
+// une trace importée pèse jusqu'à ~50 Ko)
+export function lots(liste, n, octets = Infinity) {
   const r = [];
-  for (let i = 0; i < liste.length; i += n) r.push(liste.slice(i, i + n));
+  let lot = [], taille = 0;
+  for (const x of liste) {
+    const t = octets === Infinity ? 0 : JSON.stringify(x).length + 1;
+    if (lot.length && (lot.length >= n || taille + t > octets)) { r.push(lot); lot = []; taille = 0; }
+    lot.push(x); taille += t;
+  }
+  if (lot.length) r.push(lot);
   return r;
 }
 

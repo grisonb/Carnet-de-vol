@@ -89,7 +89,7 @@ let P = pc.p;
 const attendre = (p, ms) => p.waitForTimeout(ms);
 const fini = (p, sel) => p.waitForFunction(s => { const e = document.querySelector(s); return e && e.textContent.trim() && !/en cours|Envoi :|Réception :|prêt \?/.test(e.textContent); }, sel, { timeout: 60000 });
 const configurerNas = async p => {
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE); await p.fill('#nas-mdp', nas.mdp); await p.click('#nas-ok'); await attendre(p, 300); await p.click('#ou-x');
 };
 const onglet = (p, v) => p.click(`.tabs button[data-v="${v}"]`);

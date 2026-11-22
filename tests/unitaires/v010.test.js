@@ -166,9 +166,11 @@ test('R31 : copie compressée identique à la sauvegarde de secours, sans les mo
   const contenu = { vols: [{ id: 'v1', date: '2025-05-06', dep: 'LFMN', arr: 'LFMD', avionId: 'a1', tempsTotal: 60 }],
     avions: [{ id: 'a1', immat: 'F-XZZA', photo: 'data:image/jpeg;base64,AAAA' }], personnes: [{ id: 'p1', tri: 'ZZZ' }], suppressions: [], reglages };
   const texte = texteSauvegarde(creerSauvegarde(contenu, '2026-11-06T10:00:00Z'));
-  for (const s of ['secret-cartes', 'secret-nas', 'nas.exemple.invalid', 'nasEtat', 'nasAuto']) assert.ok(!texte.includes(s), s);
+  for (const s of ['secret-nas', 'nas.exemple.invalid', 'nasEtat', 'nasAuto']) assert.ok(!texte.includes(s), s);
+  assert.ok(texte.includes('secret-cartes'), 'v0.55 (R138) : mot de passe des traces partagé, dans la sauvegarde');
   assert.ok(texte.includes('ESSAI') && texte.includes('data:image/jpeg'), 'réglages ordinaires et photos gardés');
-  for (const k of ['nasAdresse', 'nasMotDePasse', 'nasAuto', 'nasEtat', 'cartesMotDePasse']) assert.ok(REGLAGES_PRIVES.includes(k));
+  for (const k of ['nasAdresse', 'nasMotDePasse', 'nasAuto', 'nasEtat']) assert.ok(REGLAGES_PRIVES.includes(k));
+  assert.ok(!REGLAGES_PRIVES.includes('cartesMotDePasse'), 'v0.55 (R138)');
   const octets = await compresser(texte);
   assert.ok(octets.length < texte.length);
   assert.equal(await decompresser(octets), texte, 'décompression à l\'identique');

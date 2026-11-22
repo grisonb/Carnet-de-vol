@@ -90,12 +90,12 @@ try {
   verifier(await p.textContent('#pl-bk-t') === 'Aucune sauvegarde' && (await p.textContent('#pl-bk-s')) === 'Tes vols ne sont que sur ce téléphone.', '  « Aucune sauvegarde · Tes vols ne sont que sur ce téléphone »');
   verifier(await visible('#pl-bk-go'), '  bouton « Sauvegarder »');
   const groupes = await p.$$eval('#v-plus .pgrp', l => l.map(x => x.textContent));
-  verifier(JSON.stringify(groupes) === '["Sauvegarde","Exporter","Mes réglages","Import FlyLog","Téléphone"]', 'sections : ' + groupes.join(', '));
+  verifier(JSON.stringify(groupes) === '["Sauvegarde","Exporter","Mes réglages","Contrôle","Téléphone"]' /* v0.55 */, 'sections : ' + groupes.join(', '));
   const lignes = await p.$$eval('#v-plus .pcard', cs => cs.map(c => [...c.querySelectorAll('.prow2 b')].map(b => b.textContent)));
-  verifier(JSON.stringify(lignes) === JSON.stringify([['Sauvegarde de secours', 'Restaurer une sauvegarde', 'Copie sur le NAS', 'Restaurer depuis le NAS', 'Synchro du carnet'], // v0.23 : Synchro du carnet
+  verifier(JSON.stringify(lignes) === JSON.stringify([['Sauvegarde de secours', 'Synchro du carnet', 'Restaurer'], // v0.55 (R140) : 3 lignes
     ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet'],
-    ['Mes avions', "Types d'avion", 'Importer des fiches avions', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Personnes', 'Cartes de vol', 'Socle OPS / IFR'], // v0.48 (R122)
-    ['Importer FlyLog', 'Contrôle import', 'Compléter instructeur / examinateur depuis FlyLog'], ['Stockage']] /* v0.53 (R130) */), 'toutes les entrées, rangées dans leur section');
+    ['Mes avions', "Types d'avion", 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Personnes', 'Traces des vols', 'Socle OPS / IFR'], // v0.55 (R137 / R141)
+    ['Contrôle import'], ['Stockage']] /* v0.55 (R141 / R142) */), 'toutes les entrées, rangées dans leur section');
   const forme = await p.$$eval('#v-plus .prow2', l => l.map(r => {
     const b = r.querySelector('.ptx b').getBoundingClientRect(), s = r.querySelector('.ptx small'), sr = s.getBoundingClientRect();
     const ic = r.querySelector('.pi svg'), ch = r.querySelector('.pch');
@@ -105,7 +105,7 @@ try {
   verifier(forme.every(x => x.ok), 'chaque ligne : icône dessinée, titre, sous-titre EN DESSOUS (non coupé), chevron ›');
   verifier(new Set(forme.map(x => x.fond)).size >= 5, 'carrés d\'icône de couleurs différentes selon le bloc');
   verifier((await p.textContent('.pver')).includes('v' + VERSION), 'version de l\'app en bas : ' + (await p.textContent('.pver')));
-  verifier((await p.textContent('#pl-cartes-s')).startsWith('Mot de passe à saisir'), 'Cartes de vol : sous-titre « Mot de passe à saisir » (pas encore de mot de passe)');
+  verifier((await p.textContent('#pl-cartes-s')).startsWith('Mot de passe à saisir'), 'Traces des vols : sous-titre « Mot de passe à saisir » (pas encore de mot de passe)');
   await p.screenshot({ path: join(CAPT, 'v09-02-plus-clair.png'), fullPage: true });
   await p.emulateMedia({ colorScheme: 'dark' });
   await p.screenshot({ path: join(CAPT, 'v09-03-plus-sombre.png'), fullPage: true });
@@ -114,8 +114,8 @@ try {
   console.log('Chaque entrée ouvre le bon écran (puis flèche retour)');
   const titreOutil = () => p.textContent('#ou-t');
   const entrees = [['#pl-save', 'outil', 'Sauvegarde de secours'], ['#pl-pdf', 'outil', 'Carnet officiel (PDF EASA)'], ['#pl-csv', 'outil', 'Tableur (CSV)'],
-    ['#pl-tit', 'outil', 'Titulaire du carnet'], ['#pl-avions', 'fleet'], ['#pl-types', 'outil', "Types d'avion"], ['#pl-fiches', 'outil', 'Importer des fiches avions'], ['#pl-heures', 'hs-modal'],
-    ['#rules-open', 'rules-modal'], ['#pl-libelles', 'ml-modal'], ['#pl-pers', 'outil', 'Personnes'], ['#pl-cartes', 'outil', 'Cartes de vol'],
+    ['#pl-tit', 'outil', 'Titulaire du carnet'], ['#pl-avions', 'fleet'], ['#pl-types', 'outil', "Types d'avion"], ['#pl-heures', 'hs-modal'],
+    ['#rules-open', 'rules-modal'], ['#pl-libelles', 'ml-modal'], ['#pl-pers', 'outil', 'Personnes'], ['#pl-cartes', 'outil', 'Traces des vols'], ['#pl-sync', 'outil', 'Synchro du carnet'], ['#pl-restore', 'outil', 'Restaurer'],
     ['#pl-ctrl', 'outil', 'Contrôle import'], ['#pl-stockage', 'outil', 'Stockage']];
   for (const [b, fen, titre] of entrees) {
     await p.click(b);
@@ -124,8 +124,11 @@ try {
     await retour();
     verifier(!(await visible('#' + fen)) && await vue() === 'plus', '   retour : fenêtre fermée, toujours dans Plus');
   }
-  for (const [b, input] of [['#pl-restore', '#file-restore'], ['#pl-import', '#file-flylog']]) {
+  // v0.55 (R140 / R141) : « Restaurer » › « Depuis un fichier » ; plus d'« Importer FlyLog »
+  for (const [b, input] of [['#rs-fichier', '#file-restore']]) {
+    await p.click('#pl-restore');
     const [choix] = await Promise.all([p.waitForEvent('filechooser'), p.click(b)]);
+    await p.click('#ou-x');
     verifier(await choix.element().getAttribute('id') === input.slice(1), `${b} -> choix du fichier (${input})`);
   }
   verifier((await p.textContent('#pl-stock-s')).length > 3, 'Stockage : sous-titre « ' + (await p.textContent('#pl-stock-s')) + ' »');

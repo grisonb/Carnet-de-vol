@@ -73,8 +73,8 @@ await chrono('recherche « commune-test » (loupe + frappe + résultat)', async 
   await p.waitForFunction(() => [...document.querySelectorAll('.flight')].every(c => c.textContent.includes('COMMUNE-TEST')) && document.querySelectorAll('.flight').length > 0);
 });
 await chrono('recherche effacée (retour à la liste complète)', async () => { await p.fill('#q', ''); await p.waitForFunction(() => document.querySelectorAll('.flight').length >= 40 && !document.querySelector('.flight .fl-rem')?.textContent.includes('COMMUNE') || true); await p.waitForTimeout(200); });
-await chrono('écran Totaux (tout le carnet)', async () => { await p.click('.tabs button[data-v="totaux"]'); await p.waitForSelector('#t-h .tline'); });
-await chrono('Totaux : changer de période (12 mois)', async () => { await p.click('#per button[data-p="12m"]'); await p.waitForSelector('#t-h .tline'); });
+await chrono('écran Totaux (tout le carnet)', async () => { await p.click('.tabs button[data-v="totaux"]'); await p.waitForSelector('#t-h .tline', { state: 'attached' }); }); // v0.55 : sections repliées
+await chrono('Totaux : changer de période (12 mois)', async () => { await p.click('#per button[data-p="12m"]'); await p.waitForSelector('#t-h .tline', { state: 'attached' }); }); // v0.55 : sections repliées
 await p.click('.tabs button[data-v="carnet"]');
 await chrono('ouvrir un vol en modification', async () => { await p.click('.flight >> nth=0'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p); });
 await chrono('nouveau vol (formulaire pré-rempli)', async () => { await fermerFiche(p); await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])'); });

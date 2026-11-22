@@ -68,14 +68,14 @@ try {
 
   console.log('Sans mot de passe');
   await ouvrirVol('Dash 8 Q400');
-  verifier(await texteCarte() === 'Saisis le mot de passe des cartes dans Plus.', 'texte « Saisis le mot de passe des cartes dans Plus. »');
+  verifier(await texteCarte() === 'Saisis le mot de passe des traces dans Plus.', 'texte « Saisis le mot de passe des traces dans Plus. » (v0.55)');
   verifier((await p.textContent('#carte-source')) === 'Données © adsb.lol, ODbL', 'mention « Données © adsb.lol, ODbL » sous la carte');
   await p.click('#cancel');
   await p.click('#fab');
   verifier(await texteCarte() === 'La trace sera disponible demain matin, si l\'avion a été capté.', 'nouveau vol : « disponible demain matin »');
   await p.click('#cancel');
 
-  console.log('Plus › Cartes de vol');
+  console.log('Plus › Traces des vols');
   await p.click('.tabs button[data-v="plus"]');
   await p.click('#pl-cartes');
   await p.fill('#cv-mdp', 'faux');
@@ -134,7 +134,7 @@ try {
   verifier(await texteCarte() === 'Pas d\'archive ADS-B avant mars 2023.', 'vol de 2020 : « Pas d\'archive ADS-B avant mars 2023. »');
   await p.click('#cancel');
   await ouvrirVol('Simulateur');
-  verifier(await texteCarte() === 'Pas de carte pour un vol au simulateur.', 'simulateur : pas de carte');
+  verifier(await texteCarte() === 'Pas de trace pour un vol au simulateur.', 'simulateur : pas de trace (v0.55)');
   await p.click('#cancel');
 
   console.log('Sans réseau');

@@ -1,7 +1,7 @@
 // v0.53 (R130 / R131) : instructeur ou examinateur en plus du copi ; rattrapage depuis FlyLog ; « CdB » (données INVENTÉES)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { instExamDuVol, completerInstExam } from '../../js/inst-exam.js';
+import { instExamDuVol } from '../../js/inst-exam.js';
 import { analyserFlyLog } from '../../js/flylog.js';
 import { calculerTotaux } from '../../js/totaux.js';
 import { FONCTIONS } from '../../js/modele.js';
@@ -28,16 +28,7 @@ test('bulles « Inst » / « Exam » : vrais noms seulement (ni SELF, ni l\'autr
   assert.deepEqual(instExamDuVol({ fonction: 'dc', nomInstructeur: 'ZZB', nomExaminateur: 'ZZC' }), [{ role: 'exam', nom: 'ZZC' }]);
 });
 
-test('rattrapage : champ vide complété, champ déjà rempli jamais modifié, vol absent listé, vol sans copi ignoré', () => {
-  const r = completerInstExam(fichier, carnet);
-  assert.equal(r.ok, true);
-  assert.equal(r.concernes, 4);
-  assert.equal(r.completes, 2); assert.equal(r.deja, 1);
-  assert.deepEqual(r.absents, [{ date: '2025-03-04', hDep: '13:00', dep: 'LFTW', arr: 'LFMN' }]);
-  const parDate = Object.fromEntries(r.modifs.map(m => [carnet.find(v => v.id === m.id).date, m.champs]));
-  assert.deepEqual(parDate, { '2025-03-01': { nomInstructeur: 'ZZB' }, '2025-03-02': { nomExaminateur: 'ZZC' } }, 'seuls ces champs, rien d\'autre');
-  assert.equal(completerInstExam('pas un fichier FlyLog', carnet).ok, false);
-});
+// v0.55 (R142) : le bouton « Compléter instructeur / examinateur depuis FlyLog » est retiré (rattrapage déjà fait).
 
 test('pas une fonction : totaux identiques avec ou sans instructeur / examinateur', () => {
   const avions = new Map();

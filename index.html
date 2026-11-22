@@ -113,8 +113,11 @@
     </div>
 
     <div class="sec c-carte" id="carte-zone">
-      <h3>Carte du vol</h3>
-      <div class="carte-mini" id="carte-mini" hidden role="button" tabindex="0" aria-label="Ouvrir la carte en plein écran"></div>
+      <!-- v0.55 (R139) : « Importer » une trace (GPX, KML, KMZ, IGC, GeoJSON, CSV) ; la croix la retire (retour à la trace ADS-B) -->
+      <div class="tr-tete"><h3>Trace du vol</h3><button type="button" class="ghost tr-imp" id="tr-imp" hidden>Importer</button></div>
+      <input type="file" id="file-trace" accept=".gpx,.kml,.kmz,.igc,.geojson,.json,.csv,.txt,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/geo+json,text/csv" hidden>
+      <div class="tr-info" id="tr-info" hidden><span id="tr-nom"></span><button type="button" class="x" id="tr-x" aria-label="Retirer la trace importée"></button></div>
+      <div class="carte-mini" id="carte-mini" hidden role="button" tabindex="0" aria-label="Ouvrir la trace en plein écran"></div>
       <p class="hint" id="carte-txt" role="status"></p>
       <p class="carte-source" id="carte-source"></p>
     </div>
@@ -206,12 +209,14 @@
       <div class="field"><label for="per-au">Au</label><input id="per-au" type="date"></div>
     </div>
     <p class="hint" id="per-txt" style="margin:8px 4px 0"></p>
-    <div class="sec"><h3>Heures</h3><div class="tot" id="t-h"></div></div>
-    <div class="sec"><h3>Catégories</h3><div class="tot" id="t-c"></div></div>
-    <div class="sec"><h3>Mission</h3><div class="tot" id="t-m"></div></div>
-    <div class="sec"><h3>Par étiquette <small class="hint">(hors carnet EASA)</small></h3><div class="tot" id="t-e"></div></div>
-    <div class="sec"><h3>Par type d'avion</h3><div class="tot" id="t-t"></div></div>
-    <div class="sec"><h3>Par avion</h3><div class="tot" id="t-a"></div></div>
+    <!-- v0.55 (R143) : chaque section se replie (titre touché) ; toutes fermées au départ, celles laissées ouvertes sont retenues sur cet appareil -->
+    <div class="sec repli" data-sec="h"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-h">Heures</button></h3><div class="tot" id="t-h" hidden></div></div>
+    <div class="sec repli" data-sec="c"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-c">Catégories</button></h3><div class="tot" id="t-c" hidden></div></div>
+    <div class="sec repli" data-sec="m"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-m">Mission</button></h3><div class="tot" id="t-m" hidden></div></div>
+    <div class="sec repli" data-sec="e"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-e">Par étiquette <small class="hint">(hors carnet EASA)</small></button></h3><div class="tot" id="t-e" hidden></div></div>
+    <div class="sec repli" data-sec="t"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-t">Par type d'avion</button></h3><div class="tot" id="t-t" hidden></div></div>
+    <div class="sec repli" data-sec="a"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-a">Par avion</button></h3><div class="tot" id="t-a" hidden></div></div>
+    <div class="sec repli" data-sec="tri"><h3><button type="button" class="sec-t" aria-expanded="false" aria-controls="t-tri">Trigrammes</button></h3><div class="tot" id="t-tri" hidden></div></div>
   </section>
 
   <!-- ========== PLUS ========== -->
@@ -222,10 +227,9 @@
       <h3 class="pgrp">Sauvegarde</h3>
       <div class="pcard">
         <button type="button" class="prow2" id="pl-save"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></svg></span><span class="ptx"><b>Sauvegarde de secours</b><small id="pl-save-s">Dernière : jamais</small></span><span class="pch" aria-hidden="true">›</span></button>
-        <button type="button" class="prow2" id="pl-restore"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg></span><span class="ptx"><b>Restaurer une sauvegarde</b><small>Remplace tout le carnet par le contenu du fichier</small></span><span class="pch" aria-hidden="true">›</span></button>
-        <button type="button" class="prow2" id="pl-nas"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></span><span class="ptx"><b>Copie sur le NAS</b><small id="pl-nas-s">Pas configurée</small></span><span class="pch" aria-hidden="true">›</span></button>
-        <button type="button" class="prow2" id="pl-nas-rest"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg></span><span class="ptx"><b>Restaurer depuis le NAS</b><small id="pl-nas-rest-s">Choisir une version gardée sur le NAS</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-sync"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6a6 6 0 0 1 6 6 5.9 5.9 0 0 1-.7 2.8l1.46 1.46A8 8 0 0 0 12 4zm0 14a6 6 0 0 1-6-6 5.9 5.9 0 0 1 .7-2.8L5.24 7.74A8 8 0 0 0 12 20v3l4-4-4-4z"/></svg></span><span class="ptx"><b>Synchro du carnet</b><small id="pl-sync-s">Arrêtée</small></span><span class="pch" aria-hidden="true">›</span></button>
+        <!-- v0.55 (R140) : « Restaurer » demande : depuis un fichier ou depuis une version du NAS -->
+        <button type="button" class="prow2" id="pl-restore"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg></span><span class="ptx"><b>Restaurer</b><small>Depuis un fichier ou une version gardée sur le NAS</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
       <h3 class="pgrp">Exporter</h3>
       <div class="pcard">
@@ -237,20 +241,16 @@
       <div class="pcard">
         <button type="button" class="prow2" id="pl-avions"><span class="pi pi-av"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg></span><span class="ptx"><b>Mes avions</b><small>Fiches, photos, indicatifs, code ADS-B</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-types"><span class="pi pi-av"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg></span><span class="ptx"><b>Types d'avion</b><small>Monopilote, multipilote, SE / ME, motorisation…</small></span><span class="pch" aria-hidden="true">›</span></button>
-        <button type="button" class="prow2" id="pl-fiches"><span class="pi pi-av"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 1.5L18.5 9H13zM8 13h8v2H8zm0 4h8v2H8zm0-8h3v2H8z"/></svg></span><span class="ptx"><b>Importer des fiches avions</b><small>Nom, indicatif radio, modèle depuis un fichier</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-heures"><span class="pi pi-fn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></span><span class="ptx"><b>Heures affichées en haut</b><small>Bande sous le TOTAL HdV de l'accueil</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="rules-open"><span class="pi pi-mi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.4 11.6 12.4 2.6A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9a2 2 0 0 0 2.82 0l7-7a2 2 0 0 0 0-2.82zM6.5 8A1.5 1.5 0 1 1 8 6.5 1.5 1.5 0 0 1 6.5 8z"/></svg></span><span class="ptx"><b>Pastilles des missions</b><small>Ex. « commence par ENT. » → Entraînement</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-libelles"><span class="pi pi-mi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zm-4 6h2v2H3zm4 0h14v2H7z"/></svg></span><span class="ptx"><b>Libellés missions</b><small>Suggestions proposées quand tu tapes une mission</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-pers"><span class="pi pi-fn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05A4.2 4.2 0 0 1 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span><span class="ptx"><b>Personnes</b><small>Copis, CdB, instructeurs, élèves</small></span><span class="pch" aria-hidden="true">›</span></button>
-        <button type="button" class="prow2" id="pl-cartes"><span class="pi pi-carte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9a.5.5 0 0 0-.36.48V20.5a.5.5 0 0 0 .5.5l.16-.03L9 18.9l6 2.1 5.64-1.9a.5.5 0 0 0 .36-.48V3.5a.5.5 0 0 0-.5-.5zM15 19l-6-2.11V5l6 2.11z"/></svg></span><span class="ptx"><b>Cartes de vol</b><small id="pl-cartes-s">Mot de passe, traces ADS-B</small></span><span class="pch" aria-hidden="true">›</span></button>
+        <button type="button" class="prow2" id="pl-cartes"><span class="pi pi-carte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9a.5.5 0 0 0-.36.48V20.5a.5.5 0 0 0 .5.5l.16-.03L9 18.9l6 2.1 5.64-1.9a.5.5 0 0 0 .36-.48V3.5a.5.5 0 0 0-.5-.5zM15 19l-6-2.11V5l6 2.11z"/></svg></span><span class="ptx"><b>Traces des vols</b><small id="pl-cartes-s">Mot de passe, traces ADS-B</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-socle"><span class="pi pi-fn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14zM7 11h5v5H7z"/></svg></span><span class="ptx"><b>Socle OPS / IFR</b><small id="pl-socle-s">Adresse de la feuille Google à régler</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
-      <h3 class="pgrp">Import FlyLog</h3>
+      <h3 class="pgrp">Contrôle</h3>
       <div class="pcard">
-        <button type="button" class="prow2" id="pl-import"><span class="pi pi-rq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5zM19 9h-4V3H9v6H5l7 7z" transform="rotate(180 12 12)"/></svg></span><span class="ptx"><b>Importer FlyLog</b><small>Une seule fois · résumé avant d'enregistrer</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-ctrl"><span class="pi pi-rq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span><span class="ptx"><b>Contrôle import</b><small>Totaux des vols importés de FlyLog</small></span><span class="pch" aria-hidden="true">›</span></button>
-        <!-- v0.53 (R130) : à usage unique (disparaît dès qu'il a complété des vols ; réglage partagé « rattrapageInstExam ») -->
-        <button type="button" class="prow2" id="pl-ie" hidden><span class="pi pi-rq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-2.67 0-8 1.34-8 4v2h11v-2c0-.7.2-1.37.55-2H12zm7-1v3h3v2h-3v3h-2v-3h-3v-2h3v-3z"/></svg></span><span class="ptx"><b>Compléter instructeur / examinateur depuis FlyLog</b><small>Vols avec un copi ET un instructeur ou examinateur</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
       <h3 class="pgrp">Téléphone</h3>
       <div class="pcard">
@@ -261,7 +261,6 @@
     <input type="file" id="file-flylog" accept=".csv,text/csv" hidden>
     <input type="file" id="file-restore" accept=".json,application/json" hidden>
     <input type="file" id="file-ref" accept=".json,application/json" hidden>
-    <input type="file" id="file-ie" accept=".csv,text/csv" hidden>
   </section>
 </div>
 
@@ -325,7 +324,7 @@
     <div class="field"><label for="fi-mod">Modèle</label><input id="fi-mod" autocapitalize="sentences" placeholder="ex. DHC-8-400 Dash 8"></div>
     <div class="row2" id="fi-ind-z"><div class="field"><label for="fi-nm">Nom</label><input class="big" id="fi-nm" placeholder="ex. X12" autocapitalize="characters" autocomplete="off"></div>
       <div class="field"><label for="fi-ind">Indicatif radio</label><input id="fi-ind" placeholder="ex. ALPHA 12" autocapitalize="characters" autocomplete="off"></div></div>
-    <div class="field" id="fi-hex-z"><label for="fi-hex">Code ADS-B (6 caractères, pour la carte du vol)</label><input id="fi-hex" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ex. 3A1B2C"></div>
+    <div class="field" id="fi-hex-z"><label for="fi-hex">Code ADS-B (6 caractères, pour la trace du vol)</label><input id="fi-hex" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ex. 3A1B2C"></div>
     <div class="field"><label for="fi-rem">Remarques</label><input id="fi-rem" autocapitalize="sentences"></div>
   </div>
   <div class="sec" id="fi-easa">
@@ -351,9 +350,9 @@
 <!-- Personne -->
 <div class="modal" id="p-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pm-t"><div class="mbox">
   <h3 id="pm-t">Ajouter un copi</h3>
-  <div class="row2"><div class="field"><label for="pm-pre">Prénom</label><input id="pm-pre" autocapitalize="words" autocomplete="off"></div><div class="field"><label for="pm-nom">Nom</label><input id="pm-nom" autocapitalize="words" autocomplete="off"></div></div>
+  <div class="row2"><div class="field"><label for="pm-nom">Nom</label><input id="pm-nom" autocapitalize="words" autocomplete="off"></div><div class="field"><label for="pm-pre">Prénom</label><input id="pm-pre" autocapitalize="words" autocomplete="off"></div></div>
   <div class="field"><label for="pm-tri">Trigramme</label><input class="big" id="pm-tri" maxlength="4" autocapitalize="characters" autocomplete="off"></div>
-  <p class="hint">Un seul des trois suffit.</p>
+  <p class="hint">Un seul des trois suffit. À l'écran : le trigramme, sinon le nom, sinon le prénom. Une correction s'applique à tous les vols avec cette personne.</p>
   <div class="row2"><button type="button" class="ghost annuler" id="pm-x">Annuler</button><button type="button" class="ghost primary" id="pm-ok" disabled>Ajouter</button></div>
   <button type="button" class="ghost" id="pm-del" hidden style="color:var(--feu);border-color:var(--feu)">Supprimer cette personne</button>
 </div></div>
@@ -461,9 +460,9 @@
   <div class="row2"><button type="button" class="ghost vert" id="ab-no">Continuer la saisie</button><button type="button" class="ghost" id="ab-yes" style="background:var(--feu);color:#fff;border-color:var(--feu)">Abandonner</button></div>
 </div></div>
 
-<!-- Carte du vol en plein écran (zoom au doigt) -->
+<!-- Trace du vol en plein écran (zoom au doigt) -->
 <div class="sheet" id="carte-plein" hidden role="dialog" aria-modal="true" aria-labelledby="cp-t" style="z-index:33"><div class="carte-plein-in">
-  <div class="shead"><button type="button" class="xbtn" id="cp-x" aria-label="Fermer"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button><h2 id="cp-t">Carte du vol</h2></div>
+  <div class="shead"><button type="button" class="xbtn" id="cp-x" aria-label="Fermer"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button><h2 id="cp-t">Trace du vol</h2></div>
   <div class="sim-bandeau cp-sim" id="cp-sim" hidden role="note">SIMULATION VOL</div>
   <!-- v0.31 (R73) : fond Plan (OpenStreetMap) ou Photo (photos aériennes IGN, en ligne seulement) -->
   <div class="cp-outils"><div class="seg cp-fond" id="cp-fond" role="group" aria-label="Fond de carte"><button type="button" data-fond="plan" aria-pressed="true">Plan</button><button type="button" data-fond="photo" aria-pressed="false">Photo</button></div>

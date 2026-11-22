@@ -106,7 +106,7 @@ try {
   await p.click('#npf-bandeau'); await p.click('#npf-l [data-ign]'); await p.waitForSelector('#ni-no');
   await annuler('#ni-no', 'ignorer un vol NPF'); await p.click('#ni-no');
   await p.waitForSelector('#npf-l'); await p.click('#ou-x'); // « Annuler » ramène à la liste : on la ferme
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas-rest'); await p.waitForSelector('#rn-l .nasv'); await p.click('#rn-l .nasv');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-restore'); await p.click('#rs-nas'); await p.waitForSelector('#rn-l .nasv'); await p.click('#rn-l .nasv');
   await annuler('#rn-no', 'restaurer depuis le NAS'); await p.click('#rn-no'); await p.click('#ou-x');
   await p.click('#pl-save');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#sv-dl')]);
@@ -114,11 +114,7 @@ try {
   await p.click('#ou-x');
   await p.setInputFiles('#file-restore', sauvegarde); await p.waitForSelector('#rs-no');
   await annuler('#rs-no', 'restaurer une sauvegarde'); await p.click('#rs-no');
-  const fiches = join(CAPT, 'fiches-v019.csv'); writeFileSync(fiches, 'F-XZZA,M91,ESSAI 91,Essai\n');
-  await p.click('#pl-fiches'); await p.setInputFiles('#fa-fichier', fiches); await p.waitForSelector('#fa-no');
-  await annuler('#fa-no', 'importer des fiches avions');
-  await p.screenshot({ path: join(CAPT, 'v019-05-fiches.png') });
-  await p.click('#fa-no');
+  // v0.55 (R141) : « Importer des fiches avions » retiré de Plus
   // « Annuler » du message « Vol supprimé » (en bas de l'écran)
   await p.click('.tabs button[data-v="carnet"]');
   await p.click('#list .flight'); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
@@ -127,8 +123,8 @@ try {
   await annuler('#toast .tbtn', 'du message « Vol supprimé »');
   await p.screenshot({ path: join(CAPT, 'v019-06-message-annuler.png') });
   await p.click('#toast .tbtn');
-  // 11 boutons « Annuler » + celui du message « Vol supprimé » (celui de la saisie vérifié en clair et en sombre)
-  verifier(new Set(rouges).size === 12, `${new Set(rouges).size} boutons « Annuler » différents vérifiés : ${[...new Set(rouges)].join(' ')}`);
+  // 10 boutons « Annuler » + celui du message « Vol supprimé » (v0.55 : celui des fiches avions n'existe plus)
+  verifier(new Set(rouges).size === 11, `${new Set(rouges).size} boutons « Annuler » différents vérifiés : ${[...new Set(rouges)].join(' ')}`);
 
   verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
   console.log('\nv0.19 réussie.');

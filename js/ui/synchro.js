@@ -15,7 +15,7 @@ import { lireSocle } from './socle.js';
 import { nouvelId, cleDoublon } from '../modele.js';
 import { hm, dateFr } from '../temps.js';
 import { elementsDuCarnet, preparerEnvoi, majCarte, carteDepuisNas, trierRecus, lots, resumeSynchro, REGLAGES_PARTAGES,
-  PAR_ENVOI, PAR_PAGE, PERIODE_CONSULTATION, cleElement, empreinteTexte, analyserRecus, compterSuppressions, SUPPRESSIONS_A_CONFIRMER,
+  PAR_ENVOI, ENVOI_OCTETS, PAR_PAGE, PERIODE_CONSULTATION, cleElement, empreinteTexte, analyserRecus, compterSuppressions, SUPPRESSIONS_A_CONFIRMER,
   nomAppareil, differences, doublons, texteRafraichir, duNom, ceNom, ceNomMin as ceNomMinDe, leNom, estIPad } from '../synchro.js';
 
 const nombre = n => n.toLocaleString('fr-FR');
@@ -138,7 +138,7 @@ async function cycleDeuxSens(progres) {
   if (suppressions > SUPPRESSIONS_A_CONFIRMER && !etatSynchro().suppressionsConfirmees) { aConfirmer = suppressions; mods = mods.filter(x => !x.supprime); }
   let faites = 0, restent = mods.length;
   progres('envoi', 0, mods.length);
-  for (const lot of lots(mods, PAR_ENVOI)) {
+  for (const lot of lots(mods, PAR_ENVOI, ENVOI_OCTETS)) {
     const r = await demander('synchro-envoyer', { corps: { appareil: appareil(), modifications: lot } });
     if (r.statut !== 'ok') { await noter({ carte, attente: restent + aConfirmer }); return r; }
     carte = majCarte(carte, p.empreintes, r.j);
@@ -338,7 +338,7 @@ export function majBandeaux() {
 
 // ---------- Plus › Synchro du carnet ----------
 const TEXTES = { horsLigne: 'Pas de réseau : la synchro se fera plus tard.', injoignable: 'NAS injoignable : la synchro se fera plus tard.',
-  refuse: 'Mot de passe refusé : corrige-le dans Copie sur le NAS.', 'nas-ancien': 'Le NAS n\'a pas encore carnet.php version 5 (guide, « Mise à jour v5 »).',
+  refuse: 'Mot de passe refusé : corrige-le dans « NAS : adresse, mot de passe ».', 'nas-ancien': 'Le NAS n\'a pas encore carnet.php version 5 (guide, « Mise à jour v5 »).',
   pasConfiguree: 'Synchro non configurée.', bloque: 'Trop d\'essais de mot de passe : réessaie plus tard.' };
 function texteResultat(r) {
   if (r.statut !== 'ok') return TEXTES[r.statut] || TEXTES.injoignable;
@@ -358,8 +358,8 @@ const etatNasSynchro = () => demander('synchro-etat');
 export function ecranSynchro() {
   if (!configNas().configuree) {
     const o = ouvrirOutil('Synchro du carnet', `<p class="hint" style="font-size:15px">La synchro passe par ton NAS : enregistre d'abord son adresse et son mot de passe.</p>
-      <button type="button" class="bigbtn" id="sy-conf">Copie sur le NAS ›</button>`);
-    o.querySelector('#sy-conf').addEventListener('click', ecranNas);
+      <button type="button" class="bigbtn" id="sy-nas">Adresse et mot de passe du NAS ›</button>`);
+    o.querySelector('#sy-nas').addEventListener('click', ecranNas);
     return;
   }
   const role = roleSynchro();
@@ -369,7 +369,9 @@ export function ecranSynchro() {
       <button type="button" class="bigbtn" id="sy-ref">Ce téléphone : envoyer et recevoir le carnet ›</button>
       <button type="button" class="bigbtn second" id="sy-mod">${ceNom(estIPad(navigator.userAgent, navigator.maxTouchPoints) ? 'iPad' : 'PC')} : recevoir le carnet et le modifier aussi ›</button>
       <button type="button" class="bigbtn second" id="sy-cons">Cet appareil consulte seulement ›</button>
-      <p class="hint">Les photos d'avion ne voyagent pas encore. Les copies sur le NAS partent du téléphone seulement.</p>`);
+      <p class="hint">Les photos d'avion ne voyagent pas encore. Les copies sur le NAS partent du téléphone seulement.</p>
+      <button type="button" class="linkbtn" id="sy-nas">NAS : adresse, mot de passe, copie automatique ›</button>`);
+    o.querySelector('#sy-nas').addEventListener('click', ecranNas); // v0.55 (R140)
     o.querySelector('#sy-ref').addEventListener('click', confirmerReference);
     o.querySelector('#sy-mod').addEventListener('click', () => confirmerRejoindre('modification'));
     o.querySelector('#sy-cons').addEventListener('click', () => confirmerRejoindre('consultation'));
@@ -390,6 +392,7 @@ export function ecranSynchro() {
       : 'À l\'ouverture, quelques secondes après chaque enregistrement, au retour du réseau et toutes les 2 minutes. Pas de réseau ou NAS éteint : rien n\'est perdu, ça part plus tard.'}</p>
     ${role === 'consultation' ? '<button type="button" class="bigbtn second" id="sy-passer">Passer en modification ›</button>' : ''}
     ${role !== 'consultation' && dernier ? `<button type="button" class="linkbtn" id="sy-annuler">Annuler la dernière synchro (${dateFr(dernier.le.slice(0, 10))}, ${dernier.elements.length} élément${pluriel(dernier.elements.length)}) ›</button>` : ''}
+    <button type="button" class="linkbtn" id="sy-nas">NAS : adresse, mot de passe, copie automatique ›</button>
     <button type="button" class="linkbtn" id="sy-stop">${role === 'consultation' ? 'Arrêter la consultation' : 'Arrêter la synchro'}</button>`);
   const maj = () => {
     if (!$('#sy-etat')) return;
@@ -415,6 +418,7 @@ export function ecranSynchro() {
   o.querySelector('#sy-passer')?.addEventListener('click', confirmerPassage);
   o.querySelector('#sy-annuler')?.addEventListener('click', confirmerAnnulation);
   o.querySelector('#sy-stop').addEventListener('click', () => confirmerArret(role));
+  o.querySelector('#sy-nas').addEventListener('click', ecranNas); // v0.55 (R140) : la ligne « Copie sur le NAS » de Plus a disparu
 }
 
 function confirmerReference() {

@@ -89,7 +89,7 @@ const modifier = (p, id, champs) => p.evaluate(async ([id, champs]) => { const e
 const ajouter = (p, vol) => p.evaluate(async v => { const e = await import('./js/etat.js'); return e.enregistrerVol(v); }, vol);
 const supprimer = (p, ids) => p.evaluate(async ids => { const e = await import('./js/etat.js'); for (const id of ids) await e.supprimerVol(id); }, ids);
 const configurerNas = async p => {
-  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-nas');
+  await p.click('.tabs button[data-v="plus"]'); await p.click('#pl-sync'); await p.click('#sy-nas');
   await p.fill('#nas-adr', ADRESSE); await p.fill('#nas-mdp', nas.mdp); await p.click('#nas-ok'); await attendre(p, 300); await p.click('#ou-x');
 };
 const onglet = (p, v) => p.click(`.tabs button[data-v="${v}"]`);
@@ -218,7 +218,7 @@ try {
   await onglet(P, 'carnet');
   verifier(await P.isVisible('#sync-bandeau') && (await P.textContent('#sync-bandeau')).startsWith('1 en attente d\'envoi (pas de réseau)'), `PC : « ${await P.textContent('#sync-bandeau')} »`);
   await onglet(T, 'plus');
-  verifier(await T.textContent('#pl-sync-s') === '1 en attente d\'envoi (pas de réseau)', `téléphone, Plus : « ${await T.textContent('#pl-sync-s')} »`);
+  verifier((await T.textContent('#pl-sync-s')).startsWith('1 en attente d\'envoi (pas de réseau)') /* v0.55 (R140) : « · version gardée … » en plus */, `téléphone, Plus : « ${await T.textContent('#pl-sync-s')} »`);
   await tel.ctx.setOffline(false); await pc.ctx.setOffline(false);
   await T.evaluate(() => dispatchEvent(new Event('online'))); await P.evaluate(() => dispatchEvent(new Event('online')));
   await attendre(T, 4000); await sync(T); await sync(P); await sync(T);
@@ -264,7 +264,7 @@ try {
   await modifier(P, cible, { remarques: 'APRES CHANGEMENT' });
   await attendre(P, 6500);
   await onglet(P, 'plus');
-  verifier(await P.textContent('#pl-sync-s') === 'Mot de passe refusé : à corriger', `PC : « ${await P.textContent('#pl-sync-s')} »`);
+  verifier((await P.textContent('#pl-sync-s')).startsWith('Mot de passe refusé : à corriger') /* v0.55 (R140) : « · version gardée … » en plus */, `PC : « ${await P.textContent('#pl-sync-s')} »`);
   const n = nas.requetes.filter(r => r.cle !== 'change-ailleurs-24').length;
   await P.evaluate(() => { dispatchEvent(new Event('online')); document.dispatchEvent(new Event('visibilitychange')); });
   await modifier(P, cible, { remarques: 'ENCORE' });

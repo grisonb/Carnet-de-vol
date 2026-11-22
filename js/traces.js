@@ -13,10 +13,10 @@ export const TEXTES = {
   absente: 'Pas de trace pour ce vol (avion non capté).',
   reunion: 'La Réunion n\'est pas couverte par adsb.lol.',
   avant2023: 'Pas d\'archive ADS-B avant mars 2023.',
-  sansMotDePasse: 'Saisis le mot de passe des cartes dans Plus.',
+  sansMotDePasse: 'Saisis le mot de passe des traces dans Plus.',
   attente: 'La trace de ce jour n\'est pas encore récupérée (rattrapage en cours sur le serveur).',
-  horsLigne: 'La carte s\'affichera quand le téléphone aura du réseau.',
-  simulateur: 'Pas de carte pour un vol au simulateur.',
+  horsLigne: 'La trace s\'affichera quand le téléphone aura du réseau.',
+  simulateur: 'Pas de trace pour un vol au simulateur.',
 };
 
 const JOUR_MS = 864e5;

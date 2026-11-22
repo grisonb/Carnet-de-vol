@@ -101,27 +101,5 @@ test('liste : le nom et l\'immatriculation trouvée, les escales dans l\'ordre',
   assert.deepEqual([r2.avion, r2.avionConnu, r2.avionsMemeNom], ['M75', false, 2]);
 });
 
-// ---------- R49 : importer des fiches avions (avions INVENTÉS) ----------
-import { lireFichesAvions, changementsFiches, appliquerFiches } from '../../js/fiches-avions.js';
+// v0.55 (R141) : « Importer des fiches avions » retiré de l'app (js/fiches-avions.js supprimé) : ses tests aussi.
 
-test('fiches avions : lecture (« , » ou « ; », titres, guillemets, lignes vides)', () => {
-  const { fiches, erreurs } = lireFichesAvions('﻿immatriculation,nom,indicatif radio,modèle\r\nF-XZZA,M91,ESSAI 91,Modele essai A\n\n# commentaire\nf-xzzb;M92;;\n"F-XZZC","M93","ESSAI, 93",\n,M94,X,Y\n');
-  assert.deepEqual(fiches.map(f => [f.immat, f.nom, f.indicatif, f.modele]),
-    [['F-XZZA', 'M91', 'ESSAI 91', 'Modele essai A'], ['F-XZZB', 'M92', '', ''], ['F-XZZC', 'M93', 'ESSAI, 93', '']]);
-  assert.equal(erreurs.length, 1, 'ligne sans immatriculation signalée');
-});
-
-test('fiches avions : aperçu, avion introuvable, rien d\'autre modifié', () => {
-  const avions = [{ id: 'a1', immat: 'F-XZZA', nom: '', indicatif: '', modele: 'Modele', typeOACI: 'DH8D', photo: 'x' },
-    { id: 'a2', immat: 'F-XZZB', nom: 'M92', indicatif: 'ANCIEN', modele: 'Mod B', typeOACI: 'DR40' },
-    { id: 's1', immat: 'F-XZZS', sim: true, nom: '' }];
-  const { fiches } = lireFichesAvions('F-XZZA,M91,ESSAI 91,Modele essai A\nF-XZZB,M92,,\nF-XZZZ,M99,X,Y\nF-XZZS,M98,,');
-  const c = changementsFiches(fiches, avions);
-  assert.deepEqual(c.modifs.map(m => [m.avion.id, m.changements.map(x => `${x.libelle} : ${x.avant || 'vide'} → ${x.apres}`)]),
-    [['a1', ['Nom : vide → M91', 'Indicatif radio : vide → ESSAI 91', 'Modèle : Modele → Modele essai A']]]);
-  assert.deepEqual(c.identiques, ['F-XZZB'], 'cases vides : rien ne change ; même nom : déjà à jour');
-  assert.deepEqual(c.introuvables, ['F-XZZZ', 'F-XZZS'], 'introuvable signalé ; un simulateur n\'est jamais touché');
-  const [a] = appliquerFiches(c.modifs);
-  assert.deepEqual(a, { ...avions[0], nom: 'M91', indicatif: 'ESSAI 91', modele: 'Modele essai A' }, 'type OACI, photo… inchangés');
-  assert.equal(avions[0].nom, '', 'l\'avion d\'origine n\'est pas modifié avant « Appliquer »');
-});
