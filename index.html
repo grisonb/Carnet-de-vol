@@ -91,9 +91,11 @@
       <div id="via-list" class="vialist"></div>
       <div class="blocrow">
         <div class="field"><label for="f-t0">Bloc Départ</label><input class="big tm" id="f-t0" type="text" inputmode="numeric" autocomplete="off" placeholder="hhmm"></div>
-        <div class="bloccenter"><b id="f-bloc" class="num">0h00</b></div>
+        <div class="bloccenter"><b id="f-bloc" class="num">0h00</b><input id="f-bloc-in" class="tin num" inputmode="numeric" autocomplete="off" aria-label="Temps de vol (vols groupés)" hidden></div>
         <div class="field"><label for="f-t1">Bloc Arrivée</label><input class="big tm" id="f-t1" type="text" inputmode="numeric" autocomplete="off" placeholder="hhmm"></div>
       </div>
+      <!-- v0.58 (R149) : vols groupés (avion ou type réglé) : le temps de vol se tape à la main, les heures bloc restent -->
+      <div class="vgrow" id="vg-zone" hidden><div class="mstep"><span class="mlbl" id="vg-l">Vols groupés</span><button type="button" class="sw" id="f-vg" role="switch" aria-checked="false" aria-labelledby="vg-l"><span></span></button></div></div>
       <p class="hint" id="f-j1" hidden>Arrivée le lendemain (J+1).</p>
       <!-- v0.32 (R76) : ancien vol sans heures : l'autre heure bloc est calculée avec le temps de vol déjà saisi -->
       <p class="hint" id="f-ancien" hidden>Ancien vol sans heures : tape le départ (ou l'arrivée), l'autre heure est calculée avec le temps de vol déjà saisi, qui ne change pas.</p>
@@ -349,6 +351,12 @@
     <div class="tline"><span id="fi-cp-l">Comme le type</span><button type="button" class="sw" role="switch" id="fi-cp-sw" aria-checked="true" aria-label="Comme le type"><span></span></button></div>
     <div id="fi-cps" class="cases"></div>
   </div>
+  <!-- v0.58 (R149) : vols groupés (priorité : l'avion, puis son type) -->
+  <div class="sec" id="fi-vgsec">
+    <h3>Vols groupés</h3>
+    <div class="tline"><span id="fi-vg-l">Vols groupés</span><button type="button" class="sw" role="switch" id="fi-vg-sw" aria-checked="false" aria-labelledby="fi-vg-l"><span></span></button></div>
+    <p class="hint" id="fi-vg-h"></p>
+  </div>
   <p class="fstat" id="fi-stat"></p>
   <p class="apname bad" id="fi-err" style="text-align:center;font-size:15px"></p>
 </div></div>
@@ -387,7 +395,7 @@
 <!-- Terrain intermédiaire -->
 <div class="modal" id="via-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vm-t"><div class="mbox">
   <h3 id="vm-t">Terrain intermédiaire</h3>
-  <div class="field"><label for="vm-icao">Code OACI</label><input class="big" id="vm-icao" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="FMEE"></div>
+  <div class="field"><label for="vm-icao">Code OACI</label><input class="big" id="vm-icao" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="LFML"></div>
   <p class="apname big2" id="vm-name">Tape les 4 lettres du code</p>
   <button type="button" class="linkbtn" id="vm-ajt" hidden>Ajouter ce terrain ›</button>
   <div class="condrow vm-compteurs"><!-- v0.27 (R63) : approches de ce terrain -->
@@ -444,6 +452,12 @@
   <p class="hint" style="font-size:15px">Coche les compteurs de ce vol. Les flèches rangent les compteurs pour tous les vols. Les valeurs déjà saisies ne changent jamais.</p>
   <div id="cptm-list"></div>
   <button type="button" class="ghost primary" id="cptm-x">Fermer</button>
+</div></div>
+<!-- v0.58 (R150) : temps de vol changé en modifiant un vol enregistré -->
+<div class="modal" id="tv-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tv-t" style="z-index:33"><div class="mbox">
+  <h3 id="tv-t">Temps de vol modifié</h3>
+  <p id="tv-txt"></p>
+  <div class="row2"><button type="button" class="ghost annuler" id="tv-no">Annuler</button><button type="button" class="ghost vert" id="tv-ok">Enregistrer quand même</button></div>
 </div></div>
 <div class="modal" id="cpc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cpc-t" style="z-index:33"><div class="mbox">
   <h3 id="cpc-t"></h3>

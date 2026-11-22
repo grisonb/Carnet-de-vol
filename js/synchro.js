@@ -16,7 +16,8 @@ export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMas
   'socleAdresse', // v0.48 (R122) : adresse de la web app du socle OPS / IFR (revient seule sur un nouvel appareil)
   'rattrapageInstExam', // v0.53 (R130) : « Compléter instructeur / examinateur depuis FlyLog » déjà fait (bouton masqué partout)
   'cartesMotDePasse', // v0.55 (R138) : mot de passe des traces (avant : propre à chaque appareil)
-  'compteursFiches', 'compteursTypes']; // v0.56 (R144) : compteurs créés / renommés / masqués, compteurs par défaut des types
+  'compteursFiches', 'compteursTypes', // v0.56 (R144) : compteurs créés / renommés / masqués, compteurs par défaut des types
+  'volsGroupesTypes']; // v0.58 (R149) : « Vols groupés » des types d'avion
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)
 export const ENVOI_OCTETS = 3000000; // v0.55 : un envoi reste sous 3 Mo (le NAS : 4 Mo au plus)
 export const PAR_PAGE = 1000;      // éléments par page reçue

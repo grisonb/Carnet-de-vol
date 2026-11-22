@@ -44,7 +44,8 @@ try {
     await new Promise(ok => { t.oncomplete = ok; }); db.close();
   }, [AVIONS, VOLS, REGLAGES]);
   await p.reload(); await p.waitForSelector('body[data-pret="1"]');
-  verifier(await p.textContent('#pl-version') === 'v0.57' || (await p.evaluate(async () => (await import('./js/version.js')).VERSION)) === '0.57', 'version 0.57');
+  const version = await p.evaluate(async () => (await import('./js/version.js')).VERSION);
+  verifier(Number(version.split('.')[1]) >= 57, `version ${version} (0.57 ou suivante)`);
   const totaux = () => p.evaluate(async () => { const t = await import('./js/totaux.js'), e = await import('./js/etat.js'); return JSON.stringify(t.calculerTotaux(e.etat.vols, e.etat.avions)); });
   const t0 = await totaux();
   const T = JSON.parse(t0);

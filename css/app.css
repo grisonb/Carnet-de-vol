@@ -963,3 +963,12 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 #cptm-list .prow{gap:12px}
 #cptm-list .cbox{flex:1}
 #fi-cpsec .tline{margin-bottom:4px}
+/* v0.58 (R147) : bloc du vol : titres, contenus et noms des terrains centrés dans leur case (grands champs : à gauche) */
+#v-saisie .c-vol .aprow .field,#v-saisie .c-vol .blocrow .field{text-align:center}
+#v-saisie .c-vol .aprow .field>label,#v-saisie .c-vol .blocrow .field>label,#v-saisie .c-vol .apname{text-align:center}
+#v-saisie .c-vol .aprow input.big,#v-saisie .c-vol .blocrow input.big,#v-saisie .c-vol .blocrow input.tin{text-align:center;text-indent:.04em}
+#v-saisie .c-vol .aprow .ajt{justify-self:center;text-align:center}
+/* v0.58 (R149) : « Vols groupés » (case sous les heures bloc) et temps tapé à la main entre les heures */
+.vgrow{display:grid;margin-top:2px}
+.vgrow .mstep{grid-auto-flow:column;justify-content:center;align-items:center;gap:12px}
+.bloccenter .tin{max-width:96px;font-size:22px;font-weight:700;font-family:var(--f-num)}

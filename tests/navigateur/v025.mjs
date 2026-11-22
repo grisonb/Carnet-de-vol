@@ -28,7 +28,7 @@ const faux = createServer((req, res) => {
   req.on('end', () => {
     const json = (o, code = 200) => { res.writeHead(200, { ...cors, 'Content-Type': 'application/json' }); res.end(JSON.stringify(code === 200 ? o : { ...o, code })); };
     const corps = Buffer.concat(morceaux).toString();
-    nas.requetes.push({ action, appareil: (corps.match(/"appareil":"([^"]+)"/) || [])[1] || '' , ua: req.headers['user-agent'] || '' });
+    nas.requetes.push({ action, appareil: (corps.match(/"appareil":"([^"]+)"/) || [])[1] || '' , ua: req.headers['user-agent'] || '', t: Date.now() });
     if (req.headers['x-carnet-cle'] !== nas.mdp) return json({ erreur: 'mot-de-passe' }, 401);
     if (action === 'test') return json({ ok: true, copies: 0, derniere: null, cle: 'carnet', version: 5 });
     if (action === 'envoyer') return json({ ok: true, id: 'x', vols: 1, taille: 1, verification: 'empreinte' });
@@ -237,6 +237,7 @@ try {
   });
   const avant2 = nas.requetes.length;
   await I.reload(); await I.waitForSelector('body[data-pret="1"]'); await attendre(I, 6000);
+  if (process.env.V025_SONDE) console.log('    sonde : vols', (await carnet(I)).n, 'demandes après effacement', JSON.stringify(nas.requetes.slice(avant2).map(r => [r.action, r.appareil, r.t])));
   verifier((await carnet(I)).n === 0 && nas.requetes.length === avant2, 'iPad vide (adresse et mot de passe du NAS perdus aussi) : il ne contacte même pas le NAS');
   await configurerNas(I); await attendre(I, 6000);
   verifier(!nas.requetes.slice(avant2).some(r => r.action === 'envoyer' || r.action === 'synchro-envoyer'), 'NAS retapé : aucun envoi d\'un carnet vide');

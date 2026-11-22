@@ -24,6 +24,7 @@ import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas, lireDe
 import { ecranSynchro, resumeSynchroActuel } from './synchro.js';
 import { ecranCompteurs, resumeCompteurs, htmlCases, basculerCase } from './compteurs.js';
 import { compteursDuType } from '../compteurs.js';
+import { volsGroupesDuType } from '../vols-groupes.js';
 import { copieNasAJour, depuis } from '../copieur.js';
 
 const nombre = n => n.toLocaleString('fr-FR');
@@ -266,6 +267,9 @@ function editerType(t) {
     <div class="sec" id="te-cp"><h3>Compteurs par défaut</h3>
       <p class="hint" style="margin-top:-6px">Affichés dans la saisie d'un vol sur un avion de ce type (sauf avion réglé autrement dans sa fiche). Les valeurs déjà saisies ne changent jamais.</p>
       <div id="te-cps" class="cases"></div></div>
+    <div class="sec" id="te-vgsec"><h3>Vols groupés</h3>
+      <div class="tline"><span id="te-vg-l">Vols groupés</span><button type="button" class="sw" role="switch" id="te-vg" aria-checked="false" aria-labelledby="te-vg-l"><span></span></button></div>
+      <p class="hint">Plusieurs rotations sur une ligne (largage para, remorquage…) : dans la saisie, une case « Vols groupés » permet de taper le temps de vol à la main. Pour tous les avions de ce type, sauf avion réglé autrement dans sa fiche.</p></div>
     <button type="button" class="bigbtn" id="te-ok">Enregistrer</button><button type="button" class="bigbtn second" id="te-no">Retour</button>`);
   // v0.56 (R144) : compteurs par défaut du type (réglage « compteursTypes » ; jamais changé : compteurs de départ)
   let cases = compteursDuType(v.code, v, reglage('compteursTypes'), reglage('compteurs'));
@@ -273,6 +277,12 @@ function editerType(t) {
   const rendreCases = () => { $('#te-cps').innerHTML = htmlCases(cases); };
   rendreCases();
   c.querySelector('#te-cps').addEventListener('click', e => { const b = e.target.closest('[data-cc]'); if (b) { cases = basculerCase(cases, b.dataset.cc); rendreCases(); } });
+  // v0.58 (R149) : « Vols groupés » du type (réglage « volsGroupesTypes », éteint par défaut)
+  const vgDepart = volsGroupesDuType(v.code, reglage('volsGroupesTypes'));
+  let vg = vgDepart;
+  const rendreVG = () => c.querySelector('#te-vg').setAttribute('aria-checked', String(vg));
+  rendreVG();
+  c.querySelector('#te-vg').addEventListener('click', () => { vg = !vg; rendreVG(); });
   c.querySelector('#te-no').addEventListener('click', ecranTypes);
   c.querySelector('#te-ok').addEventListener('click', async () => {
     const code = $('#te-code').value.trim().toUpperCase();
@@ -282,6 +292,7 @@ function editerType(t) {
       moteur: $('#te-mt').value, surface: $('#te-su').value, train: $('#te-tr').value };
     const parType = reglage('compteursTypes') || {};
     if (JSON.stringify(cases) !== casesDepart || (!t && cases.length)) await enregistrerReglage('compteursTypes', { ...parType, [code]: cases });
+    if (vg !== vgDepart || (!t && vg)) await enregistrerReglage('volsGroupesTypes', { ...(reglage('volsGroupesTypes') || {}), [code]: vg });
     // v0.56 : seulement les compteurs changés : le type n'est pas marqué « modifié »
     const pareil = t && !t.inconnu && ['constructeur', 'modele', 'equipage', 'moteurs', 'moteur', 'surface', 'train'].every(k => String(t[k] ?? '') === String(n[k] ?? ''));
     if (pareil) { ecranTypes(); return; }

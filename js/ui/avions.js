@@ -10,6 +10,7 @@ import { calculerTotaux } from '../totaux.js';
 import { ouvrirRecherchePhoto, initPhotoWeb, htmlCredit } from './photo-web.js';
 import { ouvrirCadrage, afficherPhotoCadree, suivreBandeau } from './cadrage.js';
 import { compteursDuType } from '../compteurs.js';
+import { volsGroupesDuType } from '../vols-groupes.js';
 import { htmlCases, basculerCase } from './compteurs.js';
 
 export const SIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
@@ -192,7 +193,16 @@ function typeDeLaFiche() {
   const code = FI.sim ? 'SIM' : $('#fi-oaci').value.toUpperCase().trim();
   return { code, carac: { equipage: FI.equipage, moteurs: FI.equipage === 'MP' ? 'ME' : FI.moteurs, moteur: FI.moteur } };
 }
+// v0.58 (R149) : « Vols groupés » : réglé pour cet avion (true / false) ou comme son type (FI.vg null)
+function rendreVGFiche() {
+  const { code } = typeDeLaFiche(), duType = volsGroupesDuType(code, reglage('volsGroupesTypes'));
+  const on = typeof FI.vg === 'boolean' ? FI.vg : duType;
+  $('#fi-vg-sw').setAttribute('aria-checked', String(on));
+  $('#fi-vg-h').textContent = typeof FI.vg === 'boolean' ? `Réglé pour cet avion (type ${code || '?'} : ${duType ? 'allumé' : 'éteint'}).`
+    : `Comme le type ${FI.sim ? 'Simulateurs' : code || '(type OACI à remplir)'}.`;
+}
 function rendreCompteursFiche() {
+  if ($('#fi-vg-sw')) rendreVGFiche();
   const { code, carac } = typeDeLaFiche(), comme = !Array.isArray(FI.cpPropres);
   $('#fi-cp-l').textContent = `Comme le type ${FI.sim ? 'Simulateurs' : code || '(type OACI à remplir)'}`;
   $('#fi-cp-sw').setAttribute('aria-checked', String(comme));
@@ -215,7 +225,8 @@ export function ouvrirFiche(a, init = {}, mode = 'modif', origine = a ? 'saisie'
   FI = { sim: !!b.sim, equipage: b.equipage, moteurs: b.moteurs, moteur: b.moteur, surface: b.surface || 'L',
     train: b.train || 'tricycle', photo: b.photo, photoCredit: b.photo ? (b.photoCredit || null) : null, photoCadre: b.photo ? (b.photoCadre || null) : null,
     fstd: b.fstd, constructeur: b.constructeur, _o: b.typeOACI,
-    etiquettes: [...(b.etiquettes || [])], cpPropres: Array.isArray(b.compteursPropres) ? [...b.compteursPropres] : null };
+    etiquettes: [...(b.etiquettes || [])], cpPropres: Array.isArray(b.compteursPropres) ? [...b.compteursPropres] : null,
+    vg: typeof b.volsGroupes === 'boolean' ? b.volsGroupes : null }; // v0.58 (R149)
   $('#fi-reg').value = b.immat; $('#fi-oaci').value = b.sim ? '' : (b.typeOACI || '');
   $('#fi-mod').value = b.modele || ''; $('#fi-ind').value = b.indicatif || ''; $('#fi-nm').value = b.nom || '';
   $('#fi-hex').value = (b.hexAdsb || '').toUpperCase();
@@ -292,6 +303,7 @@ async function enregistrerFiche() {
     equipage: FI.sim ? null : FI.equipage, moteurs: FI.sim ? null : (FI.equipage === 'MP' ? 'ME' : FI.moteurs),
     moteur: FI.sim ? null : FI.moteur, surface: FI.surface, train: FI.train, fstd: FI.sim ? (FI.fstd || null) : null,
     compteursPropres: Array.isArray(FI.cpPropres) ? [...FI.cpPropres] : null, // v0.56 (R144) : null = comme le type
+    volsGroupes: typeof FI.vg === 'boolean' ? FI.vg : null, // v0.58 (R149) : null = comme le type
   });
   await enregistrerAvion(a);
   stats = null;
@@ -356,6 +368,13 @@ export function initAvions({ choix, courant, modifie }) {
     if (Array.isArray(FI.cpPropres)) FI.cpPropres = null;
     else { const { code, carac } = typeDeLaFiche(); FI.cpPropres = FI.sim ? [...((reglage('compteursTypes') || {}).SIM || [])] : compteursDuType(code, carac, reglage('compteursTypes'), reglage('compteurs')); }
     rendreCompteursFiche();
+  });
+  $('#fi-vg-sw').addEventListener('click', () => {
+    if ($('#fiche').classList.contains('ro')) return;
+    const { code } = typeDeLaFiche(), duType = volsGroupesDuType(code, reglage('volsGroupesTypes'));
+    const on = !(typeof FI.vg === 'boolean' ? FI.vg : duType);
+    FI.vg = on; // l'avion ne suit plus son type dès qu'on change son interrupteur
+    rendreVGFiche();
   });
   $('#fi-cps').addEventListener('click', e => {
     const b = e.target.closest('[data-cc]');

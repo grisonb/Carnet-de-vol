@@ -184,6 +184,11 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   (créés), `valeurCompteur`. CSV : `colonnesTableur(liste)`. R145 ordre de Plus, `#pl-compteurs`. R146 `lireDerniereVersionNas`
   / `derniereVersionGardee` (ui/nas.js), réglage privé `nasDerniereVersion`.
 - v0.57 : R147 `departDuType` ne coche plus `amerrSEP` pour les types SEP (aucun type ne l'a de départ).
+- v0.58 : R147 (bis) cases du bloc du vol centrées (`#v-saisie .c-vol .aprow|.blocrow`, `text-indent:.04em` compense
+  l'espacement des lettres). R148 `champOACI(sel, suivant, apres, { espace: 'LFML' })` (lu dans `input`, clavier Android).
+  R149 `js/vols-groupes.js` ; réglage PARTAGÉ `volsGroupesTypes` { code: bool } ; `avion.volsGroupes` (null = comme le type) ;
+  vol `volsGroupes: true` + `tempsTotal` tapé (`#vg-zone`, `#f-vg`, `#f-bloc-in`, `F.groupe`, `recalculerGroupe` : ni nuit ni
+  R134) ; fiches `#te-vg`, `#fi-vg-sw`. R150 `alerteTemps` + `#tv-modal` (`confirmerTemps` dans `enregistrer`, pas pour NPF).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

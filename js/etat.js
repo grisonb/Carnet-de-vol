@@ -27,6 +27,7 @@ export function reglage(cle) {
     compteurs: COMPTEURS_DEFAUT, regles: REGLES_DEFAUT, etiquettes: ETIQUETTES_DEFAUT,
     missionsAjoutees: [], titulaire: '', derniereSauvegarde: null, reference: null, terrainsPerso: {}, missionsMasquees: [], bandeHeures: BANDE_DEFAUT,
     compteursFiches: {}, compteursTypes: {}, // v0.56 (R144)
+    volsGroupesTypes: {}, // v0.58 (R149)
   };
   return etat.reglages[cle] ?? defauts[cle];
 }

@@ -1,5 +1,37 @@
 # Journal des versions
 
+## v0.58 — 22/11/2026
+
+Remarques R147 (centrage ; numéro déjà pris par la v0.57 pour « Amerrissages SEP »), R148 à R150. carnet.php v5, NPF-Q400 et
+format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol existant ne change).
+
+**R147 : cases du bloc du vol centrées.** Départ (OACI), Arrivée (OACI), Bloc Départ, Bloc Arrivée : titre, contenu (LFML,
+13h24) et nom du terrain centrés dans leur case, dans la saisie comme dans la fiche ouverte en lecture. Temps IFR / nuit déjà
+centrés. Le petit blanc que l'espacement des lettres ajoute après le dernier caractère est compensé (`text-indent`). Grands
+champs (Mission, remarques, autre pilote) toujours à gauche ; place, taille, couleur et police inchangées.
+
+**R148 : Terrain intermédiaire, LFML par défaut.** Texte grisé « LFML » ; Espace sur le champ vide (ou sur « LF » seul du
+bouton LF) tape LFML (« Marseille Provence » dessous). Lu sur le texte tapé (événement `input`) et non sur la touche : marche
+avec le clavier d'Android, qui n'envoie pas la touche, comme sur PC.
+
+**R149 : vols groupés.** Interrupteur « Vols groupés » dans la fiche d'un type (réglage PARTAGÉ `volsGroupesTypes`) et dans
+la fiche d'un avion (`avion.volsGroupes` : true / false, absent = comme le type ; priorité : l'avion, puis le type ; éteint
+par défaut). Saisie : case « Vols groupés » juste sous les heures bloc si l'avion (ou son type) l'a, ou si le vol est déjà
+groupé. Allumée : le temps entre Bloc Départ et Bloc Arrivée devient une case tapée à la main (« 145 » → 1h45) ; les heures
+bloc restent saisies et gardées ; le temps de nuit et la répartition jour / nuit des atterrissages (R134) ne sont plus
+calculés. Le vol garde `volsGroupes: true` et `tempsTotal` = le temps tapé : il compte partout à la place de « fin − début »
+(fonctions, totaux, bande, « Dash 8 / Année », carte du vol, PDF, CSV), heures bloc inchangées dans le PDF. Logique :
+`js/vols-groupes.js` (`volsGroupesAvion`, `volsGroupesDuType`, `alerteTemps`).
+
+**R150 : alerte si le temps de vol change** en modifiant un vol DÉJÀ enregistré : « Temps de vol modifié : 1h30 → 1h45
+(+0h15). Ton total HdV passe de X à Y. », « Enregistrer quand même » / « Annuler » (retour à la saisie, rien d'enregistré ;
+flèche retour = Annuler). Fenêtre `#tv-modal`. Pas d'alerte pour un nouveau vol, si le temps ne change pas, ni pour la
+mise à jour d'un vol NPF-Q400 (qui montre déjà ce qui change).
+
+**Tests** : `tests/unitaires/v058.test.js`, `tests/navigateur/v058.mjs` (centrage mesuré au pixel à 360 / 393 px, faux NAS) ;
+anciens tests adaptés (v08 et v054 changent les heures d'un vol enregistré : « Enregistrer quand même » ; v057 : numéro de
+version 0.57 ou suivant) ; test complet ; contrôle local avec le vrai fichier (totaux, PDF et CSV identiques à la v0.57).
+
 ## v0.57 — 22/11/2026
 
 Remarque R147. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

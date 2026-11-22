@@ -153,7 +153,9 @@ try {
   console.log('Vol modifié : trace recalculée');
   await ouvrirVol('Dash 8 Q400');
   await p.fill('#f-t0', ''); await p.type('#f-t0', '0145'); await p.type('#f-t1', '0300'); // LOC Nice = 23h45 -> 01h00 UTC
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('#save');
+  await p.waitForSelector('#tv-modal:not([hidden])'); await p.click('#tv-ok'); // v0.58 (R150) : temps de vol changé -> « Enregistrer quand même »
+  await p.waitForSelector('#v-carnet:not([hidden])');
   await ouvrirVol('Dash 8 Q400');
   await p.waitForSelector('#carte-mini:not([hidden]) path.leaflet-interactive');
   const t2 = (await lireVol(ids[0][0])).trace;
