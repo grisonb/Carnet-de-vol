@@ -108,6 +108,9 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
 - `js/personnes.js` (v0.55) : `afficherPersonne` (trigramme, sinon nom, sinon prénom), `formesPersonne`, `indexPersonnes`,
   `nomAffiche`, `volsACorriger`, `totauxTrigrammes`. `js/trace-import.js` (v0.55) : lecture GPX / KML / KMZ / IGC / GeoJSON /
   CSV, `simplifier`, `encoderPoints` / `decoderPoints`, `traceImportee`. (`js/fiches-avions.js` supprimé en v0.55.)
+- `js/compteurs.js` (v0.56) : `listeCompteurs(fiches, ordre)`, `deplacer`, `departDuType` (compteurs de départ), `compteursDuType`,
+  `compteursParDefaut` (avion puis type), `compteursDuVol` (défaut + ajoutés + valeur > 0), `changerChoix`, `volsAvecCompteur`,
+  `nouvelleCle`, `problemeNom`. `js/ui/compteurs.js` : Plus › Compteurs, `htmlCases` (fiches type / avion).
 - Saisie : nouveau vol = arrivée du dernier vol -> `arriveeParDefaut` (modele.js : FMEP si départ FMEP, sinon `BASE` LFTW ; suit le
   départ tant que `F.arrAuto`, v0.20) ; bouton « LF » (réglage `prefixeLF`) dans `champOACI`.
 - Boutons × : constante `CROIX` (`commun.js`, croix dessinée) dans un bouton `.xbtn` ou `.x` (rond rouge).
@@ -173,6 +176,13 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `#sy-nas` (ui/synchro.js) ouvre `ecranNas` ; `verifierRappel` : classe `alerte` (`copieEnEchec`, `copieBloquee`), bouton
   `#pl-bk-go` mode `nas`. R141 / R142 : `#pl-fiches`, `#pl-import`, `#pl-ie` retirés (`#file-flylog` caché gardé pour les
   tests). R143 Totaux `.sec.repli` (`.sec-t`, `poserSections`), réglage privé `totauxOuverts`, `#t-tri`.
+- v0.56 : R144 réglages PARTAGÉS `compteursFiches` { cle: { nom, totaux, masque, cree, creeLe, supprime } } et `compteursTypes`
+  { code: [cles] } (`compteurs` = l'ordre, comme avant, « on » gardé : sert au départ DH8D) ; avion `compteursPropres` (null =
+  comme le type) ; vol `compteursAjoutes`. `listeDesCompteurs()` (etat.js). Saisie : `#ctr-open` « Compteurs › » ouvre
+  `#cpt-modal` (`#cptm-list` : `.cbox[data-ck]`, `[data-mv]`), question `#cpc-modal` (`#cpc-b [data-po]`) ; `#ctr-zone` /
+  `#ctr-panel` supprimés. Fiche type `#te-cps`, fiche avion `#fi-cpsec` (`#fi-cp-sw`, `#fi-cps`). Totaux : `t.parCompteur`
+  (créés), `valeurCompteur`. CSV : `colonnesTableur(liste)`. R145 ordre de Plus, `#pl-compteurs`. R146 `lireDerniereVersionNas`
+  / `derniereVersionGardee` (ui/nas.js), réglage privé `nasDerniereVersion`.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

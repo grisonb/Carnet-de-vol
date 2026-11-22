@@ -126,13 +126,13 @@ try {
   console.log('Compteurs et libellés dans la saisie');
   await p.click('#fab');
   await p.click('#ac-cur'); await p.fill('#ac-q', 'xaaa'); await p.click('#ac-res .acitem');
-  verifier(await p.isHidden('#feu-row') && await p.isHidden('#ctr-zone') && await p.locator('#ctrs .step').count() === 0, 'DR400 : aucun compteur');
+  verifier(await p.isHidden('#feu-row') && await p.locator('#ctrs .step').count() === 1, 'DR400 : ni Feux ni compteur Dash (v0.56 : « Amerrissages SEP » seul, type SEP)');
   await p.locator('.c-mi').screenshot({ path: join(CAPT, 'v06-05-mission-non-dh8d.png') });
   await p.click('#ac-cur'); await p.fill('#ac-q', 'xzzb'); await p.click('#ac-res .acitem');
   verifier(await p.isVisible('#feu-row') && (await p.textContent('#fire-next')).includes('n°8'), 'DH8D : Feux (prochain : n°8 = plus grand n° importé + 1) et compteurs');
   await p.locator('.c-mi').screenshot({ path: join(CAPT, 'v06-06-mission-dh8d.png') });
   const liens = await p.$$eval('.mi-links .linkbtn', l => l.map(x => x.textContent));
-  verifier(JSON.stringify(liens) === '["Libellés missions ›","Règles des pastilles ›"]', '« Libellés missions › » au-dessus de « Règles des pastilles › »');
+  verifier(JSON.stringify(liens) === '["Compteurs ›","Libellés missions ›","Règles des pastilles ›"]', '« Compteurs › » (v0.56), puis « Libellés missions › » au-dessus de « Règles des pastilles › »');
   await p.click('#mlm-open');
   const libs = () => p.$$eval('#mlm-list .swfront', l => l.map(x => x.textContent));
   const tous = await libs();

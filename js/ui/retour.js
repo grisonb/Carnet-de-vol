@@ -15,6 +15,7 @@ const COUCHES = {
   fleet: '#fl-x', fiche: '#fi-x', add1: '#a1-x', 'p-modal': '#pm-x', 'tg-modal': '#pm2-x',
   'rules-modal': '#rm-x', 'via-modal': '#vm-cancel', 'ter-modal': '#ter-x', 'hs-modal': '#hs-x',
   'ml-modal': '#mlm-x', 'fd-modal': '#fd-no', 'carte-plein': '#cp-x', outil: '#ou-x', 'ab-modal': '#ab-no', 'ph-modal': '#ph-x', 'feu-modal': '#feu-non', 'fn-modal': '#fn-non', 'rc-modal': '#rc-non',
+  'cpt-modal': '#cptm-x', 'cpc-modal': '#cpc-b [data-po=""]', // v0.56 (R144) : compteurs du vol, question « ce vol / cet avion / le type »
 };
 
 let opts = null;

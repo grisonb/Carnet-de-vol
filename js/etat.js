@@ -9,6 +9,7 @@ import { REGLES_DEFAUT, missionsConnues } from './missions.js';
 import { REGLAGES_PRIVES } from './sauvegarde.js';
 import { indexPersonnes, nomAffiche, personneDuTexte } from './personnes.js';
 import { REGLAGES_PARTAGES } from './synchro.js';
+import { listeCompteurs } from './compteurs.js';
 
 export const etat = {
   vols: [],            // du plus récent au plus ancien
@@ -25,9 +26,13 @@ export function reglage(cle) {
   const defauts = {
     compteurs: COMPTEURS_DEFAUT, regles: REGLES_DEFAUT, etiquettes: ETIQUETTES_DEFAUT,
     missionsAjoutees: [], titulaire: '', derniereSauvegarde: null, reference: null, terrainsPerso: {}, missionsMasquees: [], bandeHeures: BANDE_DEFAUT,
+    compteursFiches: {}, compteursTypes: {}, // v0.56 (R144)
   };
   return etat.reglages[cle] ?? defauts[cle];
 }
+
+// v0.56 (R144) : tous les compteurs (nom choisi, compté dans les Totaux, masqué), dans l'ordre choisi
+export const listeDesCompteurs = () => listeCompteurs(reglage('compteursFiches'), reglage('compteurs'));
 
 export async function charger() {
   const [vols, avions, personnes, reglages] = await Promise.all([

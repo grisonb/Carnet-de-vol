@@ -100,10 +100,10 @@ try {
   const ordre = () => T.$$eval('.sec.c-mi .step', l => l.filter(x => !x.hidden).map(x => x.querySelector('span').childNodes[0].textContent.trim()));
   const ordreAvant = await ordre();
   verifier(ordreAvant[0] === 'Feux' && ordreAvant[1] === 'Largages CdB Dash', `par défaut : « Feux » en premier (${ordreAvant.join(', ')})`);
-  await T.click('#ctr-open');
-  const panneau = await T.$$eval('#ctr-panel .prow', l => l.map(x => ({ nom: x.querySelector('.pname').textContent, sw: !!x.querySelector('.sw'), fleches: x.querySelectorAll('.arrows button').length })));
-  verifier(panneau[0].nom === 'Feux' && !panneau[0].sw && panneau[0].fleches === 2 && panneau.slice(1).every(x => x.sw), '« Choisir et ranger » : « Feux » avec ↑ ↓, sans interrupteur');
-  await T.click('#ctr-panel [data-mv="0"][data-d="1"]'); await attendre(T, 200);
+  await T.click('#ctr-open'); // v0.56 (R144) : fenêtre « Compteurs › » (cases + flèches) à la place de « Choisir et ranger »
+  const panneau = await T.$$eval('#cptm-list .prow', l => l.map(x => ({ nom: x.querySelector('.cbox').textContent, fleches: x.querySelectorAll('.arrows button').length })));
+  verifier(panneau[0].nom === 'Feux' && panneau.every(x => x.fleches === 2), '« Compteurs › » : « Feux » en premier, chaque compteur avec ↑ ↓');
+  await T.click('#cptm-list [data-mv="0"][data-d="1"]'); await attendre(T, 200); await T.click('#cptm-x');
   verifier((await ordre()).join(', ') === ['Largages CdB Dash', 'Feux', ...ordreAvant.slice(2)].join(', '), `↓ : « Feux » sous « Largages CdB Dash » (${(await ordre()).join(', ')})`);
   await fermer(T);
   console.log('Fermer et rouvrir l\'app');
@@ -120,7 +120,7 @@ try {
   await T.click('#feu-m');
   verifier((await T.textContent('#s-feu')) === '0' && !(await T.$$eval('#ml input', l => l.some(x => /^FEU/.test(x.value)))), '« − » sur Feux : ligne retirée');
   await T.click('#ctr-open');
-  await T.click('#ctr-panel [data-mv="1"][data-d="-1"]'); await attendre(T, 200);
+  await T.click('#cptm-list [data-mv="1"][data-d="-1"]'); await attendre(T, 200); await T.click('#cptm-x');
   verifier((await ordre())[0] === 'Feux', '↑ : « Feux » revient en premier');
   await fermer(T);
 

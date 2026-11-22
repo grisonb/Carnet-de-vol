@@ -1,5 +1,43 @@
 # Journal des versions
 
+## v0.56 — 22/11/2026
+
+Remarques R144 à R146. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.
+
+**R144 : compteurs gérables.** Plus › Mes réglages › « Compteurs » : liste, « + Nouveau compteur », fiche (Nom, « Compté
+dans les Totaux », Enregistrer ; « Supprimer » s'il n'a jamais servi, sinon « Masquer » / « Réafficher » : un compteur
+masqué n'est plus proposé, ses valeurs restent dans les vols, les totaux et le CSV). Changer un nom change l'affichage
+partout (bulles, saisie, Totaux, CSV) ; les valeurs ne bougent pas. Feux : jamais supprimé, fonctionnement « FEU n°NN »
+inchangé.
+Compteurs par défaut : fiche d'un type (Plus › Types d'avion) et fiche d'un avion (« Comme le type XXX », oui par défaut,
+sinon cases propres à l'avion ; priorité : l'avion, puis le type). Point de départ : Dash 8 (DH8D, MR et MRE) = ce que l'app
+affichait (Feux + compteurs allumés dans l'ancien réglage ; d'usine : Largages CdB Dash et Largages instruction CdB Dash) ;
+CL-415 (CL2T) = Feux, Écopages, Amerrissages CL, Largages copi CL ; types SEP (monopilote, monomoteur, piston) =
+Amerrissages SEP ; autres types et simulateurs : aucun ; Largages para : aucun type.
+Saisie, bloc Mission : « Compteurs › » (avant « Libellés missions › ») remplace « Choisir et ranger les compteurs » :
+cases (cocher : « Juste pour ce vol » / « Pour cet avion » / « Pour le type » / « Annuler » ; décocher : « Pour cet avion » /
+« Pour le type » / « Annuler ») et flèches ↑↓ (ordre pour tous les vols). Un compteur qui a une valeur sur un vol y reste
+toujours affiché. En lecture seule, « Compteurs › » ne fait rien.
+Données : réglages PARTAGÉS `compteurs` (ordre, comme avant), `compteursFiches` (nom, totaux, masqué, créé, supprimé),
+`compteursTypes` (par type) ; avion `compteursPropres` ; vol `compteursAjoutes` ; valeurs dans `vol.feux` /
+`vol.compteurs[cle]` comme avant. Synchro NAS (le plus récent gagne) et sauvegarde : oui. CSV : une colonne par compteur
+(les 8 d'origine toujours, puis les créés, masqués compris). PDF EASA : inchangé. Totaux : compteurs « Compté dans les
+Totaux », dans l'ordre choisi. Note : l'app ne relit pas le CSV ; la restauration se fait depuis la sauvegarde (qui contient
+tout).
+
+**R145 : ordre de Plus** : Mes réglages (Mes avions, Types d'avion, Personnes, Heures affichées en haut, Pastilles des
+missions, Libellés missions, Compteurs, Traces des vols, Socle OPS / IFR), Exporter, Sauvegarde, Contrôle, Téléphone.
+Bandeau du haut inchangé.
+
+**R146 : « version gardée » = la plus récente du NAS**, quel que soit l'appareil : lue sur le NAS (action « liste » de
+carnet.php v5, déjà existante) à l'ouverture de Plus, au plus une fois par minute, gardée sur l'appareil (réglage privé
+`nasDerniereVersion`) ; NAS injoignable : dernière lecture gardée. Même date dans le bandeau du haut (« Copié sur le NAS
+… ») ; ses alertes d'échec inchangées. Mot de passe refusé (ou NAS qui bloque) : aucune lecture automatique ; un refus est
+noté comme pour la copie et la synchro, et « Synchro du carnet » affiche alors « Mot de passe refusé : à corriger ».
+
+**Tests** : `tests/unitaires/v056.test.js`, `tests/navigateur/v056.mjs` ; anciens tests adaptés (parcours, v06, v037, v09,
+v055) ; test complet ; contrôle local avec le vrai fichier (totaux v0.55 = v0.56, CSV identique).
+
 ## v0.55 — 22/11/2026
 
 Remarques R136 à R143. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées.

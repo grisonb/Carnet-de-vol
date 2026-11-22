@@ -2,11 +2,12 @@
 
 import { $, $$, esc, segs, choisir, toast, toastAction, codeAvecDrapeau, PLUS, MOINS, CROIX } from './commun.js';
 import { etat, reglage, enregistrerReglage, ecrireReglageDiscret, enregistrerVol, supprimerVol, enregistrerPersonne, supprimerPersonne,
-  listeMissions, trouverPersonne, enregistrerAvion, enConsultation, enregistrerPersonneEtVols, nomAfficheVol } from '../etat.js';
+  listeMissions, trouverPersonne, enregistrerAvion, enConsultation, enregistrerPersonneEtVols, nomAfficheVol, listeDesCompteurs } from '../etat.js';
+import { compteursDuVol, compteursParDefaut, changerChoix, codeType, deplacer } from '../compteurs.js';
 import { afficherPersonne, volsACorriger } from '../personnes.js';
 import { ouvrirAjoutTerrain } from './terrain-perso.js';
 import { estSimulation, volVide, FONCTIONS, TEMPS_FONCTION, COMPTEURS, colonnesAvion, personneVide, nomPersonne, ligneAvion,
-  etiquettesDeLAvion, etiquettesPourAvion, basculerEtiquette, fonctionsPossibles, champPersonneVisible, compteursAffiches, compteursRanges, BASE, arriveeParDefaut } from '../modele.js';
+  etiquettesDeLAvion, etiquettesPourAvion, basculerEtiquette, fonctionsPossibles, champPersonneVisible, BASE, arriveeParDefaut } from '../modele.js';
 import { supprimerVolAvecAnnuler } from './suppression.js';
 import { afficherCarteVol } from './carte.js';
 import { hm, lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujourdhui, dateFr, heureH } from '../temps.js';
@@ -17,7 +18,7 @@ import { minutesDeNuit, estNuit, repartitionAtterrissages } from '../nuit.js';
 import { plusGrandFeu, ajouterFeu, enleverFeu, lignesPourSaisie, estLigneFeu, normaliser, estMasquee, numeroFeu,
   masquerSuggestion, remettreSuggestion } from '../missions.js';
 import { activerGlisser } from './glisser.js';
-import { initAvions } from './avions.js';
+import { initAvions, typesConnus } from './avions.js';
 import { ouvrirRegles } from './regles.js';
 import { brouillonNpf } from '../npf.js';
 import { ignorerVolNpf, volNpfEnregistre } from './npf.js';
@@ -477,27 +478,65 @@ function rendreLibelles() {
 }
 
 // ---------- Compteurs métier ----------
-// Compteurs affichés selon le type d'avion (règles dans modele.js : DH8D seulement pour l'instant) ;
-// un compteur déjà non nul sur ce vol reste toujours visible (rien n'est perdu)
+// v0.56 (R144) : compteurs affichés = ceux par défaut de l'avion (sinon de son type), ceux ajoutés à ce vol, et toujours ceux
+// qui ont une valeur sur ce vol (rien n'est perdu). « Compteurs › » : cases (ce vol / cet avion / le type) et ordre (tous les vols).
+const ctxCompteurs = () => ({ liste: listeDesCompteurs(), parType: reglage('compteursTypes') || {}, ancien: reglage('compteurs') });
+const volCompteurs = () => ({ feux: nbFeux(), compteurs: F.compteurs, compteursAjoutes: F.ajoutes });
 function rendreCompteurs() {
-  const conf = compteursRanges(reglage('compteurs')); // v0.37 (R91) : « Feux » rangé avec les autres
-  const noms = { feux: 'Feux', ...Object.fromEntries(COMPTEURS.map(c => [c.cle, c.nom])) };
-  const aff = compteursAffiches(avion(), { feux: nbFeux(), compteurs: F.compteurs });
-  const ligneFeu = $('#feu-row');
-  ligneFeu.hidden = !aff.feux;
-  $('#ctr-zone').hidden = !aff.reglable;
-  if (!aff.reglable) { $('#ctr-panel').hidden = true; $('#ctr-open').setAttribute('aria-expanded', 'false'); }
+  const aff = compteursDuVol({ avion: avion(), vol: volCompteurs(), ...ctxCompteurs() });
+  const ligneFeu = $('#feu-row'), feu = aff.find(c => c.cle === 'feux');
+  ligneFeu.hidden = !feu;
+  if (feu) ligneFeu.firstElementChild.firstChild.textContent = feu.nom + ' '; // nom choisi (Plus › Compteurs)
   // la ligne « Feux » (ses boutons, son « prochain : n°… ») est déplacée telle quelle à sa place parmi les compteurs
   $('#ctrs').before(ligneFeu);
-  const visibles = conf.filter(c => c.cle !== 'feux' && ((c.on && aff.compteurs.has(c.cle)) || F.compteurs[c.cle]));
-  const avantFeu = conf.slice(0, conf.findIndex(c => c.cle === 'feux')).filter(c => visibles.includes(c)).length;
+  const visibles = aff.filter(c => c.cle !== 'feux');
+  const avantFeu = feu ? aff.indexOf(feu) : 0;
   $('#ctrs').innerHTML = visibles.map(c =>
-    `<div class="step"><span>${esc(noms[c.cle])}</span><span class="ctl"><button type="button" data-c="${c.cle}" data-d="-1" aria-label="${esc(noms[c.cle])} moins">${MOINS}</button><output id="c-${c.cle}">${F.compteurs[c.cle] || 0}</output><button type="button" data-c="${c.cle}" data-d="1" aria-label="${esc(noms[c.cle])} plus">${PLUS}</button></span></div>`).join('');
+    `<div class="step"><span>${esc(c.nom)}</span><span class="ctl"><button type="button" data-c="${esc(c.cle)}" data-d="-1" aria-label="${esc(c.nom)} moins">${MOINS}</button><output id="c-${esc(c.cle)}">${F.compteurs[c.cle] || 0}</output><button type="button" data-c="${esc(c.cle)}" data-d="1" aria-label="${esc(c.nom)} plus">${PLUS}</button></span></div>`).join('');
   // (cachée, pour un avion sans compteurs : elle reste hors de la liste, comme avant)
   const ici = $('#ctrs').children[avantFeu];
-  if (aff.feux) { if (ici) ici.before(ligneFeu); else $('#ctrs').append(ligneFeu); }
-  $('#ctr-panel').innerHTML = '<p class="hint">Allume les compteurs à afficher dans la saisie, et range-les avec les flèches.</p>'
-    + conf.map((c, i) => `<div class="prow"><span class="arrows"><button type="button" data-mv="${i}" data-d="-1" aria-label="Monter" ${i ? '' : 'disabled'}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Descendre" ${i < conf.length - 1 ? '' : 'disabled'}>↓</button></span><span class="pname">${esc(noms[c.cle])}</span>${c.cle === 'feux' ? '<span class="sw-place" title="Toujours affiché"></span>' : `<button type="button" class="sw" role="switch" aria-checked="${c.on}" data-tg="${i}" aria-label="${esc(noms[c.cle])}"><span></span></button>`}</div>`).join('');
+  if (feu) { if (ici) ici.before(ligneFeu); else $('#ctrs').append(ligneFeu); }
+  if (!$('#cpt-modal').hidden) rendreFenetreCompteurs();
+}
+function rendreFenetreCompteurs() {
+  const ctx = ctxCompteurs(), affiches = new Set(compteursDuVol({ avion: avion(), vol: volCompteurs(), ...ctx }).map(c => c.cle));
+  const n = ctx.liste.length;
+  $('#cptm-list').innerHTML = ctx.liste.map((c, i) => (c.masque && !affiches.has(c.cle) ? '' // masqué : plus proposé
+    : `<div class="prow"><span class="arrows"><button type="button" data-mv="${i}" data-d="-1" aria-label="Monter ${esc(c.nom)}" ${i ? '' : 'disabled'}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Descendre ${esc(c.nom)}" ${i < n - 1 ? '' : 'disabled'}>↓</button></span><button type="button" class="cbox" role="checkbox" aria-checked="${affiches.has(c.cle)}" data-ck="${esc(c.cle)}">${esc(c.nom)}</button></div>`)).join('');
+}
+function ouvrirFenetreCompteurs() { if (!F) return; rendreFenetreCompteurs(); $('#cpt-modal').hidden = false; }
+const nomDuType = a => {
+  if (a.sim) return 'Simulateurs';
+  const code = codeType(a), t = typesConnus().get(code);
+  return `${code || '?'}${t && t.modele ? ` · ${t.modele}` : ''}`;
+};
+// Question posée en cochant / décochant : renvoie 'vol', 'avion', 'type' ou null (Annuler)
+function demanderPortee(cocher, c, a) {
+  const choix = [...(cocher ? [['vol', 'Juste pour ce vol']] : []),
+    ...(a ? [['avion', `Pour cet avion (${a.immat})`], ['type', `Pour le type (${nomDuType(a)})`]] : []), ['', 'Annuler']];
+  $('#cpc-t').textContent = `${cocher ? 'Afficher' : 'Ne plus afficher'} « ${c.nom} »`;
+  $('#cpc-b').innerHTML = choix.map(([k, l]) => `<button type="button" class="ghost${k ? '' : ' annuler'}" data-po="${k}">${esc(l)}</button>`).join('');
+  $('#cpc-modal').hidden = false;
+  return new Promise(ok => {
+    $('#cpc-b').onclick = e => { const b = e.target.closest('[data-po]'); if (!b) return; $('#cpc-modal').hidden = true; $('#cpc-b').onclick = null; ok(b.dataset.po || null); };
+  });
+}
+async function cocherCompteur(cle) {
+  const ctx = ctxCompteurs(), a = avion(), c = ctx.liste.find(x => x.cle === cle);
+  if (!c) return;
+  const cocher = !compteursDuVol({ avion: a, vol: volCompteurs(), ...ctx }).some(x => x.cle === cle);
+  const parDefaut = compteursParDefaut(a, ctx.parType, ctx.ancien).includes(cle);
+  // décocher un compteur ajouté seulement à ce vol (ou sans avion choisi) : rien à demander
+  const portee = !cocher && (!a || !parDefaut) ? 'vol' : await demanderPortee(cocher, c, a);
+  if (!portee) return;
+  const r = changerChoix({ cocher, portee, cle, avion: a, ajoutes: F.ajoutes, parType: ctx.parType, ancien: ctx.ancien });
+  F.ajoutes = r.ajoutes;
+  if (r.typeListe) await enregistrerReglage('compteursTypes', { ...ctx.parType, [codeType(a)]: r.typeListe });
+  if (r.propres) await enregistrerAvion({ ...etat.avions.get(a.id), compteursPropres: r.propres });
+  rendreCompteurs(); rendreFenetreCompteurs();
+  const valeur = cle === 'feux' ? nbFeux() > 0 : F.compteurs[cle] > 0;
+  if (!cocher && valeur) toast(`« ${c.nom} » reste affiché sur ce vol : il a une valeur.`, 2500);
+  else if (portee !== 'vol') toast(cocher ? `« ${c.nom} » ajouté${portee === 'avion' ? ` pour ${a.immat}` : ' pour le type'}` : `« ${c.nom} » retiré pour les prochains vols`, 2000);
 }
 
 // ---------- Temps du carnet (récapitulatif EASA) ----------
@@ -624,7 +663,8 @@ export function ouvrirSaisie(vol, opts = {}) {
   const v = vol ? structuredClone(vol) : volVide();
   F = { vol: vol || null, mode: vol ? (vol.mode || 'loc') : 'loc', escales: (v.escales || []).map(e => ({ ...e })),
     avionId: v.avionId, etiquettes: [...(v.etiquettes || [])], fonction: v.fonction || 'cdb',
-    lignes: lignesPourSaisie(v), compteurs: { ...v.compteurs }, s: { approches: Math.max(0, (v.approches || 0) - approchesEscales(v.escales)), attJour: v.attJour, attNuit: v.attNuit },
+    lignes: lignesPourSaisie(v), compteurs: { ...v.compteurs }, ajoutes: [...(v.compteursAjoutes || [])], // v0.56 (R144)
+    s: { approches: Math.max(0, (v.approches || 0) - approchesEscales(v.escales)), attJour: v.attJour, attNuit: v.attNuit },
     ifr: !!v.regleIFR, bloc: v.tempsTotal || v.simTemps || 0, heuresInconnues: !!vol && !(vol.hDep && vol.hArr), charge: true, npf: null,
     // v0.32 (R76) : ancien vol = enregistré avec un temps de vol mais sans heures bloc
     feuChoisi: 0, simulation: estSimulation(vol), // v0.35 (R85)
@@ -646,7 +686,7 @@ export function ouvrirSaisie(vol, opts = {}) {
   $$('#v-saisie input.bad').forEach(el => el.classList.remove('bad'));
   majBoutonLF();
   $('#f-err').textContent = '';
-  $('#ctr-panel').hidden = true; $('#ctr-open').setAttribute('aria-expanded', 'false');
+  $('#cpt-modal').hidden = true; $('#cpc-modal').hidden = true; // v0.56 : fenêtre des compteurs fermée à l'ouverture d'un vol
   $('#p-res').hidden = true; $('#m-res').hidden = true; ouvrirChoixAvion(false);
   $('#m-q').value = '';
   choisir('.seg.mini', F.mode === 'loc' ? 0 : 1);
@@ -733,7 +773,7 @@ export function ouvrirSaisie(vol, opts = {}) {
 // le crayon, LF / LOC / UTC, la carte (flammes figées : voir carte.js), la fiche de l'avion (« i », sans son crayon) et
 // l'ouverture du détail des compteurs. Ni « Enregistrer » ni « Supprimer » (style).
 let lecture = false;
-const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #ctr-open';
+const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche'; // v0.56 : « Compteurs › » bloqué en lecture
 export const enLecture = () => lecture;
 function fixerLecture(oui) {
   lecture = oui;
@@ -759,7 +799,7 @@ function bloquerEnLecture(e) {
 const CHAMPS = ['#f-date', '#f-dep', '#f-arr', '#f-t0', '#f-t1', '#f-copi', '#f-rem', '#c-ifr', '#c-nuit', '#c-col', '#c-fn'];
 function empreinte() {
   return JSON.stringify([CHAMPS.map(c => $(c).value), F.mode, F.escales, F.avionId, F.etiquettes, F.fonction,
-    F.lignes.map(l => l.t), F.compteurs, F.s, F.ifr, F.ie]);
+    F.lignes.map(l => l.t), F.compteurs, F.ajoutes, F.s, F.ifr, F.ie]);
 }
 export const saisieModifiee = () => !!F && !lecture && F.empreinte !== undefined && empreinte() !== F.empreinte;
 export function abandonnerSaisie() { F = null; quitter(); }
@@ -826,6 +866,7 @@ async function enregistrer() {
   v.missions = F.lignes.map(l => l.t.trim()).filter(Boolean);
   v.feux = nbFeux();
   v.compteurs = { ...v.compteurs, ...F.compteurs };
+  if (F.ajoutes.length) v.compteursAjoutes = [...F.ajoutes]; else delete v.compteursAjoutes; // v0.56 (R144) : « Juste pour ce vol »
   v.remarques = $('#f-rem').value.trim();
   if (!F.vol) v.source = 'saisie';
   // Vol reçu de NPF-Q400 : son id (pas de doublon), la date de l'export et les positions des feux (Carte du vol)
@@ -1093,16 +1134,15 @@ export function initSaisie({ fermer }) {
   $('#fn-non').addEventListener('click', () => { $('#fn-modal').hidden = true; });
   $('#fn-oui').addEventListener('click', validerNumeroFeu);
 
-  // compteurs : choix et ordre (réglage gardé pour les prochains vols)
-  $('#ctr-open').addEventListener('click', () => { const p = $('#ctr-panel'); p.hidden = !p.hidden; $('#ctr-open').setAttribute('aria-expanded', String(!p.hidden)); });
-  $('#ctr-panel').addEventListener('click', async e => {
-    const t = e.target.closest('[data-tg]'), m = e.target.closest('[data-mv]');
-    const conf = compteursRanges(reglage('compteurs')); // v0.37 (R91) : avec « Feux » (sans interrupteur)
-    if (t) conf[Number(t.dataset.tg)].on = !conf[Number(t.dataset.tg)].on;
-    else if (m) { const i = Number(m.dataset.mv), j = i + Number(m.dataset.d); [conf[i], conf[j]] = [conf[j], conf[i]]; }
-    else return;
-    await enregistrerReglage('compteurs', conf);
-    rendreCompteurs();
+  // v0.56 (R144) : « Compteurs › » : cases du vol et ordre (réglage « compteurs », pour tous les vols)
+  $('#ctr-open').addEventListener('click', ouvrirFenetreCompteurs);
+  $('#cptm-x').addEventListener('click', () => { $('#cpt-modal').hidden = true; });
+  $('#cptm-list').addEventListener('click', async e => {
+    const k = e.target.closest('[data-ck]'), m = e.target.closest('[data-mv]');
+    if (k) return cocherCompteur(k.dataset.ck);
+    if (!m) return;
+    await enregistrerReglage('compteurs', deplacer(reglage('compteurs'), listeDesCompteurs(), Number(m.dataset.mv), Number(m.dataset.d)));
+    rendreCompteurs(); rendreFenetreCompteurs();
   });
   $('#rules-open2').addEventListener('click', ouvrirRegles);
   $('#mlm-open').addEventListener('click', ouvrirLibelles);

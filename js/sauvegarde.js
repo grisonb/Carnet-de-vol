@@ -17,7 +17,8 @@ export const REGLAGES_PRIVES = ['nasAdresse', 'nasMotDePasse', 'nasAuto', 'nasEt
   'carteFond', 'feuxCommunesEnAttente', // v0.31 : fond Plan / Photo de cet appareil ; communes de feux déplacés hors ligne
   'afficherJours', // v0.42 (R104) : cases 3 / 7 / 30 jours de l'accueil affichées ou non sur cet appareil
   'socleLu', // v0.48 (R122) : dernière lecture réussie du socle OPS / IFR (cet appareil)
-  'totauxOuverts']; // v0.55 (R143) : sections des Totaux laissées ouvertes (cet appareil)
+  'totauxOuverts', // v0.55 (R143) : sections des Totaux laissées ouvertes (cet appareil)
+  'nasDerniereVersion']; // v0.56 (R146) : date de la dernière version gardée lue sur le NAS (cet appareil)
 
 // contenu : { vols, avions, personnes, suppressions, reglages: [{cle, valeur}] }
 export function creerSauvegarde(contenu, maintenant = new Date().toISOString()) {
@@ -137,14 +138,29 @@ export const COLONNES_TABLEUR = [
   ['Modifié le', v => v.modifieLe],
 ];
 
+// v0.56 (R144) : une colonne par compteur : les 8 d'origine toujours (avec leur nom choisi), puis les compteurs créés
+// (masqués compris) ; liste = listeCompteurs(...) (sans liste : comme avant)
+export function colonnesTableur(liste = null) {
+  if (!liste) return COLONNES_TABLEUR;
+  const noms = new Map(liste.map(c => [c.cle, c.nom]));
+  const val = cle => v => (v.compteurs && v.compteurs[cle]) || 0;
+  const crees = liste.filter(c => c.cree).map(c => [c.nom, val(c.cle)]);
+  const l = COLONNES_TABLEUR.map(col => {
+    const base = COMPTEURS.find(c => c.nom === col[0]);
+    return base ? [noms.get(base.cle) || base.nom, col[1]] : col;
+  });
+  const i = l.findIndex(([t]) => t === 'Remarque du carnet');
+  return [...l.slice(0, i), ...crees, ...l.slice(i)];
+}
 // vols : ordre chronologique ; avions : Map id -> avion
-export function texteTableur(vols, avions) {
+export function texteTableur(vols, avions, liste = null) {
+  const cols = colonnesTableur(liste);
   const lignes = vols.map(v => {
     const a = avions.get(v.avionId);
     const c = colonnesAvion(v, a);
-    return COLONNES_TABLEUR.map(([, f]) => f(v, a, c) ?? '');
+    return cols.map(([, f]) => f(v, a, c) ?? '');
   });
-  return ecrireCSV(COLONNES_TABLEUR.map(([t]) => t), lignes);
+  return ecrireCSV(cols.map(([t]) => t), lignes);
 }
 
 // Encart « sauvegarde » en haut de Plus : à faire si jamais faite ou plus de 7 jours (date affichée en heure du téléphone)

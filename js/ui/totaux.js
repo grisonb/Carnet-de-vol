@@ -3,11 +3,11 @@
 // section « Trigrammes » (personnes qui ont un trigramme : vols et heures ensemble, dernier vol ; simulateur exclu).
 
 import { $, esc, segs } from './commun.js';
-import { etat, reglage, ecrireReglageDiscret, avionDe } from '../etat.js';
+import { etat, reglage, ecrireReglageDiscret, avionDe, listeDesCompteurs } from '../etat.js';
 import { totauxTrigrammes } from '../personnes.js';
 import { volsReels } from '../modele.js';
 import { hm, aujourdhui, dateFr } from '../temps.js';
-import { RUBRIQUES, calculerTotaux, filtrerPeriode, heuresDerniersJours, totalHdV, bornesPeriode } from '../totaux.js';
+import { RUBRIQUES, calculerTotaux, valeurCompteur, filtrerPeriode, heuresDerniersJours, totalHdV, bornesPeriode } from '../totaux.js';
 
 let periode = { genre: 'tout' };
 const nombre = n => n.toLocaleString('fr-FR');
@@ -35,7 +35,9 @@ export function rafraichirTotaux() {
   const groupe = g => RUBRIQUES.filter(r => r.groupe === g).map(r => ligne(r.titre, val(r))).join('');
   $('#t-h').innerHTML = groupe('heures');
   $('#t-c').innerHTML = RUBRIQUES.filter(r => r.groupe === 'categories' && t[r.cle]).map(r => ligne(r.titre, val(r))).join('') || '<p class="hint">Aucune heure sur la période.</p>';
-  $('#t-m').innerHTML = groupe('metier');
+  // v0.56 (R144) : compteurs « Compté dans les Totaux » (d'origine ou créés, nom choisi), dans l'ordre des compteurs
+  $('#t-m').innerHTML = listeDesCompteurs().filter(c => c.totaux).map(c => ligne(c.nom, nombre(valeurCompteur(t, c.cle)))).join('')
+    || '<p class="hint">Aucun compteur compté dans les Totaux (Plus › Compteurs).</p>';
   const et = Object.entries(t.parEtiquette).sort((x, y) => y[1] - x[1]);
   $('#t-e').innerHTML = et.map(([k, m]) => ligne(k, hm(m))).join('') || '<p class="hint">Aucune étiquette sur la période.</p>';
   const ty = Object.entries(t.parType).sort((x, y) => y[1] - x[1]);

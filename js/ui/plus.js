@@ -3,7 +3,7 @@
 // retirés (aucune donnée ne change).
 
 import { $, esc, toast, proposerFichier, lireFichierTexte, ouvrirOutil, fermerOutil, pause } from './commun.js';
-import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer } from '../etat.js';
+import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer, listeDesCompteurs } from '../etat.js';
 import { analyserFlyLog } from '../flylog.js';
 import { calculerTotaux, filtrerPeriode, bornesPeriode } from '../totaux.js';
 import { comparerReference } from '../controle.js';
@@ -20,8 +20,10 @@ import { ouvrirPersonne, ouvrirLibelles } from './saisie.js';
 import { ouvrirChoixBande } from './carnet.js';
 import { resumeCartes } from './carte.js';
 import { resumeSocle } from './socle.js';
-import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas } from './nas.js';
+import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas, lireDerniereVersionNas, derniereVersionGardee, nasRefuse } from './nas.js';
 import { ecranSynchro, resumeSynchroActuel } from './synchro.js';
+import { ecranCompteurs, resumeCompteurs, htmlCases, basculerCase } from './compteurs.js';
+import { compteursDuType } from '../compteurs.js';
 import { copieNasAJour, depuis } from '../copieur.js';
 
 const nombre = n => n.toLocaleString('fr-FR');
@@ -95,7 +97,7 @@ function ecranCSV() {
     <p class="hint" style="font-size:15px">Un fichier avec toutes les colonnes (mission et compteurs compris), une seule ligne d'en-tête, séparateur « ; ». S'ouvre dans LibreOffice Calc et Excel.</p>
     <button type="button" class="bigbtn" id="cs-dl">Enregistrer dans Téléchargements</button>
     <button type="button" class="bigbtn second" id="cs-sh">Partager (Drive, e-mail…)</button>`);
-  const fabriquer = () => new Blob([texteTableur(chrono(etat.vols), etat.avions)], { type: 'text/csv;charset=utf-8' });
+  const fabriquer = () => new Blob([texteTableur(chrono(etat.vols), etat.avions, listeDesCompteurs())], { type: 'text/csv;charset=utf-8' });
   c.querySelector('#cs-dl').addEventListener('click', () => proposerFichier(fabriquer(), nomFichier('carnet-de-vol', 'csv')));
   c.querySelector('#cs-sh').addEventListener('click', () => proposerFichier(fabriquer(), nomFichier('carnet-de-vol', 'csv'), { partager: true }));
 }
@@ -145,9 +147,13 @@ const copieEnEchec = (conf, e) => conf.configuree && conf.auto && ECHECS_COPIE.i
 export function resumeLigneSynchro() {
   const conf = configNas(), nas = etatNas();
   if (!conf.configuree) return 'NAS à régler · synchro et versions gardées';
+  // v0.56 : mot de passe refusé (vu par la synchro, la copie ou la lecture des versions) : dit en premier, rien d'autre
+  if (nasRefuse()) return 'Mot de passe refusé : à corriger';
   const sy = resumeSynchroActuel(), synchro = /^Synchronisé/.test(sy) ? 'Synchronisé' : sy;
   if (copieEnEchec(conf, nas)) return `${synchro} · copie sur le NAS : ${resumeCopieNas()}`;
-  if (nas.derniereCopie) return `${synchro} · version gardée ${depuis(nas.derniereCopie)}`;
+  // v0.56 (R146) : la dernière version gardée sur le NAS, quel que soit l'appareil qui l'a faite
+  const derniere = derniereVersionGardee();
+  if (derniere) return `${synchro} · version gardée ${depuis(derniere)}`;
   if (reglage('synchroRole') && reglage('synchroRole') !== 'reference') return synchro; // les copies partent du téléphone
   return `${synchro} · ${conf.auto ? 'aucune version gardée pour l\'instant' : 'copie automatique arrêtée'}`;
 }
@@ -257,7 +263,16 @@ function editerType(t) {
     <div class="field"><label>Surface</label>${opt('su', Object.entries(SURFACE), v.surface)}</div>
     <div class="field"><label>Train</label>${opt('tr', [['tricycle', 'Tricycle'], ['classique', 'Classique']], v.train)}</div></div>
     <p class="hint">Modifier un type ne change pas les avions déjà créés : corrige aussi leur fiche si besoin.</p>
+    <div class="sec" id="te-cp"><h3>Compteurs par défaut</h3>
+      <p class="hint" style="margin-top:-6px">Affichés dans la saisie d'un vol sur un avion de ce type (sauf avion réglé autrement dans sa fiche). Les valeurs déjà saisies ne changent jamais.</p>
+      <div id="te-cps" class="cases"></div></div>
     <button type="button" class="bigbtn" id="te-ok">Enregistrer</button><button type="button" class="bigbtn second" id="te-no">Retour</button>`);
+  // v0.56 (R144) : compteurs par défaut du type (réglage « compteursTypes » ; jamais changé : compteurs de départ)
+  let cases = compteursDuType(v.code, v, reglage('compteursTypes'), reglage('compteurs'));
+  const casesDepart = JSON.stringify(cases);
+  const rendreCases = () => { $('#te-cps').innerHTML = htmlCases(cases); };
+  rendreCases();
+  c.querySelector('#te-cps').addEventListener('click', e => { const b = e.target.closest('[data-cc]'); if (b) { cases = basculerCase(cases, b.dataset.cc); rendreCases(); } });
   c.querySelector('#te-no').addEventListener('click', ecranTypes);
   c.querySelector('#te-ok').addEventListener('click', async () => {
     const code = $('#te-code').value.trim().toUpperCase();
@@ -265,6 +280,11 @@ function editerType(t) {
     const n = { code, constructeur: $('#te-cons').value.trim().toUpperCase(), modele: $('#te-mod').value.trim(),
       equipage: $('#te-eq').value, moteurs: $('#te-eq').value === 'MP' ? 'ME' : $('#te-mo').value,
       moteur: $('#te-mt').value, surface: $('#te-su').value, train: $('#te-tr').value };
+    const parType = reglage('compteursTypes') || {};
+    if (JSON.stringify(cases) !== casesDepart || (!t && cases.length)) await enregistrerReglage('compteursTypes', { ...parType, [code]: cases });
+    // v0.56 : seulement les compteurs changés : le type n'est pas marqué « modifié »
+    const pareil = t && !t.inconnu && ['constructeur', 'modele', 'equipage', 'moteurs', 'moteur', 'surface', 'train'].every(k => String(t[k] ?? '') === String(n[k] ?? ''));
+    if (pareil) { ecranTypes(); return; }
     const perso = (reglage('typesPerso') || []).filter(p => p.code !== code);
     await enregistrerReglage('typesPerso', [...perso, n]);
     appliquerTypesPerso();
@@ -338,8 +358,10 @@ export async function majPlus() {
   $('#pl-tit-s').textContent = reglage('titulaire') || 'Nom imprimé sur le PDF';
   verifierRappel();
   $('#pl-sync-s').textContent = resumeLigneSynchro();
+  lireDerniereVersionNas(); // v0.56 (R146) : à jour dès la réponse du NAS (événement « nas-etat »)
   resumeCartes().then(t => { $('#pl-cartes-s').textContent = t; });
   $('#pl-socle-s').textContent = resumeSocle();
+  $('#pl-compteurs-s').textContent = resumeCompteurs();
   const p = await persiste();
   $('#pl-stock-s').textContent = p === null ? 'Protection non disponible sur ce navigateur'
     : p ? 'Protégé contre l\'effacement automatique' : 'Non protégé : fais des sauvegardes';
@@ -359,7 +381,8 @@ export function verifierRappel() {
   let e;
   if (copieEnEchec(conf, nas)) e = { alerte: true, titre: 'Copie sur le NAS en échec', texte: resumeCopieNas() };
   else if (copieBloquee(conf, nas)) e = { alerte: true, titre: nas.derniereCopie ? `Pas de copie sur le NAS depuis ${depuis(nas.derniereCopie).replace(/^il y a /, '')}` : 'Pas encore de copie sur le NAS', texte: resumeCopieNas() };
-  else if (copieNasAJour(conf, nas)) e = { ok: true, titre: `Copié sur le NAS ${depuis(nas.derniereCopie)}`, texte: 'Copie automatique à jour.' };
+  // v0.56 (R146) : même date que « Synchro du carnet » (la plus récente sur le NAS) ; les alertes ci-dessus ne changent pas
+  else if (copieNasAJour(conf, { ...nas, derniereCopie: derniereVersionGardee() })) e = { ok: true, titre: `Copié sur le NAS ${depuis(derniereVersionGardee())}`, texte: 'Copie automatique à jour.' };
   else e = etatSauvegarde(reglage('derniereSauvegarde'));
   $('#pl-bk').classList.toggle('ok', !!e.ok);
   $('#pl-bk').classList.toggle('alerte', !!e.alerte);
@@ -390,6 +413,7 @@ export function initPlus() {
   $('#pl-bk-go').addEventListener('click', e => (e.currentTarget.dataset.mode === 'nas' ? ecranNas() : ecranSauvegarde()));
   $('#pl-heures').addEventListener('click', ouvrirChoixBande);
   $('#pl-libelles').addEventListener('click', ouvrirLibelles);
+  $('#pl-compteurs').addEventListener('click', ecranCompteurs); // v0.56 (R144)
   $('#pl-stockage').addEventListener('click', ecranStockage);
   $('#pl-sync').addEventListener('click', ecranSynchro);
   document.addEventListener('synchro-etat', () => { $('#pl-sync-s').textContent = resumeLigneSynchro(); });

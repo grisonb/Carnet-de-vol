@@ -15,6 +15,14 @@ import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide } fr
 import { heuresLocales } from '../fuseaux.js';
 import { fuseau } from '../terrains.js';
 import { FONCTIONS, COMPTEURS, identiteAvion, estSimulation } from '../modele.js';
+import { listeCompteurs } from '../compteurs.js';
+const LARGAGES = new Set(COMPTEURS.filter(c => /^lrg/.test(c.court)).map(c => c.cle));
+let memoBulles = null; // v0.56 (R144) : liste des compteurs recalculée seulement si leurs réglages changent
+function compteursBulles() {
+  const f = reglage('compteursFiches'), o = reglage('compteurs');
+  if (!memoBulles || memoBulles.f !== f || memoBulles.o !== o) memoBulles = { f, o, l: listeCompteurs(f, o).filter(c => c.cle !== 'feux') };
+  return memoBulles.l;
+}
 import { pastilleFeu, pastillesRegles, texteMissions, normaliser } from '../missions.js';
 import { heuresDerniersJours, totalHdV, calculerTotaux } from '../totaux.js';
 import { lireDate, filtreDate } from '../recherche.js';
@@ -150,9 +158,10 @@ export function carteVol(v, voir = false) {
   // v0.38 (R96) : largages (« N lrg… ») : contour rouge sur un vol feu, orange sur un entraînement (feu d'abord), sinon jaune
   const entrainement = regles.some(p => p.toUpperCase() === 'ENTRAÎNEMENT');
   const lrg = feu ? ' lrg-feu' : entrainement ? ' lrg-ent' : '';
-  for (const c of COMPTEURS) {
+  // v0.56 (R144) : tous les compteurs qui ont une valeur (d'origine ou créés), avec leur nom choisi, dans l'ordre choisi
+  for (const c of compteursBulles()) {
     const n = v.compteurs && v.compteurs[c.cle];
-    if (n) puces.push(`<span class="chip hl${/^lrg/.test(c.court) ? lrg : ''}">${n} ${esc(c.court)}</span>`);
+    if (n > 0) puces.push(`<span class="chip hl${LARGAGES.has(c.cle) ? lrg : ''}">${n} ${esc(c.court)}</span>`);
   }
   // v0.38 (R97 / R98) : « N att » = atterrissages de jour (contour noir) ; ceux de nuit à part : « N att nuit » (comme « Nuit »)
   const attJour = v.attJour || 0, attNuit = v.attNuit || 0;

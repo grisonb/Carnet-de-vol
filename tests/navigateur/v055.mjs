@@ -172,7 +172,7 @@ try {
   console.log('R141 / R142 : outils retirés de Plus ; R140 : Sauvegarde en 3 lignes ; R137 : « Traces des vols »');
   await onglet(A.p, 'plus');
   for (const id of ['#pl-fiches', '#pl-import', '#pl-ie', '#file-ie', '#pl-nas', '#pl-nas-rest']) verifier(!(await A.p.$(id)), `Plus : ${id} n'existe plus`);
-  const lignesSv = await A.p.$$eval('#v-plus .pcard', l => [...l[0].querySelectorAll('.prow2 b')].map(b => b.textContent));
+  const lignesSv = await A.p.$eval('#pl-save', b => [...b.parentElement.querySelectorAll('.prow2 b')].map(x => x.textContent)); // v0.56 (R145) : section déplacée
   verifier(JSON.stringify(lignesSv) === '["Sauvegarde de secours","Synchro du carnet","Restaurer"]', `Sauvegarde : ${lignesSv.join(' · ')}`);
   verifier(await A.p.textContent('#pl-cartes b') === 'Traces des vols', 'Plus : « Traces des vols »');
   await A.p.click('#pl-cartes');

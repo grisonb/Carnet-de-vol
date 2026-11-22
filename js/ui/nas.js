@@ -18,6 +18,38 @@ export const configNas = () => ({
 export const etatNas = () => reglage('nasEtat') || {};
 export const resumeCopieNas = () => resumeNas(configNas(), etatNas(), Date.now(), enLigne());
 
+// v0.56 (R146) : dernière version gardée sur le NAS, QUEL QUE SOIT l'appareil qui l'a faite : lue sur le NAS (action « liste »
+// de carnet.php v5, inchangé), au plus une fois par minute, gardée sur cet appareil (réglage privé « nasDerniereVersion »).
+// NAS injoignable : la dernière lecture réussie reste. derniereVersionGardee() : la plus récente de cette lecture et de la
+// dernière copie faite par cet appareil.
+let lectureVersion = null;
+export function lireDerniereVersionNas({ forcer = false } = {}) {
+  // mot de passe refusé ou NAS qui bloque les essais : AUCUN appel automatique (voir nasRefuse) ; la dernière lecture reste
+  if (!configNas().configuree || etatNas().statut === 'refuse' || etatNas().statut === 'bloque') return Promise.resolve(null);
+  const d = reglage('nasDerniereVersion');
+  if (!forcer && d && Date.now() - Date.parse(d.luLe) < 60000) return Promise.resolve(d);
+  if (lectureVersion) return lectureVersion;
+  lectureVersion = (async () => {
+    const r = await requete('liste', { delai: 15000 });
+    if (r.statut === 'refuse') await noterRefus();
+    if (r.statut !== 'ok') return null;
+    let copies;
+    try { copies = (await r.reponse.json()).copies; } catch { return null; }
+    if (!Array.isArray(copies)) return null;
+    const dates = copies.map(c => Date.parse(c && c.date)).filter(t => t > 0);
+    const v = { date: dates.length ? new Date(Math.max(...dates)).toISOString() : null, luLe: new Date().toISOString() };
+    const avant = reglage('nasDerniereVersion');
+    await ecrireReglageDiscret('nasDerniereVersion', v);
+    if (!avant || avant.date !== v.date) document.dispatchEvent(new CustomEvent('nas-etat'));
+    return v;
+  })().finally(() => { lectureVersion = null; });
+  return lectureVersion;
+}
+export function derniereVersionGardee() {
+  const t = [etatNas().derniereCopie, (reglage('nasDerniereVersion') || {}).date].map(x => Date.parse(x || '')).filter(x => x > 0);
+  return t.length ? new Date(Math.max(...t)).toISOString() : null;
+}
+
 // ---------- Réseau ----------
 const STATUTS = { 401: 'refuse', 413: 'trop-gros', 400: 'abimee', 500: 'stockage', 403: 'origine', 404: 'introuvable', 429: 'bloque' };
 // Protocole 2 (v0.12) : « &v=2 » demande au NAS de répondre aux erreurs avec le code HTTP 200 et {"erreur", "code"}.

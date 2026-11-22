@@ -9,6 +9,8 @@ import { hm, dateFr } from '../temps.js';
 import { calculerTotaux } from '../totaux.js';
 import { ouvrirRecherchePhoto, initPhotoWeb, htmlCredit } from './photo-web.js';
 import { ouvrirCadrage, afficherPhotoCadree, suivreBandeau } from './cadrage.js';
+import { compteursDuType } from '../compteurs.js';
+import { htmlCases, basculerCase } from './compteurs.js';
 
 export const SIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
 export const SIMI = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3zm2 2v8h14V6zm3 12h8v2H8zM10 8l5 2-5 2z"/></svg>';
@@ -160,6 +162,7 @@ function boutonsFiche() {
   $('#fi-col').textContent = !FI.equipage ? 'Choisis monopilote ou multipilote.'
     : FI.equipage === 'SP' && !FI.moteurs ? 'Carnet EASA : colonne Mono-pilote : choisis SE ou ME'
       : texteColonneAvion({ equipage: FI.equipage, moteurs: FI.moteurs });
+  if ($('#fi-cps')) rendreCompteursFiche();
 }
 
 function genreFiche() {
@@ -173,6 +176,7 @@ function genreFiche() {
   $('#fi-web').hidden = sim;
   $('#fi-rc').hidden = !FI.photo;
   ligneType();
+  rendreCompteursFiche();
 }
 
 // Bloc « Étiquettes » de la fiche : toutes les étiquettes existantes, à cocher pour cet avion
@@ -181,6 +185,20 @@ function rendreEtiquettesFiche() {
   $('#fi-tgs').innerHTML = toutes.map(t => `<button type="button" class="tgchip" data-ft="${esc(t)}" aria-pressed="${FI.etiquettes.includes(t)}">${esc(t)}</button>`).join('')
     || '<p class="hint">Aucune étiquette pour l\'instant (crée-les depuis la saisie d\'un vol).</p>';
   $('#fi-tgsec').classList.toggle('vide', !FI.etiquettes.length);
+}
+
+// v0.56 (R144) : « Compteurs par défaut » : « Comme le type XXX » (oui par défaut) ou cases propres à cet avion
+function typeDeLaFiche() {
+  const code = FI.sim ? 'SIM' : $('#fi-oaci').value.toUpperCase().trim();
+  return { code, carac: { equipage: FI.equipage, moteurs: FI.equipage === 'MP' ? 'ME' : FI.moteurs, moteur: FI.moteur } };
+}
+function rendreCompteursFiche() {
+  const { code, carac } = typeDeLaFiche(), comme = !Array.isArray(FI.cpPropres);
+  $('#fi-cp-l').textContent = `Comme le type ${FI.sim ? 'Simulateurs' : code || '(type OACI à remplir)'}`;
+  $('#fi-cp-sw').setAttribute('aria-checked', String(comme));
+  const coches = comme ? (FI.sim ? ((reglage('compteursTypes') || {}).SIM || []) : compteursDuType(code, carac, reglage('compteursTypes'), reglage('compteurs'))) : FI.cpPropres;
+  $('#fi-cps').innerHTML = htmlCases(coches, { actif: !comme });
+  $('#fi-cps').classList.toggle('grise', comme);
 }
 
 // Lecture seule (bouton « i ») ou modification (crayon, nouvel avion)
@@ -197,12 +215,13 @@ export function ouvrirFiche(a, init = {}, mode = 'modif', origine = a ? 'saisie'
   FI = { sim: !!b.sim, equipage: b.equipage, moteurs: b.moteurs, moteur: b.moteur, surface: b.surface || 'L',
     train: b.train || 'tricycle', photo: b.photo, photoCredit: b.photo ? (b.photoCredit || null) : null, photoCadre: b.photo ? (b.photoCadre || null) : null,
     fstd: b.fstd, constructeur: b.constructeur, _o: b.typeOACI,
-    etiquettes: [...(b.etiquettes || [])] };
+    etiquettes: [...(b.etiquettes || [])], cpPropres: Array.isArray(b.compteursPropres) ? [...b.compteursPropres] : null };
   $('#fi-reg').value = b.immat; $('#fi-oaci').value = b.sim ? '' : (b.typeOACI || '');
   $('#fi-mod').value = b.modele || ''; $('#fi-ind').value = b.indicatif || ''; $('#fi-nm').value = b.nom || '';
   $('#fi-hex').value = (b.hexAdsb || '').toUpperCase();
   $('#fi-rem').value = b.remarques || '';
   rendreEtiquettesFiche();
+  rendreCompteursFiche();
   if (b.photo) afficherPhotoFiche(`Photo de ${b.immat}`); else $('#fi-img').innerHTML = b.sim ? SIMI : SIL;
   afficherCredit();
   if (!stats) calculerStats();
@@ -272,6 +291,7 @@ async function enregistrerFiche() {
     photoCadre: FI.photo ? (FI.photoCadre || null) : null, hexAdsb: FI.sim ? '' : hex, hexAdsbManuel: hexManuel,
     equipage: FI.sim ? null : FI.equipage, moteurs: FI.sim ? null : (FI.equipage === 'MP' ? 'ME' : FI.moteurs),
     moteur: FI.sim ? null : FI.moteur, surface: FI.surface, train: FI.train, fstd: FI.sim ? (FI.fstd || null) : null,
+    compteursPropres: Array.isArray(FI.cpPropres) ? [...FI.cpPropres] : null, // v0.56 (R144) : null = comme le type
   });
   await enregistrerAvion(a);
   stats = null;
@@ -330,11 +350,22 @@ export function initAvions({ choix, courant, modifie }) {
     FI.etiquettes = FI.etiquettes.includes(t) ? FI.etiquettes.filter(x => x !== t) : [...FI.etiquettes, t];
     rendreEtiquettesFiche();
   });
-  $('#fi-oaci').addEventListener('input', () => { $('#fi-oaci').value = $('#fi-oaci').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); ligneType(); });
+  $('#fi-oaci').addEventListener('input', () => { $('#fi-oaci').value = $('#fi-oaci').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); ligneType(); rendreCompteursFiche(); });
+  $('#fi-cp-sw').addEventListener('click', () => {
+    if ($('#fiche').classList.contains('ro')) return;
+    if (Array.isArray(FI.cpPropres)) FI.cpPropres = null;
+    else { const { code, carac } = typeDeLaFiche(); FI.cpPropres = FI.sim ? [...((reglage('compteursTypes') || {}).SIM || [])] : compteursDuType(code, carac, reglage('compteursTypes'), reglage('compteurs')); }
+    rendreCompteursFiche();
+  });
+  $('#fi-cps').addEventListener('click', e => {
+    const b = e.target.closest('[data-cc]');
+    if (!b || $('#fiche').classList.contains('ro') || !Array.isArray(FI.cpPropres)) return;
+    FI.cpPropres = basculerCase(FI.cpPropres, b.dataset.cc); rendreCompteursFiche();
+  });
   segs('#fi-kind', (b, i) => { FI.sim = i === 1; genreFiche(); });
   segs('#fi-pil', (b, i) => { FI.equipage = i ? 'MP' : 'SP'; if (FI.equipage === 'MP') FI.moteurs = 'ME'; boutonsFiche(); });
   segs('#fi-eng', (b, i) => { FI.moteurs = i ? 'ME' : 'SE'; boutonsFiche(); });
-  segs('#fi-mot', (b, i) => { FI.moteur = 'PTJ'[i]; });
+  segs('#fi-mot', (b, i) => { FI.moteur = 'PTJ'[i]; rendreCompteursFiche(); });
   segs('#fi-surf', (b, i) => { FI.surface = 'LAH'[i]; });
   segs('#fi-tw', (b, i) => { FI.train = i ? 'classique' : 'tricycle'; FI.etiquettes = etiquettesPourTrain(FI.etiquettes, FI.train); rendreEtiquettesFiche(); });
   segs('#fi-fstd', (b, i) => { FI.fstd = ['FFS', 'FTD', 'FNPT II'][i]; });

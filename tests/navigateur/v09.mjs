@@ -90,12 +90,13 @@ try {
   verifier(await p.textContent('#pl-bk-t') === 'Aucune sauvegarde' && (await p.textContent('#pl-bk-s')) === 'Tes vols ne sont que sur ce téléphone.', '  « Aucune sauvegarde · Tes vols ne sont que sur ce téléphone »');
   verifier(await visible('#pl-bk-go'), '  bouton « Sauvegarder »');
   const groupes = await p.$$eval('#v-plus .pgrp', l => l.map(x => x.textContent));
-  verifier(JSON.stringify(groupes) === '["Sauvegarde","Exporter","Mes réglages","Contrôle","Téléphone"]' /* v0.55 */, 'sections : ' + groupes.join(', '));
+  verifier(JSON.stringify(groupes) === '["Mes réglages","Exporter","Sauvegarde","Contrôle","Téléphone"]' /* v0.56 (R145) */, 'sections : ' + groupes.join(', '));
   const lignes = await p.$$eval('#v-plus .pcard', cs => cs.map(c => [...c.querySelectorAll('.prow2 b')].map(b => b.textContent)));
-  verifier(JSON.stringify(lignes) === JSON.stringify([['Sauvegarde de secours', 'Synchro du carnet', 'Restaurer'], // v0.55 (R140) : 3 lignes
+  verifier(JSON.stringify(lignes) === JSON.stringify([ // v0.56 (R145) : nouvel ordre, « Compteurs » (R144)
+    ['Mes avions', "Types d'avion", 'Personnes', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Compteurs', 'Traces des vols', 'Socle OPS / IFR'],
     ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet'],
-    ['Mes avions', "Types d'avion", 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Personnes', 'Traces des vols', 'Socle OPS / IFR'], // v0.55 (R137 / R141)
-    ['Contrôle import'], ['Stockage']] /* v0.55 (R141 / R142) */), 'toutes les entrées, rangées dans leur section');
+    ['Sauvegarde de secours', 'Synchro du carnet', 'Restaurer'],
+    ['Contrôle import'], ['Stockage']]), 'toutes les entrées, rangées dans leur section');
   const forme = await p.$$eval('#v-plus .prow2', l => l.map(r => {
     const b = r.querySelector('.ptx b').getBoundingClientRect(), s = r.querySelector('.ptx small'), sr = s.getBoundingClientRect();
     const ic = r.querySelector('.pi svg'), ch = r.querySelector('.pch');

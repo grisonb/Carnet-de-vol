@@ -30,11 +30,16 @@ export const RUBRIQUES = [
   ...COMPTEURS.map(c => ({ cle: c.cle, titre: c.nom, genre: 'nombre', groupe: 'metier' })),
 ];
 
+const BASE = new Set(COMPTEURS.map(c => c.cle));
+// v0.56 (R144) : valeur d'un compteur dans des totaux (Feux, compteurs d'origine ou créés)
+export const valeurCompteur = (t, cle) => (cle === 'feux' || BASE.has(cle) ? t[cle] || 0 : (t.parCompteur || {})[cle] || 0);
+
 const SOMMES = ['tempsTotal', 'simTemps', 'tempsCdB', 'tempsCopi', 'tempsDC', 'tempsInst', 'tempsNuit',
   'tempsIFR', 'tempsXC', 'feux'];
 
 export function totauxVides() {
   const t = Object.fromEntries(RUBRIQUES.map(r => [r.cle, 0]));
+  t.parCompteur = {}; // v0.56 (R144) : compteurs créés
   t.parEtiquette = {}; t.parAvion = {}; t.parType = {}; t.parTypeCdB = {}; t.parTypeCopi = {};
   t.parFamille = {}; t.parFamilleCdB = {}; t.parFamilleCopi = {}; // v0.46 (R120) : par nom de modèle (bande d'heures)
   t.parFamilleAnnee = {}; // v0.52 (R128) : par nom de modèle, année civile en cours (1er janvier -> aujourd'hui)
@@ -48,6 +53,8 @@ export function ajouterVol(t, v, avions) {
   if ((a && a.sim) || v.simTemps > 0) t.sessionsSim++;
   for (const k of SOMMES) t[k] += v[k] || 0;
   for (const c of COMPTEURS) t[c.cle] += (v.compteurs && v.compteurs[c.cle]) || 0;
+  // v0.56 (R144) : compteurs créés (clés à part, jamais mélangées aux rubriques ci-dessus)
+  for (const [k, n] of Object.entries(v.compteurs || {})) if (n > 0 && !BASE.has(k)) t.parCompteur[k] = (t.parCompteur[k] || 0) + n;
   t.atterrissages += (v.attJour || 0) + (v.attNuit || 0);
   const col = colonnesAvion(v, a);
   t.se += col.se; t.me += col.me; t.mp += col.mp;
