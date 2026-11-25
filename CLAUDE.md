@@ -189,6 +189,11 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   R149 `js/vols-groupes.js` ; réglage PARTAGÉ `volsGroupesTypes` { code: bool } ; `avion.volsGroupes` (null = comme le type) ;
   vol `volsGroupes: true` + `tempsTotal` tapé (`#vg-zone`, `#f-vg`, `#f-bloc-in`, `F.groupe`, `recalculerGroupe` : ni nuit ni
   R134) ; fiches `#te-vg`, `#fi-vg-sw`. R150 `alerteTemps` + `#tv-modal` (`confirmerTemps` dans `enregistrer`, pas pour NPF).
+- v0.59 : R151 profil sous la trace : `js/profil.js` (pur : `profilDeTrace` points [t, lat, lon, alt ft, gs kt?] -> vitesse fournie
+  sinon calculée sur 30 s, aberrants isolés ignorés ; `valeursA`, `echelle`, `graduationsTemps`) et `js/ui/profil.js` (SVG
+  `#profil` / `#pf-val` / `#pf-svg` / `#pf-leg`, `afficherProfil`, `changerFuseauProfil` appelé par `changerMode`) ; carte.js
+  `montrerProfil` (point jaune `path.pf-point` sur `#carte-mini`). `traceImportee.a` = altitude (dizaines de ft), `.v` = vitesse mesurée (kt ; GPX `<mytracks:speed>` km/h, `<speed>` m/s) ; `decouper`
+  garde tout après lat / lon. VPS : altitude oui, vitesse sol non (plan proposé, rien exécuté).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

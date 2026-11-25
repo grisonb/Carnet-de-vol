@@ -154,7 +154,8 @@ const sansReglesV058 = p => p.evaluate(() => { for (const f of document.styleShe
 
 try {
   const A = await appareil('A');
-  verifier(await A.p.evaluate(async () => (await import('./js/version.js')).VERSION) === '0.58', 'version 0.58');
+  const version = await A.p.evaluate(async () => (await import('./js/version.js')).VERSION);
+  verifier(Number(version.split('.')[1]) >= 58, `version ${version} (0.58 ou suivante)`);
   const t0 = await totaux(A.p);
   verifier(t0.vols === T0.vols && t0.tempsTotal === T0.tempsTotal && t0.tempsCdB === T0.tempsCdB && t0.atterrissages === T0.atterrissages, `jeu inventé sans vol groupé : totaux identiques (${t0.vols} vols, ${hm(t0.tempsTotal)})`);
 

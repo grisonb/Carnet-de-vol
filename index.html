@@ -120,6 +120,10 @@
       <input type="file" id="file-trace" accept=".gpx,.kml,.kmz,.igc,.geojson,.json,.csv,.txt,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/geo+json,text/csv" hidden>
       <div class="tr-info" id="tr-info" hidden><span id="tr-nom"></span><button type="button" class="x" id="tr-x" aria-label="Retirer la trace importée"></button></div>
       <div class="carte-mini" id="carte-mini" hidden role="button" tabindex="0" aria-label="Ouvrir la trace en plein écran"></div>
+      <!-- v0.59 (R151) : profil altitude / vitesse sol (affichage seulement) -->
+      <div class="profil" id="profil" hidden><div class="pf-val vide" id="pf-val" aria-live="polite"></div>
+        <svg id="pf-svg" class="pf-svg" role="img" aria-label="Profil : altitude et vitesse sol selon l'heure"></svg>
+        <div class="pf-leg" id="pf-leg"></div></div>
       <p class="hint" id="carte-txt" role="status"></p>
       <p class="carte-source" id="carte-source"></p>
     </div>

@@ -16,7 +16,8 @@ import { $, esc, toast, ouvrirOutil, fermerOutil, proposerFichier, PARTAGE, CROI
 import { lireTraceFichier, traceImportee, decoderPoints } from '../trace-import.js';
 import { kmlDuVol } from '../kml.js';
 import { etat, reglage, enregistrerReglage, enregistrerAvions, lireTrace, ecrireTrace, avionDe, enregistrerVol, enConsultation, ecrireReglageDiscret } from '../etat.js';
-import { terrain } from '../terrains.js';
+import { terrain, fuseau } from '../terrains.js';
+import { afficherProfil, cacherProfil, initProfil } from './profil.js';
 import { aujourdhui, dateFr } from '../temps.js';
 import { etatCarte, decouper, signatureTrace, codeAvion, volsRecents, joursTrace, SOURCE } from '../traces.js';
 
@@ -422,7 +423,7 @@ let volAffiche = null, feuxChanges = false;
 export async function afficherCarteVol(vol) {
   volAffiche = vol;
   const mini = $('#carte-mini'), txt = $('#carte-txt');
-  mini.hidden = true; txt.textContent = '';
+  mini.hidden = true; txt.textContent = ''; cacherProfil();
   $('#carte-source').textContent = SOURCE;
   majImport(vol);
   if (!vol) { txt.textContent = (await etatDuVol(null)).texte; return; }
@@ -444,10 +445,24 @@ export async function afficherCarteVol(vol) {
     txt.textContent = '';
     if (e.importee) $('#carte-source').textContent = 'Trace importée d\'un fichier · elle ne change jamais tes heures.';
     mini.hidden = false;
-    try { await dessiner(mini, vol, e.stockee.points, false); } catch { mini.hidden = true; txt.textContent = 'Trace indisponible.'; }
+    let carte = null;
+    try { carte = await dessiner(mini, vol, e.stockee.points, false); } catch { mini.hidden = true; txt.textContent = 'Trace indisponible.'; }
+    if (carte && volAffiche === vol) montrerProfil(vol, e.stockee.points, carte);
   } else if (feux.length) await dessinerFeux(vol, titreNpf + (e.code === 'aTelecharger' ? TEXTE_RESEAU : e.texte));
   else txt.textContent = e.code === 'aTelecharger' ? TEXTE_RESEAU : e.texte;
 }
+// v0.59 (R151) : profil altitude / vitesse sous la carte ; le doigt sur le profil place un point jaune sur la trace
+function montrerProfil(vol, points, carte) {
+  let point = null;
+  afficherProfil(points, { mode: vol.mode || 'loc', tz: fuseau(vol.dep), placer: (lat, lon) => {
+    const L = window.L;
+    if (lat === null || lon === null || !L || conteneurDe(carte) !== $('#carte-mini')) return;
+    if (!point) point = L.circleMarker([lat, lon], { radius: 7, color: '#ffffff', weight: 2, fillColor: '#e0a800', fillOpacity: 1, interactive: false, className: 'pf-point' }).addTo(carte);
+    else point.setLatLng([lat, lon]);
+  } });
+}
+const conteneurDe = carte => { try { return carte.getContainer(); } catch { return null; } };
+
 // ---------- v0.55 (R139) : importer la trace d'un vol (fichier) ----------
 // Bouton « Importer » : vol enregistré seulement (même sans trace ADS-B), jamais en consultation ; ligne « Trace importée »
 // avec une croix pour la retirer (la trace ADS-B revient, si elle existe).
@@ -556,6 +571,7 @@ function ecranCartes() {
 
 export function initCarte() {
   $('#carte-mini').addEventListener('click', pleinEcran);
+  initProfil(); // v0.59 (R151)
   $('#tr-x').innerHTML = CROIX;
   $('#tr-imp').addEventListener('click', () => $('#file-trace').click());
   $('#file-trace').addEventListener('change', importerTrace);

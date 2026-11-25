@@ -1,5 +1,30 @@
 # Journal des versions
 
+## v0.59 — 25/11/2026
+
+Remarque R151. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés (VPS lu seulement) ; données
+inchangées (aucune heure, aucun total ; PDF et CSV identiques).
+
+**Vérification.** VPS : le script de nuit garde l'altitude de chaque point (pieds, 0 au sol) mais PAS la vitesse sol ; les
+fichiers bruts d'adsb.lol ne sont pas gardés. App : la découpe des traces ADS-B gardait déjà l'altitude ; les traces importées
+la perdaient à l'encodage (`encoderPoints` ne gardait que position et heure).
+
+**R151 : profil altitude / vitesse sous la trace du vol.** Section « Trace du vol », sous la carte : altitude en bleu (aire,
+pieds à gauche), vitesse sol en vert (ligne, nœuds à droite), heures en bas dans le fuseau du vol (UTC, ou LOC = fuseau du
+terrain de départ ; suit le bouton LOC / UTC), légende. Doigt ou souris posé / glissé : trait vertical, « 10:34  16 000 ft
+236 kt » au-dessus, point jaune au même instant sur la carte. Vitesse sol : fournie par la trace si elle l'a, sinon CALCULÉE
+avec les positions et les heures (distance parcourue sur ~30 s ; pas calculée si les points sont espacés de plus de 5 min).
+Une seule courbe si l'autre manque ; aucune (ou pas d'heures) : pas de graphique. Au sol = 0 ft ; saut isolé d'altitude
+ou de position impossible : ignoré pour le dessin. Dessin maison en SVG (`js/profil.js` pur, `js/ui/profil.js`), aucune
+bibliothèque. Traces importées : altitude gardée en pieds (clé `a` de `traceImportee`, dizaines de pieds ; anciennes traces
+sans altitude : réimporter le fichier) ; CSV : colonne altitude lue. Vitesse sol MESURÉE des GPX gardée en nœuds (clé `v`) :
+`<mytracks:speed>` (myTracks) en km/h, `<speed>` (GPX 1.0, Garmin) en m/s ; le graphique l'utilise à la place de la vitesse
+calculée. Taille : environ +2 caractères par point, toujours sous
+la limite de 50 000 caractères par vol (64 Ko du NAS). Traces ADS-B : un 5e nombre (vitesse) serait gardé s'il arrivait.
+
+**Tests** : `tests/unitaires/v059.test.js`, `tests/navigateur/v059.mjs` (faux serveur de traces, faux NAS, glissé mesuré à
+393 px processeur ralenti ×4) ; v058 : numéro de version 0.58 ou suivant ; test complet ; contrôle local avec le vrai fichier.
+
 ## v0.58 — 22/11/2026
 
 Remarques R147 (centrage ; numéro déjà pris par la v0.57 pour « Amerrissages SEP »), R148 à R150. carnet.php v5, NPF-Q400 et

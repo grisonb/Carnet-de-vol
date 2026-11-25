@@ -46,14 +46,15 @@ export const estReunion = vol => [vol.dep, vol.arr, ...(vol.escales || []).map(e
 // Ce qui détermine la trace : si cela change (date, heures, avion, code), la trace est recalculée
 export const signatureTrace = (vol, hex) => [hex || '', vol.avionId || '', vol.date || '', vol.hDep || '', vol.hArr || ''].join('|');
 
-// Fichiers du serveur ({ jour, points: [[s depuis minuit UTC, lat, lon, alt]] }) -> points du vol
-// [[instant ms UTC, lat, lon, alt]] entre les heures bloc (avec marge), allégés si besoin
+// Fichiers du serveur ({ jour, points: [[s depuis minuit UTC, lat, lon, alt ft, (vitesse kt)]] }) -> points du vol
+// [[instant ms UTC, lat, lon, alt, (vitesse)]] entre les heures bloc (avec marge), allégés si besoin
 export function decouper(fichiers, vol) {
   const i = instantsVol(vol);
   let pts = [];
   for (const f of fichiers) {
     const minuit = Date.parse(f.jour + 'T00:00:00Z');
-    for (const p of f.points || []) pts.push([minuit + p[0] * 1000, p[1], p[2], p[3]]);
+    // v0.59 (R151) : tout ce qui suit la position est gardé (altitude ft ; vitesse sol kt si le serveur la fournit un jour)
+    for (const p of f.points || []) pts.push([minuit + p[0] * 1000, p[1], p[2], ...p.slice(3)]);
   }
   pts.sort((a, b) => a[0] - b[0]);
   if (i) pts = pts.filter(p => p[0] >= i.debut - MARGE_MS && p[0] <= i.fin + MARGE_MS);

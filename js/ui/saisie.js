@@ -10,6 +10,7 @@ import { estSimulation, volVide, FONCTIONS, TEMPS_FONCTION, COMPTEURS, colonnesA
   etiquettesDeLAvion, etiquettesPourAvion, basculerEtiquette, fonctionsPossibles, champPersonneVisible, BASE, arriveeParDefaut } from '../modele.js';
 import { supprimerVolAvecAnnuler } from './suppression.js';
 import { afficherCarteVol } from './carte.js';
+import { changerFuseauProfil } from './profil.js';
 import { hm, lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujourdhui, dateFr, heureH } from '../temps.js';
 import { versLocal, versUTC } from '../fuseaux.js';
 import { terrain, fuseau } from '../terrains.js';
@@ -627,6 +628,7 @@ function changerMode(m) {
   if (nd) $('#f-date').value = nd;
   F.mode = m;
   choisir('.seg.mini', m === 'loc' ? 0 : 1);
+  changerFuseauProfil(m, fuseau($('#f-dep').value)); // v0.59 (R151) : heures du profil dans le fuseau choisi
   recalculer();
 }
 

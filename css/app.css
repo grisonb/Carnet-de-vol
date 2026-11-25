@@ -972,3 +972,20 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .vgrow{display:grid;margin-top:2px}
 .vgrow .mstep{grid-auto-flow:column;justify-content:center;align-items:center;gap:12px}
 .bloccenter .tin{max-width:96px;font-size:22px;font-weight:700;font-family:var(--f-num)}
+/* v0.59 (R151) : profil altitude (bleu, aire) / vitesse sol (vert, ligne) sous la trace du vol */
+.profil{--pf-alt:#2f7fd1;--pf-gs:#1e8a3c;margin-top:8px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .profil{--pf-alt:#64a8f0;--pf-gs:#4cc276}}
+:root[data-theme="dark"] .profil{--pf-alt:#64a8f0;--pf-gs:#4cc276}
+.pf-val{display:flex;justify-content:center;gap:14px;font-weight:800;font-size:16px;min-height:22px;margin:2px 0;font-variant-numeric:tabular-nums}
+.pf-val.vide{font-weight:600;font-size:13px;color:var(--muted)}
+.pf-h{color:var(--ink)}.pf-a{color:var(--pf-alt)}.pf-g{color:var(--pf-gs)}
+.pf-svg{display:block;width:100%;height:170px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:crosshair}
+.pf-gr{stroke:var(--line);stroke-width:1}
+.pf-ax{font-size:10px;fill:var(--muted);font-family:inherit}.pf-axg{fill:var(--pf-gs)}.pf-axa{fill:var(--muted)}
+.pf-aa{fill:var(--pf-alt);fill-opacity:.16}.pf-al{fill:none;stroke:var(--pf-alt);stroke-width:2;stroke-linejoin:round}
+.pf-gl{fill:none;stroke:var(--pf-gs);stroke-width:2;stroke-linejoin:round}
+.pf-trait{stroke:var(--ink);stroke-dasharray:3 3}
+.pf-pa{fill:var(--pf-alt);stroke:#fff;stroke-width:1.5}.pf-pg{fill:var(--pf-gs);stroke:#fff;stroke-width:1.5}
+.pf-leg{display:flex;gap:14px;justify-content:center;font-size:13px;color:var(--muted);font-weight:600}
+.pf-leg i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:4px}
+.pf-la{background:var(--pf-alt)}.pf-lg{background:var(--pf-gs)}

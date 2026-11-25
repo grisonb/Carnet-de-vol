@@ -5,7 +5,10 @@
 // - Le NAS (carnet.php v5, inchangé) refuse un élément de plus de 64 Ko : la trace est simplifiée (Douglas-Peucker,
 //   1 500 points au plus) puis encodée (« polyline » : ~10 caractères par point), et réduite encore si le vol dépassait
 //   TAILLE_VOL_MAX caractères (marge sous les 60 000 de la synchro).
-// Point lu : [instant ms UTC | null, lat, lon, altitude m | null].
+// Point lu : [instant ms UTC | null, lat, lon, altitude m | null, vitesse sol kt (facultative)]. Rangé (v0.59, R151) : altitude
+// en pieds, arrondie à 10 ft (clé « a ») et vitesse sol mesurée en nœuds entiers (clé « v ») ; clés absentes si le fichier
+// n'en a pas ; après decoderPoints : [instant, lat, lon, altitude ft | null, vitesse kt | null].
+// Vitesse dans un GPX : <mytracks:speed> (myTracks) en km/h ; <speed> (GPX 1.0) et <gpxtpx:speed> (Garmin…) en m/s.
 
 export const POINTS_MAX = 1500;
 export const TAILLE_VOL_MAX = 50000;
@@ -37,7 +40,10 @@ function lireGpx(t) {
     let m;
     while ((m = re.exec(t))) {
       const lat = nombre(attr(m[1], 'lat')), lon = nombre(attr(m[1], 'lon')), dedans = m[3] || '';
-      l.push([instant(contenuDe(dedans, 'time')), lat, lon, nombre(contenuDe(dedans, 'ele') ?? '')]);
+      // v0.59 (R151) : vitesse sol mesurée (convertie en nœuds)
+      const kmh = /<mytracks:speed\b/i.test(dedans), v = nombre(contenuDe(dedans, 'speed') ?? '');
+      const kt = v === null || v < 0 ? null : kmh ? v / 1.852 : v * 1.943844;
+      l.push([instant(contenuDe(dedans, 'time')), lat, lon, nombre(contenuDe(dedans, 'ele') ?? ''), ...(kt === null ? [] : [kt])]);
     }
     return l;
   };
@@ -125,13 +131,17 @@ function lireCsv(t) {
   if (iLat < 0 || iLon < 0) return null;
   if (lignes.length < 2) return [];
   const iT = col(['time', 'heure', 'timestamp', 'datetime', 'date_time', 'utc', 'temps', 'date et heure', 'horodatage', 'time (utc)']);
+  // v0.59 (R151) : altitude (mètres, sauf colonne marquée « ft »)
+  const iAm = col(['alt', 'altitude', 'ele', 'elevation', 'alt (m)', 'altitude (m)', 'elevation (m)', 'ele (m)']);
+  const iAf = col(['alt (ft)', 'altitude (ft)', 'altitude ft', 'alt ft']);
   const iD = col(['date']);
   const l = [];
   for (const ligne of lignes.slice(1)) {
     const c = ligne.split(sep).map(x => x.trim().replace(/^"|"$/g, ''));
     let quand = iT >= 0 ? c[iT] : iD >= 0 ? c[iD] : null;
     if (iT >= 0 && iD >= 0 && iD !== iT && /^\d{1,2}:\d{2}/.test(c[iT] || '')) quand = `${c[iD]}T${c[iT]}`;
-    l.push([instant(quand), nombre(c[iLat] ?? ''), nombre(c[iLon] ?? ''), null]);
+    const alt = iAf >= 0 ? (nombre(c[iAf] ?? '') ?? null) : iAm >= 0 ? nombre(c[iAm] ?? '') : null;
+    l.push([instant(quand), nombre(c[iLat] ?? ''), nombre(c[iLon] ?? ''), alt === null ? null : iAf >= 0 ? alt / 3.28084 : alt]);
   }
   return l.filter(pointValide);
 }
@@ -239,7 +249,20 @@ export function encoderPoints(points) {
     ecrireNombre(la - pl, s); ecrireNombre(lo - pn, s); pl = la; pn = lo;
     if (avecHeure) { const t = Math.round(p[0] / 1000) - t0; ecrireNombre(t - pt, s); pt = t; }
   }
-  return { t0, pts: s.join('') };
+  // v0.59 (R151) : altitude en dizaines de pieds (points sans altitude : la valeur connue la plus proche avant, sinon après)
+  const alt = points.map(p => (Number.isFinite(p[3]) ? Math.round(p[3] * 3.28084 / 10) : null));
+  const r = { t0, pts: s.join('') };
+  const serie = vals => { // valeurs entières ; manquantes : la plus proche connue avant, sinon après
+    let connu = vals.find(x => x !== null), pv = 0;
+    const o = [];
+    for (const x of vals) { if (x !== null) connu = x; ecrireNombre(connu - pv, o); pv = connu; }
+    return o.join('');
+  };
+  if (alt.some(x => x !== null)) r.a = serie(alt);
+  // v0.59 (R151) : vitesse sol mesurée (nœuds entiers) si le fichier en donne
+  const vit = points.map(p => (Number.isFinite(p[4]) ? Math.round(p[4]) : null));
+  if (vit.some(x => x !== null)) r.v = serie(vit);
+  return r;
 }
 export function decoderPoints(trace) {
   if (!trace || typeof trace.pts !== 'string') return [];
@@ -255,6 +278,15 @@ export function decoderPoints(trace) {
     if (avecHeure) t += lire();
     out.push([avecHeure ? (trace.t0 + t) * 1000 : null, la / 1e5, lo / 1e5, null]);
   }
+  // v0.59 (R151) : altitude (pieds) si la trace en a (traces importées avant la v0.59 : sans altitude)
+  const serie = (txt, k, f) => {
+    if (typeof txt !== 'string' || !txt) return;
+    let j = 0, v = 0;
+    const lireS = () => { let r = 0, d = 0, b; do { b = txt.charCodeAt(j++) - 63; r |= (b & 0x1f) << d; d += 5; } while (b >= 0x20 && j < txt.length); return r & 1 ? ~(r >> 1) : r >> 1; };
+    for (const p of out) { v += lireS(); p[k] = v * f; }
+  };
+  serie(trace.a, 3, 10); // altitude (pieds)
+  serie(trace.v, 4, 1);  // vitesse sol mesurée (nœuds)
   return out;
 }
 
@@ -265,7 +297,7 @@ export function traceImportee(points, { nom, format }, volSansTrace = {}, mainte
   let max = POINTS_MAX, t;
   for (;;) {
     const s = simplifier(points, max), e = encoderPoints(s);
-    t = { nom: String(nom || '').slice(0, 120), format, n: s.length, nOrigine: points.length, t0: e.t0, pts: e.pts, importeLe: maintenant };
+    t = { nom: String(nom || '').slice(0, 120), format, n: s.length, nOrigine: points.length, t0: e.t0, pts: e.pts, ...(e.a ? { a: e.a } : {}), ...(e.v ? { v: e.v } : {}), importeLe: maintenant };
     if (base + JSON.stringify(t).length + 20 <= TAILLE_VOL_MAX || max <= 50) break;
     max = Math.floor(max * 0.7);
   }
