@@ -9,7 +9,7 @@ import { etat, reglage, ecrireReglageDiscret, contenuComplet, restaurer, charger
 import * as db from '../db.js';
 import { requete, configNas, nasRefuse, noterRefus, ecranNas } from './nas.js';
 import { creerCopieur } from '../copieur.js';
-import { cleVolOuvert } from './saisie.js';
+import { cleVolOuvert, rafraichirVolLu } from './saisie.js';
 import { verifierVolsNpf, texteNpf } from './npf.js';
 import { lireSocle } from './socle.js';
 import { nouvelId, cleDoublon } from '../modele.js';
@@ -109,6 +109,26 @@ async function cycleDeuxSens(progres) {
   let recus = 0, appliques = 0;
   const remplaces = [];
   const ouvert = cleVolOuvert();
+  // v0.60 : conflit laissé par un vol qui était OUVERT (modifié nulle part ici : version d'ici = dernière version commune) :
+  // la version reçue s'applique dès que le vol n'est plus ouvert (avant : elle n'arrivait jamais, sans rien signaler)
+  const enAttente = [];
+  for (const c of [...conflits.values()]) {
+    if (c.cle === ouvert || !carte) continue;
+    const l = locaux.get(c.cle), base = carte[c.cle];
+    if ((l ? l.h : null) !== (base ? base[1] : null)) continue; // vraiment modifié ici aussi : on demandera
+    enAttente.push({ magasin: c.magasin, id: c.id, donnees: c.distant });
+    carte = { ...carte, [c.cle]: [c.rev, c.distant === null ? null : empreinteTexte(JSON.stringify(c.distant))] };
+    conflits.delete(c.cle);
+  }
+  if (enAttente.length) {
+    for (const x of enAttente) remplaces.push({ magasin: x.magasin, id: x.id, avant: locaux.get(cleElement(x.magasin, x.id))?.donnees ?? null });
+    await ecrireIci(enAttente);
+    for (const x of enAttente) {
+      const cle = cleElement(x.magasin, x.id);
+      if (x.donnees === null) locaux.delete(cle); else locaux.set(cle, { magasin: x.magasin, id: x.id, donnees: x.donnees, h: empreinteTexte(JSON.stringify(x.donnees)) });
+    }
+    await noter({ carte, conflits: [...conflits.values()] });
+  }
   const r1 = await recevoirDepuis(etatSynchro().rev || 0, async (elements, jusqua) => {
     if (elements.length) ({ m: locaux } = await locauxActuels()); // relu juste avant : rien de saisi entre-temps n'est écrasé
     const a = analyserRecus(elements, locaux, carte, ouvert);
@@ -119,8 +139,10 @@ async function cycleDeuxSens(progres) {
       if (x.donnees === null) locaux.delete(cle); else locaux.set(cle, { magasin: x.magasin, id: x.id, donnees: x.donnees, h: empreinteTexte(JSON.stringify(x.donnees)) });
     }
     for (const c of a.conflits) conflits.set(c.cle, c);
-    // un élément reçu à l'identique de la version d'ici règle un ancien conflit
-    for (const k of [...conflits.keys()]) if (a.carte[k] && locaux.get(k)?.h === a.carte[k][1]) conflits.delete(k);
+    // un élément reçu à l'identique de la version d'ici règle un ancien conflit (v0.60 : seulement si cette version reçue est
+    // au moins aussi récente que celle du conflit ; avant, le conflit d'un vol ouvert, non modifié ici, était effacé tout de
+    // suite et la version reçue perdue)
+    for (const [k, c] of [...conflits.entries()]) if (a.carte[k] && a.carte[k][0] >= c.rev && locaux.get(k)?.h === a.carte[k][1]) conflits.delete(k);
     carte = a.carte;
     recus += elements.length; appliques += a.appliquer.length;
     await noter({ carte, rev: jusqua, conflits: [...conflits.values()] });
@@ -128,7 +150,8 @@ async function cycleDeuxSens(progres) {
   });
   if (r1.statut !== 'ok') return r1;
   await garderHistorique(remplaces);
-  if (appliques) { await charger(); prevenir(); ({ m: locaux } = await locauxActuels()); }
+  appliques += enAttente.length;
+  if (appliques) { await charger(); prevenir(); ({ m: locaux } = await locauxActuels()); rafraichirVolLu(); }
   // 2. Envoyer ce qui a changé ici (sauf les conflits ; plus de 20 suppressions : seulement après confirmation)
   const contenu = await contenuComplet();
   const p = preparerEnvoi(elementsDuCarnet(contenu), carte, new Set(conflits.keys()));

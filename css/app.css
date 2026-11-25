@@ -989,3 +989,18 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .pf-leg{display:flex;gap:14px;justify-content:center;font-size:13px;color:var(--muted);font-weight:600}
 .pf-leg i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:4px}
 .pf-la{background:var(--pf-alt)}.pf-lg{background:var(--pf-gs)}
+/* v0.60 (R152) : bouton « Profil » et graphique en bas de la carte en plein écran (la carte s'arrête au-dessus : rien n'est
+   caché, ni les boutons ni le crédit) */
+.cp-pf{pointer-events:auto;margin-top:8px;min-height:40px;padding:6px 14px;font-weight:700;font-size:15px;border:0;border-radius:12px;
+  background:var(--surface);color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.cp-pf[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink)}
+.cp-pf[hidden]{display:none}
+#carte-plein{--cp-pf-h:clamp(150px,34vh,260px)}
+.cp-profil{position:absolute;left:0;right:0;bottom:34px;height:var(--cp-pf-h);z-index:2;margin:0;padding:4px 8px 2px;box-sizing:border-box;
+  background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 12px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.cp-profil[hidden]{display:none}
+.cp-profil .pf-svg{flex:1 1 auto;min-height:0;height:auto}
+.cp-profil .pf-val{margin:0}
+#carte-plein.avec-ge .cp-profil{bottom:calc(60px + env(safe-area-inset-bottom,0px))}
+#carte-plein.avec-profil .carte-grande{bottom:calc(34px + var(--cp-pf-h))}
+#carte-plein.avec-profil.avec-ge .carte-grande{bottom:calc(60px + env(safe-area-inset-bottom,0px) + var(--cp-pf-h))}

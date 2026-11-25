@@ -20,7 +20,8 @@ const MESSAGES = {
 };
 
 // ---------- Outils ----------
-const nombre = x => { const n = Number(String(x).trim().replace(',', '.')); return Number.isFinite(n) ? n : null; };
+// v0.60 : vide -> null (avant : 0, d'où une altitude et une vitesse « 0 » pour un GPX qui n'en avait pas)
+const nombre = x => { const t = String(x ?? '').trim(); if (!t) return null; const n = Number(t.replace(',', '.')); return Number.isFinite(n) ? n : null; };
 const instant = x => {
   if (x === null || x === undefined || x === '') return null;
   if (typeof x === 'number' || /^\d{9,13}(\.\d+)?$/.test(String(x).trim())) { const n = Number(x); return n < 1e11 ? Math.round(n * 1000) : Math.round(n); }

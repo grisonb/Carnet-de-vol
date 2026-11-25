@@ -1,5 +1,31 @@
 # Journal des versions
 
+## v0.60 — 25/11/2026
+
+Remarque R152 et défaut de synchro constaté. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ;
+données inchangées (aucune heure, aucun total).
+
+**R152 : profil dans la carte en plein écran.** Bouton « Profil » (style des boutons Plan / Photo), seulement si le vol a un
+graphique. Appui : le graphique monte en bas (environ le tiers bas, 150 à 260 px, fond opaque, mêmes couleurs, échelles,
+heures UTC / LOC et légende que sous la petite carte) ; la carte s'arrête au-dessus (déplacer, zoomer : rien de caché, ni
+les boutons ni le crédit). Doigt / souris : valeurs et point jaune sur la carte en plein écran ; si le point sort de la
+partie visible, la carte le suit. Nouvel appui : caché. Ouvert / fermé retenu sur cet appareil (réglage privé `profilPlein`).
+Point ignoré (aberrant) : la courbe le saute au lieu de laisser une petite coupure (coupure seulement après 5 min sans
+valeur).
+
+**Défaut de synchro (trace réimportée sur l'iPad, pas reçue par le téléphone).** Cause trouvée avec le faux NAS : le
+téléphone regardait le vol (lecture seule) pendant la synchro ; la règle « vol ouvert : ne pas le changer, conflit » s'est
+appliquée, puis la règle « conflit réglé si la version d'ici est celle du NAS » l'a effacé aussitôt (rien n'avait changé
+sur le téléphone) : la nouvelle version était perdue pour le téléphone, sans rien signaler. Corrigé : un vol seulement
+regardé est mis à jour comme les autres et la fiche se rafraîchit ; un vol en modification reste protégé, puis la version
+reçue s'applique dès qu'il est fermé s'il n'a pas été modifié ici ; un conflit n'est plus effacé par une version plus
+ancienne. Une vraie modification des deux côtés reste un conflit à choisir (inchangé).
+Aussi : un GPX sans altitude ou sans vitesse n'enregistre plus « 0 » à la place (valeur vide = absente).
+
+**Tests** : `tests/navigateur/v060.mjs` (plein écran : téléphone portrait / paysage, PC, iPad WebKit paysage / portrait,
+fluidité ; synchro : vol regardé, vol en modification, vraie modification des deux côtés) ; test complet ; contrôle local
+avec le vrai fichier.
+
 ## v0.59 — 25/11/2026
 
 Remarque R151. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés (VPS lu seulement) ; données

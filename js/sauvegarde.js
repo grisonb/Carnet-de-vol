@@ -18,7 +18,8 @@ export const REGLAGES_PRIVES = ['nasAdresse', 'nasMotDePasse', 'nasAuto', 'nasEt
   'afficherJours', // v0.42 (R104) : cases 3 / 7 / 30 jours de l'accueil affichées ou non sur cet appareil
   'socleLu', // v0.48 (R122) : dernière lecture réussie du socle OPS / IFR (cet appareil)
   'totauxOuverts', // v0.55 (R143) : sections des Totaux laissées ouvertes (cet appareil)
-  'nasDerniereVersion']; // v0.56 (R146) : date de la dernière version gardée lue sur le NAS (cet appareil)
+  'nasDerniereVersion', // v0.56 (R146) : date de la dernière version gardée lue sur le NAS (cet appareil)
+  'profilPlein']; // v0.60 (R152) : profil laissé ouvert dans la carte en plein écran (cet appareil)
 
 // contenu : { vols, avions, personnes, suppressions, reglages: [{cle, valeur}] }
 export function creerSauvegarde(contenu, maintenant = new Date().toISOString()) {

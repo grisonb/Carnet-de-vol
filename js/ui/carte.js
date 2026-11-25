@@ -17,7 +17,7 @@ import { lireTraceFichier, traceImportee, decoderPoints } from '../trace-import.
 import { kmlDuVol } from '../kml.js';
 import { etat, reglage, enregistrerReglage, enregistrerAvions, lireTrace, ecrireTrace, avionDe, enregistrerVol, enConsultation, ecrireReglageDiscret } from '../etat.js';
 import { terrain, fuseau } from '../terrains.js';
-import { afficherProfil, cacherProfil, initProfil } from './profil.js';
+import { afficherProfil, cacherProfil, initProfil, afficherProfilPlein, cacherProfilPlein, aUnProfil, _profilAffiche } from './profil.js';
 import { aujourdhui, dateFr } from '../temps.js';
 import { etatCarte, decouper, signatureTrace, codeAvion, volsRecents, joursTrace, SOURCE } from '../traces.js';
 
@@ -370,6 +370,7 @@ async function redessinerPlein(vol, conteneur) {
   const e = await etatDuVol(vol);
   const carte = await dessiner(conteneur, vol, e.code === 'ok' ? e.stockee.points : [], true);
   if (centre) carte.setView(centre, zoom, { animate: false });
+  if (conteneur.id === 'carte-grande') majProfilPlein(vol, e.code === 'ok' ? e.stockee.points : [], carte); // v0.60 (R152)
 }
 
 async function dessiner(conteneur, vol, points, interactif) {
@@ -452,16 +453,35 @@ export async function afficherCarteVol(vol) {
   else txt.textContent = e.code === 'aTelecharger' ? TEXTE_RESEAU : e.texte;
 }
 // v0.59 (R151) : profil altitude / vitesse sous la carte ; le doigt sur le profil place un point jaune sur la trace
-function montrerProfil(vol, points, carte) {
+const conteneurDe = carte => { try { return carte.getContainer(); } catch { return null; } };
+function pointJaune(carte) {
   let point = null;
-  afficherProfil(points, { mode: vol.mode || 'loc', tz: fuseau(vol.dep), placer: (lat, lon) => {
-    const L = window.L;
-    if (lat === null || lon === null || !L || conteneurDe(carte) !== $('#carte-mini')) return;
+  return (lat, lon) => {
+    const L = window.L, c = conteneurDe(carte);
+    if (lat === null || lon === null || !L || !c || c._carte !== carte) return; // carte refaite ou fermée entre-temps
     if (!point) point = L.circleMarker([lat, lon], { radius: 7, color: '#ffffff', weight: 2, fillColor: '#e0a800', fillOpacity: 1, interactive: false, className: 'pf-point' }).addTo(carte);
     else point.setLatLng([lat, lon]);
-  } });
+    // v0.60 (R152) : point sorti de la partie visible (carte déplacée ou zoomée) : la carte le suit
+    if (!carte.getBounds().pad(-0.08).contains([lat, lon])) carte.panTo([lat, lon], { animate: false });
+  };
 }
-const conteneurDe = carte => { try { return carte.getContainer(); } catch { return null; } };
+function montrerProfil(vol, points, carte) {
+  afficherProfil(points, { mode: vol.mode || 'loc', tz: fuseau(vol.dep), placer: pointJaune(carte) });
+}
+// v0.60 (R152) : bouton « Profil » de la carte en plein écran ; ouvert / fermé retenu sur cet appareil (réglage privé)
+const pleinProfil = { vol: null, points: [], carte: null };
+function majProfilPlein(vol, points, carte) {
+  Object.assign(pleinProfil, { vol, points, carte });
+  const possible = aUnProfil(points), ouvert = possible && reglage('profilPlein') === true;
+  $('#cp-pf').hidden = !possible;
+  $('#cp-pf').setAttribute('aria-pressed', String(ouvert));
+  const avant = $('#carte-plein').classList.contains('avec-profil');
+  $('#carte-plein').classList.toggle('avec-profil', ouvert);
+  if (avant !== ouvert && carte) carte.invalidateSize({ pan: false }); // la carte s'arrête au-dessus du graphique
+  const mini = _profilAffiche();
+  if (ouvert) afficherProfilPlein(points, { mode: (mini && mini.mode) || vol.mode || 'loc', tz: fuseau(vol.dep), placer: pointJaune(carte) });
+  else cacherProfilPlein();
+}
 
 // ---------- v0.55 (R139) : importer la trace d'un vol (fichier) ----------
 // Bouton « Importer » : vol enregistré seulement (même sans trace ADS-B), jamais en consultation ; ligne « Trace importée »
@@ -518,7 +538,10 @@ async function pleinEcran() {
   // v0.35 (R85) : vol de simulation : bandeau rouge (place réservée sous le titre, la carte descend d'autant)
   $('#cp-sim').hidden = volAffiche.simulation !== true; $('#carte-plein').classList.toggle('avec-sim', volAffiche.simulation === true);
   $('#cp-t').textContent = `${dateFr(volAffiche.date)} · ${[volAffiche.dep, ...(volAffiche.escales || []).map(x => x.code), volAffiche.arr].filter(Boolean).join(' → ')}`;
-  await dessiner($('#carte-grande'), volAffiche, e.code === 'ok' ? e.stockee.points : [], true);
+  const points = e.code === 'ok' ? e.stockee.points : [];
+  $('#carte-plein').classList.toggle('avec-profil', aUnProfil(points) && reglage('profilPlein') === true); // place du graphique avant la carte
+  const carte = await dessiner($('#carte-grande'), volAffiche, points, true);
+  majProfilPlein(volAffiche, points, carte);
 }
 
 // ---------- Plus › Traces des vols (v0.55, R137 : « Cartes de vol » avant) ----------
@@ -577,8 +600,13 @@ export function initCarte() {
   $('#file-trace').addEventListener('change', importerTrace);
   $('#tr-x').addEventListener('click', retirerTrace);
   $('#carte-zone').addEventListener('keydown', e => { if (e.key === 'Enter') pleinEcran(); });
+  // v0.60 (R152) : « Profil » : montre / cache le graphique en bas de la carte en plein écran (choix retenu sur cet appareil)
+  $('#cp-pf').addEventListener('click', async () => {
+    await ecrireReglageDiscret('profilPlein', $('#cp-pf').getAttribute('aria-pressed') !== 'true');
+    if (pleinProfil.vol) majProfilPlein(pleinProfil.vol, pleinProfil.points, pleinProfil.carte);
+  });
   $('#cp-x').addEventListener('click', () => {
-    $('#carte-plein').hidden = true;
+    $('#carte-plein').hidden = true; cacherProfilPlein();
     const g = $('#carte-grande');
     if (g._carte) { g._carte.remove(); g._carte = null; }
     // feux déplacés ou supprimés : la petite carte de la saisie les montre aussi

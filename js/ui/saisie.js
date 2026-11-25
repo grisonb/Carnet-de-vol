@@ -1242,5 +1242,13 @@ export function initSaisie({ fermer }) {
 
 export const saisieEnCours = () => F !== null;
 // v0.24 : vol ouvert dans la saisie (la synchro ne le change jamais sous les yeux du pilote : conflit à la place)
-export const cleVolOuvert = () => (F && F.vol ? `vols/${F.vol.id}` : null);
+// v0.60 : un vol seulement REGARDÉ (lecture seule) n'est pas « ouvert » pour la synchro : il est mis à jour comme les autres,
+// et la fiche se rafraîchit (rafraichirVolLu) ; un vol en MODIFICATION reste protégé (conflit, à choisir)
+export const cleVolOuvert = () => (F && F.vol && !lecture ? `vols/${F.vol.id}` : null);
+export function rafraichirVolLu() {
+  if (!F || !F.vol || !lecture || $('#v-saisie').hidden) return;
+  const v = etat.vols.find(x => x.id === F.vol.id);
+  if (!v) return;
+  if (JSON.stringify(v) !== JSON.stringify(F.vol)) { const y = scrollY; ouvrirSaisie(v); scrollTo(0, y); }
+}
 export { codeAvecDrapeau };
