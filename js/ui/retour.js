@@ -17,6 +17,7 @@ const COUCHES = {
   'ml-modal': '#mlm-x', 'fd-modal': '#fd-no', 'carte-plein': '#cp-x', outil: '#ou-x', 'ab-modal': '#ab-no', 'ph-modal': '#ph-x', 'feu-modal': '#feu-non', 'fn-modal': '#fn-non', 'rc-modal': '#rc-non',
   'cpt-modal': '#cptm-x', 'cpc-modal': '#cpc-b [data-po=""]', // v0.56 (R144) : compteurs du vol, question « ce vol / cet avion / le type »
   'tv-modal': '#tv-no', // v0.58 (R150) : temps de vol modifié
+  'rq-modal': '#rq-non', // v0.62 (R156) : question du rattrapage FlyLog
 };
 
 let opts = null;

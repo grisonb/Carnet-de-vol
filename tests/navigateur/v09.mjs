@@ -92,8 +92,8 @@ try {
   const groupes = await p.$$eval('#v-plus .pgrp', l => l.map(x => x.textContent));
   verifier(JSON.stringify(groupes) === '["Mes réglages","Exporter","Sauvegarde","Contrôle","Téléphone"]' /* v0.56 (R145) */, 'sections : ' + groupes.join(', '));
   const lignes = await p.$$eval('#v-plus .pcard', cs => cs.map(c => [...c.querySelectorAll('.prow2 b')].map(b => b.textContent)));
-  verifier(JSON.stringify(lignes) === JSON.stringify([ // v0.56 (R145) : nouvel ordre, « Compteurs » (R144)
-    ['Mes avions', "Types d'avion", 'Personnes', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Compteurs', 'Traces des vols', 'Socle OPS / IFR'],
+  verifier(JSON.stringify(lignes) === JSON.stringify([ // v0.56 (R145) : nouvel ordre, « Compteurs » (R144) ; v0.62 (R156) : « Anomalies traitées »
+    ['Mes avions', "Types d'avion", 'Personnes', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Anomalies traitées', 'Compteurs', 'Traces des vols', 'Socle OPS / IFR'],
     ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet'],
     ['Sauvegarde de secours', 'Synchro du carnet', 'Restaurer'],
     ['Contrôle import'], ['Stockage']]), 'toutes les entrées, rangées dans leur section');

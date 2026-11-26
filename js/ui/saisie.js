@@ -27,6 +27,7 @@ import { ROLES_IE, nomReel } from '../inst-exam.js';
 import { volsGroupesAvion, alerteTemps } from '../vols-groupes.js';
 import { anomaliesDe } from './anomalies.js';
 import { ignorer } from '../anomalies.js';
+import { anomaliesAvant, noterCorrection } from './anomalies-traitees.js';
 
 let F = null;          // brouillon du vol en cours
 let quitter = () => {};
@@ -970,7 +971,9 @@ async function enregistrer() {
     const al = alerteTemps(etat.vols, actuel || F.vol, v);
     if (al && !(await confirmerTemps(al.texte))) return;
   }
+  const avantAn = anomaliesAvant(actuel && actuel.id); // v0.62 (R156) : « ! » affiché avant d'enregistrer
   await enregistrerVol(v);
+  if (actuel) await noterCorrection(avantAn, actuel, v); // anomalie disparue : ligne « Corrigées » (le vol ne change pas)
   if (npf) volNpfEnregistre(npf.id);
   // nouvelle personne tapée sans passer par « + » : on l'ajoute à la liste
   const copiNpfRefuse = npf && npf.copiInconnu && qui.toUpperCase() === npf.copiInconnu;

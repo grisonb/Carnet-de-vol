@@ -1042,3 +1042,27 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .an-cadre b .an-tri{width:20px;height:18px}
 .an-cadre ul{margin:4px 0 8px 18px;padding:0}
 .an-ign{border:1.5px solid #8a6d00;color:#5c4800;background:transparent;border-radius:10px;padding:6px 12px;font:inherit;font-weight:700;font-size:15px;min-height:40px}
+/* v0.62 (R156) : Plus › Anomalies traitées (maquette validée) : badge jaune, onglets, lignes ; zones d'appui ≥ 40 px */
+.pi-an{--pt:#fff8d6}
+.pi-an svg{width:22px;height:20px;fill:initial}
+.badge-an{flex:none;background:#f5c400;border:1.5px solid #c9a000;color:#1b2433;border-radius:999px;font-size:13px;font-weight:800;padding:1px 8px;line-height:1.4;font-family:var(--f-num)}
+.badge-an[hidden]{display:none}
+.an-onglets{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 10px}
+.an-onglets button{min-height:44px;border:0;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:15px;padding:8px 6px}
+.an-onglets button[aria-selected="true"]{background:var(--primary);color:var(--primary-ink)}
+.lv{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 8px;font-size:15px;line-height:1.4;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent}
+.lv:active{background:var(--surface2)}
+.lv-h{display:flex;justify-content:space-between;gap:10px;font-weight:800;font-size:16px}
+.lv-av{font-size:14px;font-family:var(--f-num)}
+.lv-tr{overflow-wrap:anywhere}
+.lv-q{color:var(--muted);font-size:14px}
+.lv-chg{margin-top:2px;overflow-wrap:anywhere}
+.lv-av-v{text-decoration:line-through;color:#b3261e}
+.lv-ap{color:#2e7d32;font-weight:700}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lv-av-v{color:#ff8a80}:root:not([data-theme="light"]) .lv-ap{color:#81c784}}
+:root[data-theme="dark"] .lv-av-v{color:#ff8a80}:root[data-theme="dark"] .lv-ap{color:#81c784}
+.lv-btn{display:inline-block;margin-top:6px;min-height:40px;border:1.5px solid var(--primary);color:var(--primary);background:transparent;border-radius:10px;padding:6px 12px;font:inherit;font-weight:700;font-size:14px}
+.at-bas{margin-top:14px}
+.at-bas[hidden]{display:none}
+.at-res{background:#e5f3e6;border:1px solid #2e7d32;color:#1b2433;border-radius:12px;padding:8px 12px;font-weight:700;margin:0 0 10px}
+body.consultation #at-bas,body.consultation .lv-btn{display:none!important}

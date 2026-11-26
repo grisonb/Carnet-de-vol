@@ -207,6 +207,14 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `ignorer` / `estIgnore` : vol `anomaliesIgnorees` { empreinte des CHAMPS contrôlés, le }) ; `js/ui/anomalies.js` (cache par
   `etat.revision`, `TRIANGLE`) ; carnet.js `.fl-an` + `.flight.avec-an`, `#an-btn` / `#an-n`, `filtreAnomalies` (exclusif avec
   `filtreReport`) ; saisie `#an-cadre` / `#an-l` / `#an-ign` (permis en lecture). report.js `fusionnerEtats` (synchro).
+- v0.62 : R156 `js/anomalies-traitees.js` (pur : `correctionALaSaisie`, `avantApres`, `ajouterCorrigees` (300 lignes au plus),
+  `corrigeesAffichees`, `ignoreesAffichees`, `rattrapage` : clé `cleDoublon` avec quantités, à défaut même ligne du fichier + date) ;
+  anomalies avec `cle` (« a|LFML », « c-nuit »…), `anomaliesDuCarnet(…, { avecIgnorees })`, `nePlusIgnorer` (empreinte null, heure
+  gardée). Réglages PARTAGÉS `anomaliesCorrigees` (fusionnable : réunion par id) et `rattrapageCorrections` ; PRIVÉ `questionCorrections`
+  ('a-poser' si le carnet a des vols FlyLog au premier lancement, 'non', 'posee'). `js/ui/anomalies-traitees.js` : `#pl-anom` /
+  `#pl-anom-n`, écran `ecranAnomaliesTraitees` (`#at-c`, `#at-i`, `#at-l .lv[data-vol]`, `[data-np]`, `#at-fl`, `#at-res`), question
+  `#rq-modal` (`#rq-oui`, `#rq-non`), `#file-rq` ; saisie `enregistrer` -> `noterCorrection` ; app.js `ouvrir-vol-traite` (retour à
+  l'écran à la fermeture du vol).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

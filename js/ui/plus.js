@@ -26,6 +26,7 @@ import { ecranCompteurs, resumeCompteurs, htmlCases, basculerCase } from './comp
 import { compteursDuType } from '../compteurs.js';
 import { volsGroupesDuType } from '../vols-groupes.js';
 import { copieNasAJour, depuis } from '../copieur.js';
+import { majBadgeAnomalies } from './anomalies-traitees.js';
 
 const nombre = n => n.toLocaleString('fr-FR');
 const chrono = vols => [...vols].reverse(); // etat.vols est du plus récent au plus ancien
@@ -373,6 +374,7 @@ export async function majPlus() {
   resumeCartes().then(t => { $('#pl-cartes-s').textContent = t; });
   $('#pl-socle-s').textContent = resumeSocle();
   $('#pl-compteurs-s').textContent = resumeCompteurs();
+  majBadgeAnomalies(); // v0.62 (R156)
   const p = await persiste();
   $('#pl-stock-s').textContent = p === null ? 'Protection non disponible sur ce navigateur'
     : p ? 'Protégé contre l\'effacement automatique' : 'Non protégé : fais des sauvegardes';

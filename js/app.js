@@ -15,6 +15,8 @@ import { initNas, carnetModifie } from './ui/nas.js';
 import { initNpf, verifierVolsNpf } from './ui/npf.js';
 import { initSocle } from './ui/socle.js';
 import { initSynchro, synchroModifiee, majBandeaux } from './ui/synchro.js';
+import { initAnomaliesTraitees, ecranAnomaliesTraitees } from './ui/anomalies-traitees.js';
+import { etat } from './etat.js';
 import { invaliderStats } from './ui/avions.js';
 import { VERSION } from './version.js';
 import { aAncienneAdresse, nouvelleAdresse, nouvelleAdresseRepond, marquerDemenage, estDemenage } from './demenagement.js';
@@ -51,7 +53,19 @@ async function demarrer() {
   // quand la flèche retour revient dans l'historique (sinon retour en haut de la liste).
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   initCarnet(ouvrirVol);
-  initSaisie({ fermer: () => montrer('carnet') });
+  // v0.62 (R156) : vol ouvert depuis Plus › Anomalies traitées : on y revient en le fermant
+  let retourAnomalies = false;
+  initSaisie({ fermer: () => {
+    if (retourAnomalies) { retourAnomalies = false; montrer('plus'); ecranAnomaliesTraitees(); return; }
+    montrer('carnet');
+  } });
+  document.addEventListener('ouvrir-vol-traite', e => {
+    const v = etat.vols.find(x => x.id === e.detail);
+    if (!v) return;
+    $('#outil').hidden = true; $('#ou-c').innerHTML = '';
+    retourAnomalies = true;
+    ouvrirVol(v);
+  });
   initTotaux();
   initPlus();
   initRegles();
@@ -107,6 +121,7 @@ async function demarrer() {
   initNas();
   initSynchro();
   initSocle(); // v0.48 (R122) : socle OPS / IFR
+  initAnomaliesTraitees(); // v0.62 (R156)
   setTimeout(verifierVolsNpf, 1200); // vols envoyés par NPF-Q400, discrètement
   finLancement(); // v0.40 (R102) : l'écran de lancement bleu nuit laisse place au carnet
   document.body.dataset.pret = '1';

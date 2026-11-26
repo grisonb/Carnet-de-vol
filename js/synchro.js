@@ -8,6 +8,7 @@
 // de la carte qui n'est plus dans le carnet). Le PC retient le dernier numéro reçu et demande la suite.
 
 import { seulReportDiffere, fusionnerEtats } from './report.js';
+import { fusionCorrigees } from './anomalies-traitees.js';
 
 export const MAGASINS = ['vols', 'avions', 'personnes', 'reglages'];
 // Réglages qui appartiennent au carnet (envoyés) ; les autres sont propres à chaque appareil (mot de passe, adresse du
@@ -19,7 +20,8 @@ export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMas
   'rattrapageInstExam', // v0.53 (R130) : « Compléter instructeur / examinateur depuis FlyLog » déjà fait (bouton masqué partout)
   'cartesMotDePasse', // v0.55 (R138) : mot de passe des traces (avant : propre à chaque appareil)
   'compteursFiches', 'compteursTypes', // v0.56 (R144) : compteurs créés / renommés / masqués, compteurs par défaut des types
-  'volsGroupesTypes']; // v0.58 (R149) : « Vols groupés » des types d'avion
+  'volsGroupesTypes', // v0.58 (R149) : « Vols groupés » des types d'avion
+  'anomaliesCorrigees', 'rattrapageCorrections']; // v0.62 (R156) : Plus › Anomalies traitées, rattrapage FlyLog déjà fait
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)
 export const ENVOI_OCTETS = 3000000; // v0.55 : un envoi reste sous 3 Mo (le NAS : 4 Mo au plus)
 export const PAR_PAGE = 1000;      // éléments par page reçue
@@ -178,10 +180,12 @@ function depuisCourt(iso, maintenant) {
 
 // ---------- v0.24 : deux sens ----------
 // Réglages que l'on peut FUSIONNER sans demander : listes (réunion) et terrains perso (réunion par code).
-export const REGLAGES_FUSIONNABLES = ['etiquettes', 'missionsAjoutees', 'missionsMasquees', 'terrainsPerso', 'doublonsVus'];
+export const REGLAGES_FUSIONNABLES = ['etiquettes', 'missionsAjoutees', 'missionsMasquees', 'terrainsPerso', 'doublonsVus',
+  'anomaliesCorrigees']; // v0.62 (R156) : lignes ajoutées sur deux appareils : toutes gardées
 export function fusionReglage(cle, local, distant) {
   if (!REGLAGES_FUSIONNABLES.includes(cle)) return null;
   if (cle === 'terrainsPerso') return { ...(distant || {}), ...(local || {}) };
+  if (cle === 'anomaliesCorrigees') return fusionCorrigees(local, distant);
   const l = Array.isArray(local) ? local : [], d = Array.isArray(distant) ? distant : [];
   return [...l, ...d.filter(x => !l.some(y => JSON.stringify(y) === JSON.stringify(x)))];
 }

@@ -1,5 +1,31 @@
 # Journal des versions
 
+## v0.62 — 26/11/2026
+
+Remarque R156. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol
+réécrit ; PDF, CSV et totaux identiques).
+
+**R156 : Plus › « Anomalies traitées »** (maquette validée). Ligne juste après « Libellés missions », triangle jaune dessiné par
+l'app, badge jaune = nombre de vols dans la liste (caché à 0). Deux onglets « Corrigées (N) » et « Ignorées (N) », plus récents en
+haut ; un appui sur une ligne ouvre le vol (en le fermant, retour à l'écran).
+Corrigées : quand un vol qui avait un « ! » (non ignoré) est enregistré et qu'une anomalie disparaît, l'app note le vol (date,
+trajet, avion lus dans le carnet), l'anomalie en mots simples, l'ancienne valeur barrée en rouge -> la nouvelle en vert (seulement ce
+qui a changé, ex. « LFML : 0 att. -> LFML : 1 att. ») et « Corrigé le JJ/MM/AAAA ». Vol supprimé : sa ligne disparaît.
+Ignorées : vols ignorés (R155) avec l'anomalie, « Ignoré le » et « Ne plus ignorer » (le « ! » revient ; « Modifié le » inchangé).
+Rattrapage : au premier lancement (carnet avec des vols venus de FlyLog), une seule question « Retrouver les corrections déjà faites
+dans le fichier FlyLog d'origine ? » (« Choisir le fichier » / « Plus tard » ; le bouton « Retrouver les corrections dans FlyLog » reste
+en bas de l'écran). Le fichier est lu sur l'appareil ; chaque vol est retrouvé comme à l'import d'origine (date, terrains,
+immatriculation, heure de départ, temps, quantités comptées), à défaut par sa ligne du fichier et sa date ; anomalie présente dans
+FlyLog et absente maintenant (ignorée = toujours là) = corrigée, datée du « Modifié le » du vol (sinon « date inconnue »). Le fichier
+n'est ni gardé, ni envoyé ; relancer n'ajoute pas de doublon ; à la fin « N corrections retrouvées ». Fait sur un appareil : la
+question ne revient sur aucun autre (réglage partagé).
+Synchro et sauvegarde : la liste « Corrigées » est un réglage partagé (une ligne ajoutée sur deux appareils : les deux gardées) ;
+« Ignorées » voyage avec les vols ; une ancienne sauvegarde restaurée : listes vides. Aucune ligne ne modifie un vol ni ne déclenche
+l'alerte R150 ; ni PDF, ni CSV, ni totaux.
+
+**Tests** : `tests/unitaires/v062.test.js`, `tests/navigateur/v062.mjs` (faux fichier FlyLog inventé, faux NAS, A -> B, sauvegarde,
+ancienne sauvegarde, 360 / 393 px) ; test complet ; contrôle local avec le vrai fichier.
+
 ## v0.61 — 26/11/2026
 
 Remarques R154 et R155. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol

@@ -156,7 +156,7 @@ try {
   await onglet(A.p, 'plus');
   const plus = await A.p.evaluate(() => [...document.querySelectorAll('#v-plus .pgrp')].map(h => [h.textContent, [...h.nextElementSibling.querySelectorAll('.prow2 b')].map(b => b.textContent)]));
   verifier(JSON.stringify(plus) === JSON.stringify([
-    ['Mes réglages', ['Mes avions', "Types d'avion", 'Personnes', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Compteurs', 'Traces des vols', 'Socle OPS / IFR']],
+    ['Mes réglages', ['Mes avions', "Types d'avion", 'Personnes', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Anomalies traitées' /* v0.62 (R156) */, 'Compteurs', 'Traces des vols', 'Socle OPS / IFR']],
     ['Exporter', ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet']],
     ['Sauvegarde', ['Sauvegarde de secours', 'Synchro du carnet', 'Restaurer']],
     ['Contrôle', ['Contrôle import']], ['Téléphone', ['Stockage']]]), 'sections et lignes dans l\'ordre R145 : ' + plus.map(([g, l]) => `${g} (${l.join(', ')})`).join(' · '));
