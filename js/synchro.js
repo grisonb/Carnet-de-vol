@@ -7,6 +7,8 @@
 // son contenu (la « carte ») : à chaque synchro, il n'envoie que ce qui a changé depuis, et les suppressions (élément
 // de la carte qui n'est plus dans le carnet). Le PC retient le dernier numéro reçu et demande la suite.
 
+import { seulReportDiffere, fusionnerEtats } from './report.js';
+
 export const MAGASINS = ['vols', 'avions', 'personnes', 'reglages'];
 // Réglages qui appartiennent au carnet (envoyés) ; les autres sont propres à chaque appareil (mot de passe, adresse du
 // NAS, bouton « LF », état des copies…) et ne voyagent jamais.
@@ -207,6 +209,15 @@ export function analyserRecus(recus, locaux, carte, ouvert = null) {
     if (!modifieIci && cle !== ouvert) {
       appliquer.push({ magasin: e.magasin, id: e.id, donnees: hE === null ? null : e.donnees });
       c[cle] = [e.rev, hE];
+      continue;
+    }
+    // v0.61 (R154, R155) : vol changé des deux côtés seulement par « reporté sur le carnet papier » et / ou le « ! » ignoré :
+    // chaque état pris là où il a été changé le plus récemment, sans conflit à choisir
+    if (e.magasin === 'vols' && hE !== null && l && cle !== ouvert && seulReportDiffere(l.donnees, e.donnees)) {
+      const f = fusionnerEtats(l.donnees, e.donnees), ici = l.donnees;
+      const memeQueIci = f.aReporter === ici.aReporter && f.reporteLe === ici.reporteLe && JSON.stringify(f.anomaliesIgnorees) === JSON.stringify(ici.anomaliesIgnorees);
+      if (!memeQueIci) appliquer.push({ magasin: 'vols', id: e.id, donnees: f });
+      c[cle] = [e.rev, hE]; // base = version du NAS : si la version fusionnée en diffère, elle repart
       continue;
     }
     if (e.magasin === 'reglages' && hE !== null && l) {

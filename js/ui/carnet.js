@@ -5,7 +5,9 @@
 // quand on remonte) ; bouton « ↑ Dernier vol » pour revenir en haut en un geste.
 
 import { $, esc, codeAvecDrapeau } from './commun.js';
-import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret, nomAfficheVol } from '../etat.js';
+import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret, nomAfficheVol, enregistrerVol } from '../etat.js';
+import { estAReporter, nbAReporter, basculerReport } from '../report.js';
+import { anomaliesActuelles, TRIANGLE } from './anomalies.js';
 import { activerGlisser } from './glisser.js';
 import { instExamDuVol, ROLES_IE } from '../inst-exam.js';
 import { ajusterSocle } from './socle.js';
@@ -177,12 +179,40 @@ export function carteVol(v, voir = false) {
   const duree = v.tempsTotal || v.simTemps || 0;
   const couleur = couleurTemps(feu, regles, v); // v0.38 (R94 / R95) : couleur du vol (pastille, barre de la remarque)
   // la carte se glisse vers la gauche pour faire apparaître « Supprimer » (avec confirmation)
-  return `<div class="swrow flrow"><button type="button" class="swdel" data-fdel="${esc(v.id)}" tabindex="-1">Supprimer</button><button type="button" class="flight swfront vol-${couleur}${estSimulation(v) ? ' sim' : ''}" data-id="${esc(v.id)}">
+  const anomalie = anomaliesActuelles().has(v.id); // v0.61 (R155)
+  return `<div class="swrow flrow"><button type="button" class="swdel" data-fdel="${esc(v.id)}" tabindex="-1">Supprimer</button><button type="button" class="flight swfront vol-${couleur}${estSimulation(v) ? ' sim' : ''}${anomalie ? ' avec-an' : ''}" data-id="${esc(v.id)}">
     ${estSimulation(v) ? '<div class="sim-bandeau fl-sim">SIMULATION VOL<small>hors totaux</small></div>' : ''}<div class="fl-top fl-tete"><b class="fl-date">${esc(dateFr(dateAffichee(v)))}</b><span class="fl-route${taille}">${route}</span><span class="fl-bloc t-${couleur}">${hm(duree)}</span></div>
     <div class="fl-id">${ligne}</div>
     <div class="fl-meta num">${esc(ligneHeures(v))}</div>
     <div class="chips">${puces.join('')}</div>
-    ${mission ? `<div class="fl-rem">${esc(mission)}</div>` : ''}${voir ? `<span class="fl-voir" data-voir="${esc(v.id)}">Voir dans le carnet ›</span>` : ''}</button></div>`;
+    ${mission ? `<div class="fl-rem">${esc(mission)}</div>` : ''}${voir ? `<span class="fl-voir" data-voir="${esc(v.id)}">Voir dans le carnet ›</span>` : ''}${anomalie ? `<span class="fl-an" role="img" aria-label="Anomalie à vérifier">${TRIANGLE}</span>` : ''}${rondReport(v)}</button></div>`;
+}
+// v0.61 (R154) : rond « reporté sur le carnet papier » en bas à droite (vert coché = reporté ; vide = à reporter).
+// Zone d'appui 40 × 40 px ; un appui coche / décoche seulement (n'ouvre pas le vol). Pas pour un vol de simulation.
+// dessiné en SVG : trait exact de 1,5 px (Chrome arrondit une bordure CSS de 1,5 px à 1 px)
+const COCHE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="7.25"/><path d="M4.6 8.3l2.3 2.3 4.5-4.9"/></svg>';
+function rondReport(v) {
+  if (estSimulation(v)) return '';
+  const fait = !estAReporter(v);
+  return `<span class="fl-rep${fait ? ' on' : ''}" role="checkbox" aria-checked="${fait}" aria-label="${fait ? 'Reporté sur le carnet papier' : 'À reporter sur le carnet papier'}" data-rep="${esc(v.id)}">${COCHE}</span>`;
+}
+// Ligne « À reporter sur le carnet : N vols » (cachée à 0) ; appui : seulement ces vols, nouvel appui : tous
+// v0.61 (R155) : bouton jaune « N vols à vérifier » (vols avec « ! ») : même principe ; un seul filtre actif à la fois
+let filtreReport = false, filtreAnomalies = false;
+function majBoutonAnomalies() {
+  const n = anomaliesActuelles().size, b = $('#an-btn');
+  if (!n) filtreAnomalies = false;
+  b.hidden = !n;
+  b.setAttribute('aria-pressed', String(filtreAnomalies));
+  $('#an-n').textContent = `${n} vol${n > 1 ? 's' : ''} à vérifier`;
+}
+function majLigneReport() {
+  const n = nbAReporter(etat.vols), l = $('#rep-ligne');
+  if (!n) filtreReport = false;
+  l.hidden = !n;
+  l.setAttribute('aria-pressed', String(filtreReport));
+  $('#rep-n').textContent = `${n} vol${n > 1 ? 's' : ''}`;
+  $('#rep-tous').hidden = !filtreReport;
 }
 
 function afficherPaquet() {
@@ -415,6 +445,9 @@ export function rafraichirCarnet({ haut = false, versVol = null, retour = false 
   // Une date (06/05/25, 05/2025, 2025…) : les vols de cette date (date affichée sur la carte) ; sinon recherche texte
   const brut = $('#q').value, parDate = filtreDate(lireDate(brut)), q = normaliser(brut);
   resultats = parDate ? base.filter(v => parDate(dateAffichee(v) || '')) : q ? base.filter(v => texteRecherche(v).includes(q)) : base;
+  majLigneReport(); majBoutonAnomalies();
+  if (filtreReport) resultats = resultats.filter(estAReporter); // v0.61 (R154)
+  if (filtreAnomalies) { const m = anomaliesActuelles(); resultats = resultats.filter(v => m.has(v.id)); } // v0.61 (R155)
   enRecherche = !!(parDate || q); // « Voir dans le carnet » : seulement pour une recherche (pas pour une période seule)
   // Fenêtre : commence au vol visé (ou au vol mémorisé) s'il est loin dans la liste, sinon au début
   const cible = versVol || (place && place.id);
@@ -466,6 +499,14 @@ export function initCarnet(ouvrir) {
   activerGlisser($('#list'), { largeur: 110, mode: 'decaler' });
   initSuppression();
   $('#list').addEventListener('click', e => {
+    // v0.61 (R154) : le rond coche / décoche seulement (le vol ne s'ouvre pas)
+    const r = e.target.closest('[data-rep]');
+    if (r) {
+      e.preventDefault();
+      const v = etat.vols.find(x => x.id === r.dataset.rep);
+      if (v) enregistrerVol(basculerReport(v), { garderDate: true });
+      return;
+    }
     const d = e.target.closest('[data-fdel]');
     if (d) {
       const v = etat.vols.find(x => x.id === d.dataset.fdel);
@@ -516,6 +557,8 @@ export function initCarnet(ouvrir) {
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completerAvant(); }, { rootMargin: '600px' })
     .observe($('#list-debut'));
   $('#list-debut').addEventListener('click', afficherAvant);
+  $('#rep-ligne').addEventListener('click', () => { filtreReport = !filtreReport; if (filtreReport) filtreAnomalies = false; rafraichirCarnet({ haut: true }); });
+  $('#an-btn').addEventListener('click', () => { filtreAnomalies = !filtreAnomalies; if (filtreAnomalies) filtreReport = false; rafraichirCarnet({ haut: true }); });
   $('#top-btn').addEventListener('click', allerAuDernierVol);
   addEventListener('scroll', () => {
     if (bhEnAttente) return;

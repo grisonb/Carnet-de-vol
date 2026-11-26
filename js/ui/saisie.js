@@ -25,6 +25,8 @@ import { brouillonNpf } from '../npf.js';
 import { ignorerVolNpf, volNpfEnregistre } from './npf.js';
 import { ROLES_IE, nomReel } from '../inst-exam.js';
 import { volsGroupesAvion, alerteTemps } from '../vols-groupes.js';
+import { anomaliesDe } from './anomalies.js';
+import { ignorer } from '../anomalies.js';
 
 let F = null;          // brouillon du vol en cours
 let quitter = () => {};
@@ -804,6 +806,7 @@ export function ouvrirSaisie(vol, opts = {}) {
   F.charge = false;
   $('#f-ancien').hidden = !(F.ancien && !brouillon);
   $('#f-sim').hidden = !F.simulation;
+  rendreAnomalies(brouillon ? null : vol); // v0.61 (R155)
   recap(); apercu();
   F.empreinte = empreinte();
   // carte du vol enregistré (sans jamais toucher aux heures) ; brouillon NPF : positions des feux reçues
@@ -815,12 +818,29 @@ export function ouvrirSaisie(vol, opts = {}) {
   requestAnimationFrame(ajusterDate); // v0.46 (R118)
 }
 
+// ---------- v0.61 (R155) : anomalies du vol (l'app ne corrige rien) ----------
+function rendreAnomalies(vol) {
+  const l = vol && vol.id ? anomaliesDe(vol.id) : [];
+  $('#an-cadre').hidden = !l.length;
+  if (!l.length) return;
+  $('#an-l').innerHTML = l.map(a => `<li>${esc(a.texte)}</li>`).join('');
+  $('#an-ign').textContent = l.length > 1 ? 'Ignorer ces anomalies' : 'Ignorer cette anomalie';
+}
+// « Ignorer » : enlève le « ! » sans toucher aux données du vol (ni « Modifié le », ni alerte R150)
+async function ignorerAnomalies() {
+  const v = F && F.vol ? etat.vols.find(x => x.id === F.vol.id) : null;
+  if (!v) return;
+  if (await enregistrerVol(ignorer(v), { garderDate: true }) === false) return;
+  $('#an-cadre').hidden = true;
+  toast('Anomalie ignorée');
+}
+
 // ---------- v0.44 (R112) : lecture seule ----------
 // Rien n'est modifiable : champs en lecture seule, et tout appui / frappe / saisie bloqué dans la fiche, sauf : Fermer,
 // le crayon, LF / LOC / UTC, la carte (flammes figées : voir carte.js), la fiche de l'avion (« i », sans son crayon) et
 // l'ouverture du détail des compteurs. Ni « Enregistrer » ni « Supprimer » (style).
 let lecture = false;
-const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche'; // v0.56 : « Compteurs › » bloqué en lecture
+const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #an-cadre'; // v0.61 : « Ignorer » ne change aucune donnée // v0.56 : « Compteurs › » bloqué en lecture
 export const enLecture = () => lecture;
 function fixerLecture(oui) {
   lecture = oui;
@@ -922,6 +942,8 @@ async function enregistrer() {
   if (F.ajoutes.length) v.compteursAjoutes = [...F.ajoutes]; else delete v.compteursAjoutes; // v0.56 (R144) : « Juste pour ce vol »
   v.remarques = $('#f-rem').value.trim();
   if (!F.vol) v.source = 'saisie';
+  // v0.61 (R154) : un vol créé (saisi ou importé de NPF-Q400) arrive « à reporter » sur le carnet papier (pas une simulation)
+  if (!F.vol && !F.simulation) v.aReporter = true;
   // Vol reçu de NPF-Q400 : son id (pas de doublon), la date de l'export et les positions des feux (Carte du vol)
   const npf = F.npf;
   // v0.31 (R72) : feux déplacés / supprimés sur la Carte du vol pendant que ce vol était ouvert : la dernière version enregistrée
@@ -931,6 +953,8 @@ async function enregistrer() {
     if (actuel.feuxRetouches) v.feuxRetouches = true;
     // v0.55 (R139) : trace importée (ou retirée) pendant que ce vol était ouvert : celle de la dernière version enregistrée
     if (actuel.traceImportee) v.traceImportee = actuel.traceImportee; else delete v.traceImportee;
+    // v0.61 (R154, R155) : rond et « ! » ignoré changés pendant que ce vol était ouvert : ceux de la dernière version enregistrée
+    for (const k of ['aReporter', 'reporteLe', 'anomaliesIgnorees']) if (k in actuel) v[k] = actuel[k]; else delete v[k];
   }
   if (npf) {
     v.npfId = npf.id; v.npfExporteLe = npf.exporteLe;
@@ -1070,6 +1094,7 @@ export function initSaisie({ fermer }) {
   $('#c-nuit').addEventListener('input', () => { if (F && F.ancien && !F.groupe) recalculerAncien(instants()); });
   // v0.58 (R149) : vols groupés : interrupteur et temps tapé (« 145 » -> 1h45)
   $('#f-vg').addEventListener('click', basculerVG);
+  $('#an-ign').addEventListener('click', ignorerAnomalies); // v0.61 (R155)
   const vgIn = $('#f-bloc-in');
   vgIn.addEventListener('input', () => {
     if (/^\d+$/.test(vgIn.value.replace('h', '')) || /^\d*h?\d*$/.test(vgIn.value)) {

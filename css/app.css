@@ -1004,3 +1004,41 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 #carte-plein.avec-ge .cp-profil{bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 #carte-plein.avec-profil .carte-grande{bottom:calc(34px + var(--cp-pf-h))}
 #carte-plein.avec-profil.avec-ge .carte-grande{bottom:calc(60px + env(safe-area-inset-bottom,0px) + var(--cp-pf-h))}
+/* v0.61 (R154) : rond « reporté sur le carnet papier » (16 px, trait 1,5 px ; zone d'appui 40 × 40 px en bas à droite) ;
+   les dernières lignes de la carte s'arrêtent avant la zone d'appui (aucune bulle dessous) */
+.flight.swfront{position:relative}
+.fl-rep{position:absolute;right:0;bottom:0;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fl-rep svg{width:16px;height:16px;overflow:visible}
+.fl-rep circle{fill:var(--surface);stroke:#9aa3b1;stroke-width:1.5}
+.fl-rep path{fill:none;stroke:transparent;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fl-rep.on circle{fill:#2e7d32;stroke:#2e7d32}
+.fl-rep.on path{stroke:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fl-rep circle{stroke:#7d8a99}}
+:root[data-theme="dark"] .fl-rep circle{stroke:#7d8a99}
+.flight .chips,.flight .fl-rem,.flight .fl-voir{padding-right:28px}
+.rep-ligne{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0;padding:8px 12px;border-radius:12px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:15px;text-align:left}
+.rep-ligne[hidden]{display:none}
+.rep-ligne>span:first-child{flex:1;min-width:0}
+.rep-ligne b{color:#c62828}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rep-ligne b{color:#ff8a80}}
+:root[data-theme="dark"] .rep-ligne b{color:#ff8a80}
+.rep-ligne[aria-pressed="true"]{border-color:#c62828;box-shadow:inset 0 0 0 1px #c62828}
+.rep-tous{color:var(--primary);font-weight:700}
+.rep-tous[hidden]{display:none}
+/* v0.61 (R155) : triangle « ! » (20 × 18 px, juste à gauche de la zone d'appui du rond ; les dernières lignes s'arrêtent avant),
+   bouton jaune sous OPS / IFR (même hauteur que leurs cases), cadre « Anomalie détectée » de la saisie */
+.fl-an{position:absolute;right:40px;bottom:11px;width:20px;height:18px;line-height:0;pointer-events:none}
+.fl-an svg{display:block}
+.flight.avec-an .chips,.flight.avec-an .fl-rem,.flight.avec-an .fl-voir{padding-right:50px}
+.an-tri{display:inline-block;width:22px;height:20px;flex:none;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 1.5 L23 20.5 H1 Z' fill='%23ffd84d' stroke='%231b2433' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='10.8' y='7' width='2.4' height='7.5' rx='1' fill='%231b2433'/%3E%3Ccircle cx='12' cy='17.3' r='1.4' fill='%231b2433'/%3E%3C/svg%3E")}
+.an-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:30px;margin-top:8px;padding:0 10px;border-radius:12px;
+  background:#f5c400;border:1.5px solid #c9a000;color:#1b2433;font:inherit;font-weight:800;font-size:16px;line-height:1}
+.an-btn[hidden]{display:none}
+.an-btn[aria-pressed="true"]{box-shadow:inset 0 0 0 2px #1b2433}
+.an-cadre{background:#fff8d6;border:1.5px solid #e0b400;border-radius:12px;padding:10px 12px;margin:8px 0;font-size:15px;line-height:1.4;color:#1b2433}
+.an-cadre[hidden]{display:none}
+.an-cadre b{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:16px}
+.an-cadre b .an-tri{width:20px;height:18px}
+.an-cadre ul{margin:4px 0 8px 18px;padding:0}
+.an-ign{border:1.5px solid #8a6d00;color:#5c4800;background:transparent;border-radius:10px;padding:6px 12px;font:inherit;font-weight:700;font-size:15px;min-height:40px}

@@ -199,6 +199,14 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   (la carte suit le point), `majProfilPlein`, réglage PRIVÉ `profilPlein`. Synchro : `cleVolOuvert()` = vol en MODIFICATION
   seulement (lecture : mis à jour, `rafraichirVolLu`) ; conflit d'un vol ouvert non modifié ici appliqué dès sa fermeture ;
   un conflit n'est effacé que par une version reçue au moins aussi récente (`a.carte[k][0] >= c.rev`).
+- v0.61 : R154 `js/report.js` (`estAReporter` : vol `aReporter: true` ; absent = reporté ; `basculerReport` + `reporteLe` ;
+  `seulReportDiffere` / `plusRecentReport` utilisés par `analyserRecus` : rond seul changé des deux côtés -> le plus récent).
+  carnet.js : `.fl-rep[data-rep]` (SVG, zone 40 px), `#rep-ligne` / `#rep-n` / `#rep-tous`, `filtreReport` ; saisie : nouveau vol
+  (pas simulation) `aReporter: true` ; `enregistrerVol(v, { garderDate })` (etat.js) garde `modifieLe`.
+  R155 `js/anomalies.js` (`anomaliesDuCarnet(vols, avions, terrainDe)` -> Map id -> [{ type a..h, texte }], `anomaliesDuVol`,
+  `ignorer` / `estIgnore` : vol `anomaliesIgnorees` { empreinte des CHAMPS contrôlés, le }) ; `js/ui/anomalies.js` (cache par
+  `etat.revision`, `TRIANGLE`) ; carnet.js `.fl-an` + `.flight.avec-an`, `#an-btn` / `#an-n`, `filtreAnomalies` (exclusif avec
+  `filtreReport`) ; saisie `#an-cadre` / `#an-l` / `#an-ign` (permis en lecture). report.js `fusionnerEtats` (synchro).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

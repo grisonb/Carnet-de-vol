@@ -1,5 +1,39 @@
 # Journal des versions
 
+## v0.61 — 26/11/2026
+
+Remarques R154 et R155. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol
+réécrit ; PDF, CSV et totaux identiques).
+
+**R154 : rond « reporté sur le carnet papier ».** En bas à droite de chaque carte de l'accueil : rond 16 px (trait 1,5 px,
+dessiné en SVG), vert plein avec ✓ blanc = reporté, vide gris = à reporter ; zone d'appui 40 × 40 px ; un appui coche /
+décoche sans ouvrir le vol ; les dernières lignes de la carte s'arrêtent avant (aucune bulle dessous). Un vol SANS
+l'information est reporté : tous les vols existants (et ceux d'une ancienne sauvegarde) le sont, sans être réécrits ; un vol
+créé (saisi, importé de NPF-Q400) arrive avec `aReporter: true` (pas les vols de simulation). Ligne « À reporter sur le carnet :
+N vols » (`#rep-ligne`, nombre en rouge, cachée à 0) : appui = seulement ces vols, nouvel appui (« Tous › ») = tous. L'état
+voyage avec le vol (synchro, sauvegarde) ; changé des deux côtés et rien d'autre : le plus récent gagne (`reporteLe`), sans
+conflit à choisir. L'appui ne change pas « Modifié le » du vol (`enregistrerVol(v, { garderDate: true })`) : CSV identique ;
+pas d'alerte R150. Logique : `js/report.js`.
+
+**R155 : anomalies signalées par un triangle « ! ».** L'app ne corrige jamais rien. Détectées (et aucune autre ; simulateur
+non contrôlé) : a. terrain intermédiaire avec 0 atterrissage ; b. arrivée de nuit (estNuit au bloc arrivée) et 0 atterrissage
+de nuit ; c. nuit ou IFR plus grand que le temps de vol ; d. CdB + Copi + DC + PICUS différent du temps de vol (le temps
+instructeur compte aussi en CdB, comme FlyLog ; un vol instructeur saisi dans l'app, sans CdB, est accepté), instructeur ou
+examinateur plus grand que le temps de vol ; e. arrivée avant le départ ou vol de plus de 10 h ; f. chevauchement (se toucher
+n'en est pas un) ; g. terrain intermédiaire = départ ou arrivée ; h. vol saisi deux fois (date, heures, immatriculation).
+Accueil : triangle jaune dessiné (SVG) en bas à droite, à gauche du rond, les dernières lignes s'arrêtent avant ; bouton jaune
+« ⚠ N vols à vérifier ⚠ » sous les cases OPS / IFR (30 px, caché à 0) : filtre, un seul filtre à la fois avec « À reporter ».
+Fiche du vol : cadre jaune « Anomalie détectée » + liste + « Ignorer cette anomalie » (aussi en lecture). Vol corrigé : le
+« ! » disparaît. « Ignorer » : `vol.anomaliesIgnorees` { empreinte des données contrôlées, le } ; données et « Modifié le »
+inchangés, pas d'alerte R150 ; le « ! » revient seulement si ces données changent ensuite et qu'une anomalie est détectée.
+Synchro : rond et « ignoré » changés chacun sur un appareil -> les deux gardés (`fusionnerEtats`). Ancienne sauvegarde : rien
+d'ignoré. Calcul en une passe + un tri (`js/anomalies.js`, cache `js/ui/anomalies.js`) : 40 ms pour 4 000 vols (processeur ×4).
+
+**Tests** : `tests/unitaires/v061.test.js`, `tests/navigateur/v061.mjs` (50 vols inventés, 360 / 393 px, faux NAS + vol NPF,
+synchro A -> B, conflit du rond, sauvegarde, ancienne sauvegarde), `tests/navigateur/v061b.mjs` (anomalies a à h et cas
+voisins, bouton, filtres, cadre, Ignorer, synchro, sauvegarde, 360 / 393 px, 4 000 vols) ; test complet ; contrôle local avec
+le vrai fichier.
+
 ## v0.60 — 25/11/2026
 
 Remarque R152 et défaut de synchro constaté. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ;

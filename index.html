@@ -52,6 +52,8 @@
     <div class="hstrip" id="h-strip" role="button" tabindex="0" aria-label="Choisir les heures affichées"></div>
     <!-- v0.48 (R122) : socle OPS et IFR (feuille Google du pilote), sous la bande des heures ; caché sans adresse ni lecture -->
     <div class="socle" id="h-socle" hidden></div>
+    <!-- v0.61 (R155) : vols avec une anomalie (« ! ») : appui = seulement eux, nouvel appui = tous ; caché à 0 -->
+    <button type="button" class="an-btn" id="an-btn" hidden aria-pressed="false"><span class="an-tri" aria-hidden="true"></span><span id="an-n"></span><span class="an-tri" aria-hidden="true"></span></button>
     <div class="quick" id="h-quick"></div>
     <input class="search" id="q" type="search" hidden placeholder="Rechercher : date, terrain, immat., mission…" aria-label="Rechercher un vol">
     <!-- v0.31 (R71) : période (bornes comprises, date du vol affichée sur la carte) -->
@@ -60,6 +62,8 @@
       <label class="pchamp"><span>Au</span><input id="p-au" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="JJ/MM/AAAA" aria-label="Période : au"></label>
       <p class="koc" id="p-err" role="status" hidden></p>
     </div>
+    <!-- v0.61 (R154) : vols à reporter sur le carnet papier (appui : seulement eux ; nouvel appui : tous) -->
+    <button type="button" class="rep-ligne" id="rep-ligne" hidden aria-pressed="false"><span>À reporter sur le carnet</span><b id="rep-n"></b><span class="rep-tous" id="rep-tous" hidden>Tous ›</span></button>
     <button type="button" class="list-debut" id="list-debut" hidden>↑ Vols plus récents</button>
     <div id="list"></div>
     <div id="list-fin" aria-hidden="true"></div>
@@ -75,6 +79,9 @@
     </div>
     <!-- v0.35 (R85) : vol de simulation (NPF-Q400-RUN) : ne compte dans aucun total -->
     <div class="sim-bandeau" id="f-sim" hidden role="note">SIMULATION VOL<small>Ne compte dans aucun total ni dans le PDF</small></div>
+    <!-- v0.61 (R155) : anomalies de ce vol (l'app ne corrige rien) ; « Ignorer » enlève le « ! » sans toucher aux données -->
+    <div class="an-cadre" id="an-cadre" hidden role="note"><b><span class="an-tri" aria-hidden="true"></span>Anomalie détectée</b><ul id="an-l"></ul>
+      <button type="button" class="an-ign" id="an-ign">Ignorer cette anomalie</button></div>
     <div class="npf-zone" id="npf-zone" hidden><p id="npf-txt"></p><button type="button" class="linkbtn" id="npf-copi-add" hidden></button><button type="button" class="linkbtn" id="npf-feux" hidden></button><button type="button" class="linkbtn npf-ign" id="npf-ign">Ignorer ce vol</button></div>
 
     <div class="sec c-vol">

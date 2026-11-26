@@ -92,9 +92,11 @@ export async function enregistrerReglage(cle, valeur) {
   prevenir();
 }
 
-export async function enregistrerVol(vol) {
+// v0.61 (R154) : { garderDate: true } = le rond « reporté sur le carnet papier » : ce n'est pas une modification du vol
+// (« Modifié le » du CSV inchangé ; la synchro a sa propre heure, reporteLe)
+export async function enregistrerVol(vol, { garderDate = false } = {}) {
   if (refuseEnConsultation()) return false;
-  horodater(vol);
+  if (!(garderDate && vol.modifieLe)) horodater(vol);
   if (!vol.ordre) vol.ordre = Date.now();
   await db.enregistrer({ vols: [vol] });
   const i = etat.vols.findIndex(v => v.id === vol.id);
