@@ -295,10 +295,15 @@ function rendreEscales() {
 }
 // v0.64 (R158) : terrain intermédiaire sans code OACI (altisurface saisie par son nom, pélicandrome NPF) : ses atterrissages et
 // approches se modifient comme les autres ; le nom reste tel quel (le code peut rester vide)
-const sansCodeVM = () => vmEdit >= 0 && F.escales[vmEdit] && !F.escales[vmEdit].code && !!F.escales[vmEdit].nom && !$('#vm-icao').value.trim();
+// v0.64b (R158b) : le nom peut être rangé dans « nom » (NPF-Q400) OU dans « code » (import FlyLog : la route « LFHM|LA TOVIÈRE|…|LFHM »
+// donne code « LA TOVIÈRE ») : tout ce qui n'a pas la forme d'un code OACI (4 lettres / chiffres) est un nom, quels que soient accents,
+// espaces, minuscules ou longueur. Champ du code laissé vide (ou seulement « LF ») : « Valider » garde le terrain tel quel.
+const formeCode = c => /^[A-Z0-9]{4}$/.test(String(c || '').trim().toUpperCase());
+const nomSansCode = e => (!e ? '' : e.code && !formeCode(e.code) ? String(e.code).trim() : !e.code && e.nom ? String(e.nom).trim() : '');
+const sansCodeVM = () => vmEdit >= 0 && !!nomSansCode(F.escales[vmEdit]) && ['', 'LF'].includes($('#vm-icao').value.trim().toUpperCase());
 function nomVM() {
   const c = $('#vm-icao').value.toUpperCase();
-  if (sansCodeVM()) { $('#vm-name').textContent = `${F.escales[vmEdit].nom} (sans code OACI)`; $('#vm-name').classList.remove('bad'); $('#vm-ajt').hidden = true; return; }
+  if (sansCodeVM()) { $('#vm-name').textContent = `${nomSansCode(F.escales[vmEdit])} · Terrain sans code OACI`; $('#vm-name').classList.remove('bad'); $('#vm-ajt').hidden = true; return; }
   $('#vm-name').textContent = c.length < 4 ? 'Tape les 4 lettres du code' : (terrain(c)?.nom || 'Terrain inconnu : vérifie le code');
   $('#vm-name').classList.toggle('bad', c.length === 4 && !terrain(c));
   $('#vm-ajt').hidden = !(c.length === 4 && !terrain(c));
@@ -307,13 +312,14 @@ function ouvrirEscale(i) {
   vmEdit = i;
   const v = i >= 0 ? F.escales[i] : { code: '', attJour: 1, attNuit: 0, approches: 0 };
   VM = { attJour: v.attJour, attNuit: v.attNuit, approches: Number(v.approches) || 0 };
-  $('#vm-icao').value = v.code || ''; $('#vm-attJour').textContent = VM.attJour; $('#vm-attNuit').textContent = VM.attNuit;
+  const sansCode = i >= 0 && !!nomSansCode(v); // v0.64b (R158b) : le nom n'est pas mis dans le champ du code
+  $('#vm-icao').value = sansCode ? '' : v.code || ''; $('#vm-attJour').textContent = VM.attJour; $('#vm-attNuit').textContent = VM.attNuit;
   $('#vm-approches').textContent = VM.approches;
   nomVM();
   $('#vm-ok').textContent = i >= 0 ? 'Valider' : 'Ajouter';
   $('#vm-del').hidden = i < 0;
   $('#via-modal').hidden = false;
-  setTimeout(() => $('#vm-icao').focus(), 50);
+  if (!sansCode) setTimeout(() => $('#vm-icao').focus(), 50); // sans code : pas de clavier (ni « LF » ajouté)
 }
 
 // ---------- Avion ----------
@@ -1171,7 +1177,8 @@ export function initSaisie({ fermer }) {
   $('#vm-ok').addEventListener('click', () => {
     const c = $('#vm-icao').value.toUpperCase();
     if (c.length !== 4 && !sansCodeVM()) { nomVM(); return; }
-    const v = { ...(vmEdit >= 0 ? F.escales[vmEdit] : {}), code: c, attJour: VM.attJour, attNuit: VM.attNuit, approches: VM.approches };
+    const garde = sansCodeVM(); // terrain sans code OACI : nom et code d'origine gardés tels quels
+    const v = { ...(vmEdit >= 0 ? F.escales[vmEdit] : {}), ...(garde ? {} : { code: c }), attJour: VM.attJour, attNuit: VM.attNuit, approches: VM.approches };
     delete v.aVerifier;
     if (vmEdit >= 0) F.escales[vmEdit] = v; else F.escales.push(v);
     $('#via-modal').hidden = true; rendreEscales(); recalculer();

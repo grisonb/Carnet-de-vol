@@ -229,6 +229,9 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   ajouté). Anomalies traitées : ligne `tempsNuit` -> `[data-remettre]` « Remettre 0hMM » (lignesSuivi : `origine`). R160
   `arrondiDixieme` (temps.js) sur la nuit calculée (et proposée, ancien vol), plafonnée au temps de vol. R161 carnet.js `.fl-tps` > `.fl-dix` (`enDixiemes`,
   couleur `var(--vol)`) + `.fl-bloc`.
+- v0.65 : R158b terrain intermédiaire sans code : le nom peut être dans `nom` (NPF) OU dans `code` (import FlyLog : route
+  « LFTW|NOM AVEC ESPACES|LFTW ») ; `formeCode` / `nomSansCode` (saisie.js) : tout ce qui n'est pas 4 lettres / chiffres est un nom ;
+  fenêtre : champ du code vide (pas de focus, « LF » toléré), « <nom> · Terrain sans code OACI », « Valider » garde code et nom.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

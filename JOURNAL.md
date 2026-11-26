@@ -1,5 +1,24 @@
 # Journal des versions
 
+## v0.65 — 27/11/2026
+
+Remarque R158b. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; aucune donnée changée (totaux, PDF,
+CSV et nuit identiques).
+
+**R158b : altisurface venue de FlyLog, « Valider » toujours bloqué en v0.64.** Cause : à l'import FlyLog, la route
+« DÉPART|NOM DU TERRAIN|…|ARRIVÉE » range le NOM du terrain intermédiaire dans son champ « code » (pas dans « nom ») ; la correction
+de la v0.64 ne visait que les terrains dont le code est vide et le nom rempli (cas des pélicandromes envoyés par NPF-Q400) : la fenêtre
+mettait le nom dans le champ du code, disait « Terrain inconnu : vérifie le code » et refusait tout ce qui n'avait pas 4 lettres. Le
+test de la v0.64 avait construit son altisurface comme NPF-Q400 (code vide, nom rempli), pas comme un import FlyLog : il ne pouvait pas
+le voir. Maintenant : tout terrain dont l'identifiant n'a pas la forme d'un code OACI (4 lettres / chiffres) est un nom, quels que
+soient accents, espaces, minuscules ou longueur ; la fenêtre affiche « <nom> · Terrain sans code OACI » (information), le champ du code
+reste vide (pas de clavier, « LF » toléré) et « Valider » garde atterrissages, approches, nom et code d'origine. Un code à 4 lettres
+inconnu de la base : comme avant.
+
+**Tests** : `tests/navigateur/v065.mjs` (import d'un faux FlyLog avec deux terrains sans code, nom tapé en minuscules, nom seul, code
+inconnu ; téléphone 360 / 393 px, bouton LF actif et inactif, PC) — il échoue sur la v0.64 et réussit sur la v0.65 ; test rapide et
+tests v0.61 à v0.64 ; reproduction et contrôle locaux avec le vrai fichier.
+
 ## v0.64 — 26/11/2026
 
 Remarques R158 à R161. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; aucun vol existant recalculé ;
