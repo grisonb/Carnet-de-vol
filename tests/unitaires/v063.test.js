@@ -24,7 +24,7 @@ test('suivi : champs changés, origine gardée, deux modifications = une seule o
   const v2 = { ...v1, approches: 3 };
   s = majSuivi(s, v1, v2, opts, '2026-11-28T08:00:00Z');
   assert.equal(s.o.approches, '0', 'origine inchangée');
-  assert.deepEqual(lignesSuivi(s, v2, opts)[0], { k: 'approches', avant: 'Approches : 0', apres: 'Approches : 3' });
+  assert.deepEqual(lignesSuivi(s, v2, opts)[0], { k: 'approches', origine: '0', avant: 'Approches : 0', apres: 'Approches : 3' }); // v0.64 : + origine (bouton « Remettre »)
   const v3 = { ...v2, approches: 0 };
   s = majSuivi(s, v2, v3, opts);
   assert.deepEqual(lignesSuivi(s, v3, opts).map(l => l.k), ['remarques'], 'approches revenues à l\'origine : ligne retirée');

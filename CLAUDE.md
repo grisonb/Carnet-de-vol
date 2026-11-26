@@ -221,6 +221,14 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   rond, « ignoré », trace, « Modifié le », champs techniques. anomalies-traitees.js `cartesTraitees` (une carte par vol : Corrigées /
   Modifiés), `rattrapageSuivis`, `OCTETS_CORRIGEES`. Onglet `#at-m` ; question v0.63 : PRIVÉ `questionModifications`, PARTAGÉ
   `rattrapageModifications` (la question v0.62 n'est plus posée). Suivi noté seulement par la saisie (`noterCorrection`).
+- v0.64 : R158 saisie `sansCodeVM()` : terrain intermédiaire avec `nom` et sans code : `#vm-ok` accepté (code vide, nom gardé).
+  R159 `recalculer` : `F.garde` (valeurs enregistrées à l'ouverture) + `sigHeures` / `sigNuit` : temps de vol, colonne, fonction, IFR
+  recalculés seulement si date / heures changent, nuit si date / heures / terrains changent (retour à l'origine : valeurs enregistrées ;
+  vol enregistré en vols groupés : `F.garde.groupe`, tout recalculé quand on éteint) ;
+  nuit tapée : `F.nuitMain`, vol `nuitManuelle: true` (jamais remplacée) ; `signatureAtt` sans les nombres d'att. des escales (delta
+  ajouté). Anomalies traitées : ligne `tempsNuit` -> `[data-remettre]` « Remettre 0hMM » (lignesSuivi : `origine`). R160
+  `arrondiDixieme` (temps.js) sur la nuit calculée (et proposée, ancien vol), plafonnée au temps de vol. R161 carnet.js `.fl-tps` > `.fl-dix` (`enDixiemes`,
+  couleur `var(--vol)`) + `.fl-bloc`.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

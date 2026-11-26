@@ -10,7 +10,7 @@ import { ignoreesAffichees, libelleAnomalie, correctionALaSaisie, ajouterCorrige
 import { analyserFlyLog } from '../flylog.js';
 import { terrain } from '../terrains.js';
 import { typesConnus } from './avions.js';
-import { dateFr } from '../temps.js';
+import { dateFr, lireDuree } from '../temps.js';
 
 const immatDe = v => (etat.avions.get(v && v.avionId) || {}).immat || '';
 const trajet = v => [v.dep, ...(v.escales || []).map(e => e.code || e.nom), v.arr].filter(Boolean).join(' → ');
@@ -38,16 +38,18 @@ export function majBadgeAnomalies() {
 // ---------- Écran ----------
 let onglet = 'corrigees';
 const tete = v => `<div class="lv-h"><span>${esc(dateFr(v.date))}</span><span class="lv-av">${esc(immatDe(v))}</span></div><div class="lv-tr">${esc(trajet(v))}</div>`;
-const chg = (avant, apres) => `<div class="lv-chg">${avant ? `<span class="lv-av-v">${esc(avant)}</span> → ` : ''}<span class="lv-ap">${esc(apres)}</span></div>`;
+const chg = (avant, apres, bouton = '') => `<div class="lv-chg">${avant ? `<span class="lv-av-v">${esc(avant)}</span> → ` : ''}<span class="lv-ap">${esc(apres)}</span>${bouton}</div>`;
+// v0.64 (R159) : ligne « Nuit » changée : « Remettre 0h12 » (valeur d'origine remise dans le vol, sans rien recalculer)
+const ligneChamp = (x, l) => chg(l.avant, l.apres, l.k === 'tempsNuit' ? `<button type="button" class="lv-btn lv-rem" data-remettre="${esc(x.volId)}" data-val="${esc(l.origine)}">Remettre ${esc(l.origine)}</button>` : '');
 // v0.63 (R157) : la ligne grise de chaque anomalie corrigée, puis TOUS les champs changés du vol (sans suivi : l'ancienne valeur liée)
 function ligneCorrigee(x) {
   const gris = [...new Set(x.anomalies.map(a => libelleAnomalie(a.cle)))].map(t => `<div class="lv-q">${esc(t)}</div>`).join('');
-  const champs = x.lignes ? x.lignes.map(l => chg(l.avant, l.apres)).join('')
+  const champs = x.lignes ? x.lignes.map(l => ligneChamp(x, l)).join('')
     : x.anomalies.map(a => chg((a.avant || []).join(' · '), (a.apres || []).join(' · '))).filter((h, i) => (x.anomalies[i].apres || []).length).join('');
   return `<div class="lv" role="button" tabindex="0" data-vol="${esc(x.volId)}">${tete(x.vol)}${gris}${champs}<div class="lv-q">${x.le ? `Corrigé le ${jour(x.le)}` : 'Corrigé : date inconnue'}</div></div>`;
 }
 function ligneModifiee(x) {
-  return `<div class="lv" role="button" tabindex="0" data-vol="${esc(x.volId)}">${tete(x.vol)}${x.lignes.map(l => chg(l.avant, l.apres)).join('')}<div class="lv-q">${x.le ? `Modifié le ${jour(x.le)}` : 'Modifié : date inconnue'}</div></div>`;
+  return `<div class="lv" role="button" tabindex="0" data-vol="${esc(x.volId)}">${tete(x.vol)}${x.lignes.map(l => ligneChamp(x, l)).join('')}<div class="lv-q">${x.le ? `Modifié le ${jour(x.le)}` : 'Modifié : date inconnue'}</div></div>`;
 }
 function ligneIgnoree(x) {
   const an = [...new Set(x.anomalies.map(a => libelleAnomalie(a.cle)))].map(t => `<div class="lv-q">${esc(t)}</div>`).join('');
@@ -75,6 +77,14 @@ export function ecranAnomaliesTraitees() {
   c.querySelector('#at-fl').addEventListener('click', choisirFichier);
   const l = c.querySelector('#at-l');
   l.addEventListener('click', async e => {
+    const rm = e.target.closest('[data-remettre]');
+    if (rm) {
+      const v = etat.vols.find(x => x.id === rm.dataset.remettre), d = lireDuree(rm.dataset.val);
+      if (!v || Number.isNaN(d)) return;
+      // rien n'est recalculé ; la règle R159 la garde ensuite tant que la date, les heures et les terrains ne changent pas
+      if (await enregistrerVol({ ...v, tempsNuit: d || 0 }) !== false) { toast(`Nuit remise à ${rm.dataset.val}`); ecranAnomaliesTraitees(); }
+      return;
+    }
     const np = e.target.closest('[data-np]');
     if (np) {
       const v = etat.vols.find(x => x.id === np.dataset.np);

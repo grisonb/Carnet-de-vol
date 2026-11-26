@@ -125,7 +125,7 @@ try {
   const attTotal = Number(await p.textContent('#s-attJour')) + Number(await p.textContent('#s-attNuit'));
   verifier(attTotal === 2, 'atterrissages = escale + dernier atterrissage');
   verifier(await p.textContent('#s-attNuit') === '1', 'dernier atterrissage (00h45 UTC) classé de nuit');
-  verifier(await p.inputValue('#c-nuit') === '1h15', 'temps de nuit calculé');
+  verifier(await p.inputValue('#c-nuit') === '1h15', 'temps de nuit calculé (tout le vol : 1h15 ; v0.64 R160 : arrondi, jamais plus que le temps de vol)');
   await p.click('#f-ifr');
   verifier(await p.inputValue('#c-ifr') === '1h15', 'IFR : tout le vol en IFR');
   await p.click('[data-s="approches"][data-d="1"]');

@@ -127,6 +127,6 @@ export function lignesSuivi(suivi, vol, opts = {}, nomCompteur = c => c) {
   const t = textesDuVol(vol, opts);
   return trier(Object.keys(suivi.o)).filter(k => valeur(t, k) !== suivi.o[k]).map(k => {
     const l = libelleChamp(k, nomCompteur);
-    return { k, avant: `${l} : ${suivi.o[k]}`, apres: `${l} : ${valeur(t, k)}` };
+    return { k, origine: suivi.o[k], avant: `${l} : ${suivi.o[k]}`, apres: `${l} : ${valeur(t, k)}` };
   });
 }

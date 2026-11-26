@@ -1,5 +1,32 @@
 # Journal des versions
 
+## v0.64 — 26/11/2026
+
+Remarques R158 à R161. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; aucun vol existant recalculé ;
+totaux, PDF et CSV identiques.
+
+**R158 : altisurface sans code OACI.** Un terrain intermédiaire saisi par son nom (sans code) : ses atterrissages et approches se
+modifient comme les autres (avant : « Valider » refusait sans code à 4 lettres). Le nom reste tel quel ; le « ! » disparaît dès
+qu'il a un atterrissage.
+
+**R159 : la nuit ne change plus en silence.** Cause : valider la fenêtre d'un terrain intermédiaire (pour corriger ses atterrissages),
+changer LOC / UTC ou un terrain relançait TOUS les calculs du vol ; la nuit était recalculée par l'app (0h14), à la place de celle de
+FlyLog (0h12). Maintenant, à l'enregistrement d'un vol existant : la nuit n'est recalculée que si la date, une heure ou un terrain
+change (nouveau vol : toujours) ; revenu à l'identique : la valeur enregistrée revient ; tapée à la main : jamais remplacée (gardée
+avec le vol). Même règle pour les autres calculs du même cas : temps de vol (FlyLog peut différer des heures), colonne avion
+(SE / ME / multipilote), temps de la fonction, temps IFR (vol IFR) ; et un atterrissage ajouté sur un terrain intermédiaire ne
+répartit plus de nouveau jour / nuit ceux de l'arrivée. Anomalies traitées : chaque ligne « Nuit » changée a un bouton
+« Remettre 0h12 » (valeur d'origine remise, rien recalculé, pas d'alerte R150 ; la ligne disparaît).
+
+**R160 : nuit calculée arrondie au dixième** (multiple de 6 min ; reste 0 à 2 min en dessous, 3 à 5 au-dessus), seulement pour un
+calcul fait à partir de cette version ; jamais plus que le temps de vol (vol de 1h15 entièrement de nuit : 1h15, pas 1h18).
+
+**R161 : temps de vol en dixièmes sur l'accueil** (maquette validée), à gauche du temps encadré, même couleur, sans contour, plus
+petit ; même arrondi ; vol groupé : le temps saisi. Affichage seulement.
+
+**Tests** : `tests/unitaires/v064.test.js`, `tests/navigateur/v064.mjs` ; test rapide et tests v0.61 à v0.63 ; contrôle local avec le
+vrai fichier (nuit identique sur tous les vols).
+
 ## v0.63 — 26/11/2026
 
 Remarque R157. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol

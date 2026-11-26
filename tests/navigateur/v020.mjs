@@ -62,7 +62,7 @@ try {
   await taper('#f-t0', '1830'); await taper('#f-t1', '1945');
   const nuit = await p.inputValue('#c-nuit'), attJ = await p.textContent('#s-attJour'), attN = await p.textContent('#s-attNuit');
   verifier(await terrains() === 'FMEP → FMEP' && await p.textContent('#f-bloc') === '1h15', 'FMEP → FMEP, 18h30 → 19h45 locale : bloc 1h15');
-  verifier(/^0h4[01]$/.test(nuit), `  nuit ${nuit} (fin du crépuscule civil à 19h05 locale)`);
+  verifier(nuit === '0h42' /* v0.64 (R160) : 0h40 ou 0h41 calculé, arrondi au dixième */, `  nuit ${nuit} (fin du crépuscule civil à 19h05 locale)`);
   verifier(attJ === '0' && attN === '1', `  atterrissage de nuit (Att. Jour ${attJ} / Nuit ${attN})`);
   await p.screenshot({ path: join(CAPT, 'v020-01-vol-fmep-nuit.png') });
   await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])');

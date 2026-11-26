@@ -769,7 +769,7 @@ body.est-demenage>*:not(#demenage):not(#toast){display:none!important}
 .fl-tete>.fl-route{grid-column:1;grid-row:2;font-size:18px;font-weight:700;line-height:1.25}
 .fl-tete>.fl-route.small{font-size:16px}
 .fl-tete>.fl-route.xsmall{font-size:15px}
-.fl-tete>.fl-bloc{grid-column:2;grid-row:1 / span 2;align-self:start}
+.fl-tete>.fl-bloc,.fl-tete>.fl-tps{grid-column:2;grid-row:1 / span 2;align-self:start} /* v0.64 (R161) : dixièmes + pastille ensemble */
 /* v0.43 (R106) : date remontée de 4 px vers le bord haut de la carte ; décalage visuel seulement (position relative) :
    le trajet, la pastille et tout le reste gardent exactement leur place, la carte garde sa hauteur */
 .fl-tete>.fl-date{position:relative;top:-4px}
@@ -839,7 +839,7 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .fl-tete>.fl-route{margin-top:2px}
 /* v0.45 (R116) : haut de la bordure de la pastille du temps = haut du contour de la date (date : rangée - 2 px, contour
    1 px + liseré 0,5 px) : la pastille monte de 2,5 px (décalage visuel seulement, la date ne bouge pas) */
-.fl-tete>.fl-bloc{position:relative;top:-2.5px}
+.fl-tete>.fl-bloc,.fl-tete>.fl-tps>.fl-bloc{position:relative;top:-2.5px}
 /* v0.45 (R115) : ligne avion 17 px (type 15 px), ligne des heures 15 px ; couleurs et graisses inchangées. La ligne avion
    reste sur UNE ligne (R90) : le type rapetisse d'abord (jusqu'à 13 px, ajusterTypes dans carnet.js), puis « … » sur le
    type seulement ; nom et immatriculation ne sont jamais coupés. */
@@ -1067,3 +1067,8 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .at-bas[hidden]{display:none}
 .at-res{background:#e5f3e6;border:1px solid #2e7d32;color:#1b2433;border-radius:12px;padding:8px 12px;font-weight:700;margin:0 0 10px}
 body.consultation #at-bas,body.consultation .lv-btn{display:none!important}
+/* v0.64 (R161) : temps de vol en dixièmes d'heure (carnet papier), à gauche du temps encadré : même couleur, sans contour, plus petit */
+.fl-top .fl-tps{flex:none;display:flex;align-items:center;gap:7px}
+.fl-dix{font-family:var(--f-num);font-weight:800;font-size:17px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;text-decoration:none;color:var(--vol,var(--ink))}
+/* v0.64 (R159) : « Remettre 0h12 » sous une ligne « Nuit » */
+.lv-chg .lv-rem{display:block;margin-top:4px}

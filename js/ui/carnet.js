@@ -13,7 +13,7 @@ import { instExamDuVol, ROLES_IE } from '../inst-exam.js';
 import { ajusterSocle } from './socle.js';
 import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
-import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide } from '../temps.js';
+import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide, enDixiemes } from '../temps.js';
 import { heuresLocales } from '../fuseaux.js';
 import { fuseau } from '../terrains.js';
 import { FONCTIONS, COMPTEURS, identiteAvion, estSimulation } from '../modele.js';
@@ -181,7 +181,7 @@ export function carteVol(v, voir = false) {
   // la carte se glisse vers la gauche pour faire apparaître « Supprimer » (avec confirmation)
   const anomalie = anomaliesActuelles().has(v.id); // v0.61 (R155)
   return `<div class="swrow flrow"><button type="button" class="swdel" data-fdel="${esc(v.id)}" tabindex="-1">Supprimer</button><button type="button" class="flight swfront vol-${couleur}${estSimulation(v) ? ' sim' : ''}${anomalie ? ' avec-an' : ''}" data-id="${esc(v.id)}">
-    ${estSimulation(v) ? '<div class="sim-bandeau fl-sim">SIMULATION VOL<small>hors totaux</small></div>' : ''}<div class="fl-top fl-tete"><b class="fl-date">${esc(dateFr(dateAffichee(v)))}</b><span class="fl-route${taille}">${route}</span><span class="fl-bloc t-${couleur}">${hm(duree)}</span></div>
+    ${estSimulation(v) ? '<div class="sim-bandeau fl-sim">SIMULATION VOL<small>hors totaux</small></div>' : ''}<div class="fl-top fl-tete"><b class="fl-date">${esc(dateFr(dateAffichee(v)))}</b><span class="fl-route${taille}">${route}</span><span class="fl-tps"><span class="fl-dix t-${couleur}" aria-hidden="true">${enDixiemes(duree)}</span><span class="fl-bloc t-${couleur}">${hm(duree)}</span></span></div>
     <div class="fl-id">${ligne}</div>
     <div class="fl-meta num">${esc(ligneHeures(v))}</div>
     <div class="chips">${puces.join('')}</div>

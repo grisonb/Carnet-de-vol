@@ -89,3 +89,12 @@ export function aujourdhui(d = new Date()) {
 
 export const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août',
   'septembre', 'octobre', 'novembre', 'décembre'];
+
+// v0.64 (R160 / R161) : arrondi au dixième d'heure (multiple de 6 min), comme le carnet papier : reste de 0 à 2 min -> en dessous,
+// de 3 à 5 min -> au-dessus (0h14 -> 0h12, 0h15 -> 0h18, 0h02 -> 0h00)
+export function arrondiDixieme(minutes) {
+  const m = Math.max(0, Math.round(Number(minutes) || 0)), r = m % 6;
+  return m - r + (r >= 3 ? 6 : 0);
+}
+// « 1,4 » (dixièmes d'heure, virgule française)
+export const enDixiemes = minutes => (arrondiDixieme(minutes) / 60).toFixed(1).replace('.', ',');

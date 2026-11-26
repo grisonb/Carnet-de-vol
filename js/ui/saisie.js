@@ -11,7 +11,7 @@ import { estSimulation, volVide, FONCTIONS, TEMPS_FONCTION, COMPTEURS, colonnesA
 import { supprimerVolAvecAnnuler } from './suppression.js';
 import { afficherCarteVol } from './carte.js';
 import { changerFuseauProfil } from './profil.js';
-import { hm, lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujourdhui, dateFr, heureH } from '../temps.js';
+import { hm, lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujourdhui, dateFr, heureH, arrondiDixieme } from '../temps.js';
 import { versLocal, versUTC } from '../fuseaux.js';
 import { terrain, fuseau } from '../terrains.js';
 import { drapeau } from '../drapeaux.js';
@@ -148,24 +148,57 @@ function points() {
 // ---------- Recalculs automatiques (toujours modifiables ensuite) ----------
 function sortie(k) { const el = $('#s-' + k); if (el) el.textContent = F.s[k]; }
 
+// v0.64 (R159) : un vol enregistré garde ses valeurs calculées (temps de vol, colonne avion, temps de fonction, IFR, nuit,
+// jour / nuit des atterrissages de l'arrivée) tant que ce dont elles dépendent n'a pas changé : avant, valider un terrain
+// intermédiaire (ou changer LOC / UTC) relançait tous les calculs, et la nuit FlyLog (0h12) devenait celle de l'app (0h14).
+// Heures : la date et les heures bloc (instants UTC). Nuit : en plus, les terrains (départ, arrivée, intermédiaires, position).
+// Revenu aux valeurs d'origine : les valeurs enregistrées reviennent. Nuit tapée à la main (ou vol.nuitManuelle) : jamais remplacée.
+const sigHeures = i => JSON.stringify(i ? [i.ma, i.mb] : [$('#f-date').value]);
+const sigNuit = i => JSON.stringify([sigHeures(i), $('#f-dep').value.trim().toUpperCase(), $('#f-arr').value.trim().toUpperCase(),
+  F.escales.map(e => [e.code || '', e.nom || '', e.lat ?? null, e.lon ?? null]), F.arrPos]);
 function recalculer() {
   const i = instants();
   if (F.groupe) return recalculerGroupe(i); // v0.58 (R149)
   if (F.ancien) return recalculerAncien(i);
-  const bloc = i ? Math.round((i.mb - i.ma) / 60000) : (F.heuresInconnues ? F.vol.tempsTotal || F.vol.simTemps || 0 : 0);
-  F.bloc = bloc;
+  // vol enregistré en « vols groupés » puis éteint : ses valeurs (temps tapé) ne viennent pas des heures : tout est recalculé
+  const g = F.garde && !F.garde.groupe ? F.garde : null, sH = sigHeures(i), sN = sigNuit(i);
+  const memesHeures = !!g && sH === g.h;
+  if (memesHeures) {
+    if (F.sigH !== sH) { // retour aux heures enregistrées : les valeurs enregistrées reviennent
+      F.bloc = g.bloc;
+      $('#c-col').value = F.avionId === g.avionId ? g.col : hm(colonneAuto());
+      $('#c-fn').value = F.fonction === g.fonction ? g.fn : hm(avion()?.sim ? 0 : F.bloc);
+      if (F.ifr) $('#c-ifr').value = F.ifr === g.ifrRegle ? g.ifr : hm(F.bloc);
+    }
+  } else {
+    F.bloc = i ? Math.round((i.mb - i.ma) / 60000) : (F.heuresInconnues ? F.vol.tempsTotal || F.vol.simTemps || 0 : 0);
+    if (F.ifr) $('#c-ifr').value = hm(F.bloc);
+    $('#c-col').value = hm(colonneAuto());
+    $('#c-fn').value = hm(avion()?.sim ? 0 : F.bloc);
+  }
+  F.sigH = sH;
+  const bloc = F.bloc;
   $('#f-bloc').textContent = hm(bloc);
   $('#f-j1').hidden = !(i && i.ma && new Date(i.mb).toISOString().slice(0, 10) > i.dateUTC && minutesDuJour(heureDe('#f-t1')) < minutesDuJour(heureDe('#f-t0')));
   const p = points();
-  if (i && p) $('#c-nuit').value = hm(minutesDeNuit(i.ma, bloc, p));
-  else if (i) $('#c-nuit').value = hm(0);
-  // v0.54 (R134) : atterrissages jour / nuit répartis par la règle quand les heures, les terrains (ou les escales) changent ;
-  // sinon la répartition (corrigée à la main, ou celle du vol enregistré) est gardée
+  if (!F.nuitMain) {
+    if (g && sN === g.n) { if (F.sigN !== sN) $('#c-nuit').value = g.nuit; }
+    // v0.64 (R160) : nuit calculée arrondie au dixième d'heure (multiple de 6 min), jamais plus que le temps de vol
+    else if (i && p) $('#c-nuit').value = hm(Math.min(arrondiDixieme(minutesDeNuit(i.ma, bloc, p)), bloc));
+    else if (i) $('#c-nuit').value = hm(0);
+  }
+  F.sigN = sN;
+  // v0.54 (R134) : atterrissages jour / nuit répartis par la règle quand les heures ou les terrains changent ; sinon la
+  // répartition (corrigée à la main, ou celle du vol enregistré) est gardée. v0.64 (R159) : un nombre d'atterrissages changé
+  // sur un terrain intermédiaire s'ajoute (ou s'enlève) seulement, sans répartir de nouveau ceux de l'arrivée.
   const sig = signatureAtt(i);
   if (sig !== F.attSig) { F.attSig = sig; repartirAtt(i, p); }
-  if (F.ifr) $('#c-ifr').value = hm(bloc);
-  $('#c-col').value = hm(colonneAuto());
-  $('#c-fn').value = hm(avion()?.sim ? 0 : bloc);
+  else {
+    const esc = sommeEsc(), avant = F.attEsc || esc;
+    if (esc.j !== avant.j || esc.n !== avant.n) {
+      F.s.attJour = Math.max(0, F.s.attJour + esc.j - avant.j); F.s.attNuit = Math.max(0, F.s.attNuit + esc.n - avant.n); F.attEsc = esc; majAtt();
+    }
+  }
   recap(); apercu();
 }
 
@@ -176,7 +209,7 @@ function recalculer() {
 // d'arrivée (au départ pour le début). Heures ou terrains inconnus : rien n'est changé. Le total ne change jamais ici.
 const sommeEsc = () => ({ j: F.escales.reduce((s, e) => s + (e.attJour || 0), 0), n: F.escales.reduce((s, e) => s + (e.attNuit || 0), 0) });
 const signatureAtt = i => JSON.stringify([i ? [i.ma, i.mb] : null, $('#f-dep').value.trim().toUpperCase(), $('#f-arr').value.trim().toUpperCase(),
-  F.escales.map(e => [e.code || e.nom || '', e.attJour, e.attNuit]), F.arrPos]);
+  F.escales.map(e => e.code || e.nom || ''), F.arrPos]); // v0.64 (R159) : sans les nombres d'atterrissages des terrains intermédiaires
 function repartirAtt(i = instants(), p = points()) {
   const esc = sommeEsc(), avant = F.attEsc || esc; // escales déjà comptées dans les totaux affichés
   const n = Math.max(0, F.s.attJour + F.s.attNuit - avant.j - avant.n); // atterrissages à l'arrivée
@@ -196,7 +229,7 @@ function recalculerAncien(i) {
   $('#f-bloc').textContent = hm(F.bloc);
   $('#f-j1').hidden = !(i && new Date(i.mb).toISOString().slice(0, 10) > i.dateUTC && minutesDuJour(heureDe('#f-t1')) < minutesDuJour(heureDe('#f-t0')));
   const p = points();
-  const calcul = i && p ? minutesDeNuit(i.ma, F.bloc, p) : null, garde = lireDuree($('#c-nuit').value);
+  const calcul = i && p ? Math.min(arrondiDixieme(minutesDeNuit(i.ma, F.bloc, p)), F.bloc) : null, garde = lireDuree($('#c-nuit').value); // v0.64 (R160)
   F.nuitProposee = calcul !== null && calcul !== (Number.isNaN(garde) ? 0 : garde || 0) ? calcul : null;
   $('#nuit-calc').hidden = F.nuitProposee === null;
   if (F.nuitProposee !== null) $('#nuit-calc-t').textContent = `Calcul de nuit : ${hm(calcul)} (gardé : ${$('#c-nuit').value || '0h00'})`;
@@ -260,8 +293,12 @@ function rendreEscales() {
     // v0.31 (R74) : chaque nombre dans une pastille à droite (toujours visible, 0 en gris) ; le nom long est raccourci « … »
     + `<span class="vc-n">${pastilleNombre(v.attJour + v.attNuit, 'att')}${v.attNuit ? pastilleNombre(v.attNuit, 'nuit') : ''}${pastilleNombre(Number(v.approches) || 0, 'appr')}</span></button>`).join('');
 }
+// v0.64 (R158) : terrain intermédiaire sans code OACI (altisurface saisie par son nom, pélicandrome NPF) : ses atterrissages et
+// approches se modifient comme les autres ; le nom reste tel quel (le code peut rester vide)
+const sansCodeVM = () => vmEdit >= 0 && F.escales[vmEdit] && !F.escales[vmEdit].code && !!F.escales[vmEdit].nom && !$('#vm-icao').value.trim();
 function nomVM() {
   const c = $('#vm-icao').value.toUpperCase();
+  if (sansCodeVM()) { $('#vm-name').textContent = `${F.escales[vmEdit].nom} (sans code OACI)`; $('#vm-name').classList.remove('bad'); $('#vm-ajt').hidden = true; return; }
   $('#vm-name').textContent = c.length < 4 ? 'Tape les 4 lettres du code' : (terrain(c)?.nom || 'Terrain inconnu : vérifie le code');
   $('#vm-name').classList.toggle('bad', c.length === 4 && !terrain(c));
   $('#vm-ajt').hidden = !(c.length === 4 && !terrain(c));
@@ -270,7 +307,7 @@ function ouvrirEscale(i) {
   vmEdit = i;
   const v = i >= 0 ? F.escales[i] : { code: '', attJour: 1, attNuit: 0, approches: 0 };
   VM = { attJour: v.attJour, attNuit: v.attNuit, approches: Number(v.approches) || 0 };
-  $('#vm-icao').value = v.code; $('#vm-attJour').textContent = VM.attJour; $('#vm-attNuit').textContent = VM.attNuit;
+  $('#vm-icao').value = v.code || ''; $('#vm-attJour').textContent = VM.attJour; $('#vm-attNuit').textContent = VM.attNuit;
   $('#vm-approches').textContent = VM.approches;
   nomVM();
   $('#vm-ok').textContent = i >= 0 ? 'Valider' : 'Ajouter';
@@ -804,6 +841,14 @@ export function ouvrirSaisie(vol, opts = {}) {
   // v0.54 (R134) : vol déjà enregistré : sa répartition jour / nuit est gardée tant que ni les heures, ni les terrains, ni le
   // total ne changent (aucun rattrapage des anciens vols)
   if (vol && !brouillon) { F.attSig = signatureAtt(instants()); F.attEsc = sommeEsc(); }
+  // v0.64 (R159) : valeurs enregistrées et ce dont elles dépendent (voir recalculer)
+  F.nuitMain = !!(vol && vol.nuitManuelle);
+  if (vol && !brouillon) {
+    const i0 = instants();
+    F.garde = { h: sigHeures(i0), n: sigNuit(i0), bloc: F.bloc, nuit: $('#c-nuit').value, ifr: $('#c-ifr').value, ifrRegle: F.ifr, col: $('#c-col').value,
+      fn: $('#c-fn').value, avionId: F.avionId, fonction: F.fonction, groupe: !!vol.volsGroupes };
+    F.sigH = F.garde.h; F.sigN = F.garde.n;
+  } else F.garde = null;
   F.charge = false;
   $('#f-ancien').hidden = !(F.ancien && !brouillon);
   $('#f-sim').hidden = !F.simulation;
@@ -936,6 +981,7 @@ async function enregistrer() {
     if (role === F.ieOrig || (ie && ie.role === role)) v[champ] = ie && ie.role === role ? texteGarde(ie.nom.trim()) : '';
   }
   v.tempsNuit = nuit; v.tempsIFR = ifr; v.regleIFR = F.ifr;
+  if (F.nuitMain) v.nuitManuelle = true; else delete v.nuitManuelle; // v0.64 (R159)
   v.approches = F.s.approches + approchesEscales(F.escales); v.attJour = F.s.attJour; v.attNuit = F.s.attNuit; // R63 : total
   v.missions = F.lignes.map(l => l.t.trim()).filter(Boolean);
   v.feux = nbFeux();
@@ -1094,7 +1140,10 @@ export function initSaisie({ fermer }) {
     if (!F || F.nuitProposee === null) return;
     $('#c-nuit').value = hm(F.nuitProposee); F.nuitProposee = null; $('#nuit-calc').hidden = true; recap();
   });
-  $('#c-nuit').addEventListener('input', () => { if (F && F.ancien && !F.groupe) recalculerAncien(instants()); });
+  $('#c-nuit').addEventListener('input', () => {
+    if (F) F.nuitMain = true; // v0.64 (R159) : tapée à la main : plus jamais remplacée par un calcul (gardé avec le vol)
+    if (F && F.ancien && !F.groupe) recalculerAncien(instants());
+  });
   // v0.58 (R149) : vols groupés : interrupteur et temps tapé (« 145 » -> 1h45)
   $('#f-vg').addEventListener('click', basculerVG);
   $('#an-ign').addEventListener('click', ignorerAnomalies); // v0.61 (R155)
@@ -1121,7 +1170,7 @@ export function initSaisie({ fermer }) {
   $('#vm-del').addEventListener('click', () => { F.escales.splice(vmEdit, 1); $('#via-modal').hidden = true; rendreEscales(); recalculer(); });
   $('#vm-ok').addEventListener('click', () => {
     const c = $('#vm-icao').value.toUpperCase();
-    if (c.length !== 4) { nomVM(); return; }
+    if (c.length !== 4 && !sansCodeVM()) { nomVM(); return; }
     const v = { ...(vmEdit >= 0 ? F.escales[vmEdit] : {}), code: c, attJour: VM.attJour, attNuit: VM.attNuit, approches: VM.approches };
     delete v.aVerifier;
     if (vmEdit >= 0) F.escales[vmEdit] = v; else F.escales.push(v);
