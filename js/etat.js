@@ -8,7 +8,7 @@ import { BANDE_DEFAUT } from './bande.js';
 import { REGLES_DEFAUT, missionsConnues } from './missions.js';
 import { REGLAGES_PRIVES } from './sauvegarde.js';
 import { indexPersonnes, nomAffiche, personneDuTexte } from './personnes.js';
-import { REGLAGES_PARTAGES } from './synchro.js';
+import { estReglagePartage } from './synchro.js';
 import { listeCompteurs } from './compteurs.js';
 
 export const etat = {
@@ -84,11 +84,20 @@ export async function ecrireReglageDiscret(cle, valeur) {
 }
 
 export async function enregistrerReglage(cle, valeur) {
-  if (REGLAGES_PARTAGES.includes(cle) && refuseEnConsultation()) return false; // réglage du carnet
+  if (estReglagePartage(cle) && refuseEnConsultation()) return false; // réglage du carnet
   etat.reglages[cle] = valeur;
   // v0.49 (R123) : un réglage partagé garde l'heure de sa modification (elle voyage avec lui : le plus récent gagne)
-  if (REGLAGES_PARTAGES.includes(cle)) await db.enregistrer({ reglages: [{ cle, valeur, modifieLe: new Date().toISOString() }] });
+  if (estReglagePartage(cle)) await db.enregistrer({ reglages: [{ cle, valeur, modifieLe: new Date().toISOString() }] });
   else await db.ecrireReglage(cle, valeur);
+  prevenir();
+}
+
+// v0.63 (R157) : plusieurs réglages PARTAGÉS en une seule écriture (rattrapage : un suivi par vol modifié), un seul rafraîchissement
+export async function enregistrerReglages(liste) {
+  if (!liste.length || refuseEnConsultation()) return false;
+  const le = new Date().toISOString();
+  for (const { cle, valeur } of liste) etat.reglages[cle] = valeur;
+  await db.enregistrer({ reglages: liste.map(({ cle, valeur }) => ({ cle, valeur, ...(estReglagePartage(cle) ? { modifieLe: le } : {}) })) });
   prevenir();
 }
 

@@ -1,10 +1,12 @@
 // v0.62 (R156) : Plus › « Anomalies traitées » : onglets « Corrigées » et « Ignorées », question et bouton du rattrapage depuis le
 // fichier FlyLog d'origine. Affichage seulement : aucune ligne ne modifie un vol (ni ses heures, ni « Modifié le »).
 import { $, esc, toast, lireFichierTexte, ouvrirOutil, pause } from './commun.js';
-import { etat, reglage, enregistrerReglage, ecrireReglageDiscret, enregistrerVol, enConsultation, surChangement } from '../etat.js';
+import { etat, reglage, enregistrerReglages, ecrireReglageDiscret, enregistrerVol, enConsultation, surChangement, listeDesCompteurs } from '../etat.js';
+import { cleSuivi, estCleSuivi, volDuSuivi, majSuivi, champsAbsents } from '../suivi.js';
+import { lireCSVObjets } from '../csv.js';
 import { anomaliesDe, anomaliesBrutes, TRIANGLE } from './anomalies.js';
 import { nePlusIgnorer } from '../anomalies.js';
-import { corrigeesAffichees, ignoreesAffichees, nombreDeVols, libelleAnomalie, correctionALaSaisie, ajouterCorrigees, rattrapage } from '../anomalies-traitees.js';
+import { ignoreesAffichees, libelleAnomalie, correctionALaSaisie, ajouterCorrigees, rattrapage, cartesTraitees, nombreDeVols3, rattrapageSuivis } from '../anomalies-traitees.js';
 import { analyserFlyLog } from '../flylog.js';
 import { terrain } from '../terrains.js';
 import { typesConnus } from './avions.js';
@@ -14,11 +16,13 @@ const immatDe = v => (etat.avions.get(v && v.avionId) || {}).immat || '';
 const trajet = v => [v.dep, ...(v.escales || []).map(e => e.code || e.nom), v.arr].filter(Boolean).join(' → ');
 const jour = iso => (iso ? dateFr(String(iso).slice(0, 10)) : '');
 
+// v0.63 (R157) : suivis de tous les vols modifiés (réglages « suivi-<id> »)
+const suivis = () => new Map(Object.entries(etat.reglages).filter(([k, v]) => estCleSuivi(k) && v).map(([k, v]) => [volDuSuivi(k), v]));
+function nomCompteur(cle) { const c = listeDesCompteurs().find(x => x.cle === cle); return c ? c.nom : cle; }
 function listes() {
-  const parId = new Map(etat.vols.map(v => [v.id, v]));
-  const corrigees = corrigeesAffichees(reglage('anomaliesCorrigees'), parId).map(x => ({ ...x, vol: parId.get(x.volId) }));
+  const { corrigees, modifies } = cartesTraitees({ vols: etat.vols, corrigees: reglage('anomaliesCorrigees'), suivis: suivis(), opts: { immatDe }, nomCompteur });
   const ignorees = ignoreesAffichees(etat.vols, anomaliesBrutes());
-  return { corrigees, ignorees };
+  return { corrigees, modifies, ignorees };
 }
 
 // Badge jaune de Plus (nombre de vols dans la liste ; caché à 0)
@@ -26,7 +30,7 @@ export function majBadgeAnomalies() {
   const b = $('#pl-anom-n');
   if (!b) return;
   $('#pl-anom-i').innerHTML = TRIANGLE;
-  const { corrigees, ignorees } = listes(), nb = nombreDeVols(corrigees, ignorees);
+  const { corrigees, modifies, ignorees } = listes(), nb = nombreDeVols3(corrigees, modifies, ignorees);
   b.textContent = String(nb);
   b.hidden = !nb;
 }
@@ -34,9 +38,16 @@ export function majBadgeAnomalies() {
 // ---------- Écran ----------
 let onglet = 'corrigees';
 const tete = v => `<div class="lv-h"><span>${esc(dateFr(v.date))}</span><span class="lv-av">${esc(immatDe(v))}</span></div><div class="lv-tr">${esc(trajet(v))}</div>`;
+const chg = (avant, apres) => `<div class="lv-chg">${avant ? `<span class="lv-av-v">${esc(avant)}</span> → ` : ''}<span class="lv-ap">${esc(apres)}</span></div>`;
+// v0.63 (R157) : la ligne grise de chaque anomalie corrigée, puis TOUS les champs changés du vol (sans suivi : l'ancienne valeur liée)
 function ligneCorrigee(x) {
-  const chg = x.l.map(a => `<div class="lv-q">${esc(libelleAnomalie(a.cle))}</div><div class="lv-chg">${a.avant.length ? `<span class="lv-av-v">${esc(a.avant.join(' · '))}</span> → ` : ''}<span class="lv-ap">${esc(a.apres.join(' · '))}</span></div>`).join('');
-  return `<div class="lv" role="button" tabindex="0" data-vol="${esc(x.volId)}">${tete(x.vol)}${chg}<div class="lv-q">${x.le ? `Corrigé le ${jour(x.le)}` : 'Corrigé : date inconnue'}</div></div>`;
+  const gris = [...new Set(x.anomalies.map(a => libelleAnomalie(a.cle)))].map(t => `<div class="lv-q">${esc(t)}</div>`).join('');
+  const champs = x.lignes ? x.lignes.map(l => chg(l.avant, l.apres)).join('')
+    : x.anomalies.map(a => chg((a.avant || []).join(' · '), (a.apres || []).join(' · '))).filter((h, i) => (x.anomalies[i].apres || []).length).join('');
+  return `<div class="lv" role="button" tabindex="0" data-vol="${esc(x.volId)}">${tete(x.vol)}${gris}${champs}<div class="lv-q">${x.le ? `Corrigé le ${jour(x.le)}` : 'Corrigé : date inconnue'}</div></div>`;
+}
+function ligneModifiee(x) {
+  return `<div class="lv" role="button" tabindex="0" data-vol="${esc(x.volId)}">${tete(x.vol)}${x.lignes.map(l => chg(l.avant, l.apres)).join('')}<div class="lv-q">${x.le ? `Modifié le ${jour(x.le)}` : 'Modifié : date inconnue'}</div></div>`;
 }
 function ligneIgnoree(x) {
   const an = [...new Set(x.anomalies.map(a => libelleAnomalie(a.cle)))].map(t => `<div class="lv-q">${esc(t)}</div>`).join('');
@@ -44,19 +55,22 @@ function ligneIgnoree(x) {
     <button type="button" class="lv-btn" data-np="${esc(x.id)}">Ne plus ignorer</button></div>`;
 }
 export function ecranAnomaliesTraitees() {
-  const { corrigees, ignorees } = listes();
-  const fait = reglage('rattrapageCorrections');
+  const { corrigees, modifies, ignorees } = listes();
+  const fait = reglage('rattrapageModifications');
+  const vide = { corrigees: 'Aucun vol corrigé pour l\'instant. Quand tu corriges un vol qui a un « ! », il s\'ajoute ici.',
+    modifies: 'Aucun vol modifié pour l\'instant. Chaque vol que tu modifies s\'ajoute ici.', ignorees: 'Aucune anomalie ignorée.' }[onglet];
+  const html = { corrigees: () => corrigees.map(ligneCorrigee), modifies: () => modifies.map(ligneModifiee), ignorees: () => ignorees.map(ligneIgnoree) }[onglet]().join('');
   const c = ouvrirOutil('Anomalies traitées', `
     <div class="an-onglets" role="tablist">
       <button type="button" role="tab" id="at-c" aria-selected="${onglet === 'corrigees'}">Corrigées (${corrigees.length})</button>
+      <button type="button" role="tab" id="at-m" aria-selected="${onglet === 'modifies'}">Modifiés (${modifies.length})</button>
       <button type="button" role="tab" id="at-i" aria-selected="${onglet === 'ignorees'}">Ignorées (${ignorees.length})</button></div>
-    <div id="at-l">${onglet === 'corrigees'
-    ? (corrigees.map(ligneCorrigee).join('') || '<p class="hint">Aucun vol corrigé pour l\'instant. Quand tu corriges un vol qui a un « ! », il s\'ajoute ici.</p>')
-    : (ignorees.map(ligneIgnoree).join('') || '<p class="hint">Aucune anomalie ignorée.</p>')}</div>
+    <div id="at-l">${html || `<p class="hint">${vide}</p>`}</div>
     <div class="at-bas" id="at-bas"${enConsultation() ? ' hidden' : ''}>
-      <button type="button" class="bigbtn second" id="at-fl">Retrouver les corrections dans FlyLog</button>
-      <p class="hint">${fait ? `Déjà fait le ${jour(fait.le)} : le refaire n'ajoute que les corrections pas encore dans la liste. ` : ''}Le fichier FlyLog d'origine est lu sur cet appareil ; il n'est ni gardé, ni envoyé au NAS.</p></div>`);
+      <button type="button" class="bigbtn second" id="at-fl">Retrouver les modifications dans FlyLog</button>
+      <p class="hint">${fait ? `Déjà fait le ${jour(fait.le)} : le refaire n'ajoute rien en double. ` : ''}Le fichier FlyLog d'origine est lu sur cet appareil ; il n'est ni gardé, ni envoyé au NAS.</p></div>`);
   c.querySelector('#at-c').addEventListener('click', () => { onglet = 'corrigees'; ecranAnomaliesTraitees(); });
+  c.querySelector('#at-m').addEventListener('click', () => { onglet = 'modifies'; ecranAnomaliesTraitees(); });
   c.querySelector('#at-i').addEventListener('click', () => { onglet = 'ignorees'; ecranAnomaliesTraitees(); });
   c.querySelector('#at-fl').addEventListener('click', choisirFichier);
   const l = c.querySelector('#at-l');
@@ -76,10 +90,16 @@ export function ecranAnomaliesTraitees() {
 // ---------- Vol enregistré dans la saisie : anomalies disparues -> ligne « Corrigées » ----------
 // À appeler AVANT l'enregistrement (anomalies affichées) puis APRÈS (le carnet a changé)
 export const anomaliesAvant = id => (id ? anomaliesDe(id) : []);
+// v0.63 (R157) : chaque enregistrement qui change un vol met à jour son suivi (valeur d'origine de chaque champ changé) ; une
+// anomalie disparue ajoute une ligne « Corrigées » (les champs changés viennent du suivi : la ligne ne garde que l'anomalie)
 export async function noterCorrection(avant, ancien, nouveau) {
-  if (!avant.length || enConsultation()) return;
-  const e = correctionALaSaisie(avant, anomaliesBrutes().get(nouveau.id) || [], ancien, nouveau, immatDe);
-  if (e) await enregistrerReglage('anomaliesCorrigees', ajouterCorrigees(reglage('anomaliesCorrigees'), [e]));
+  if (enConsultation()) return;
+  const ecrire = [];
+  const s = majSuivi(reglage(cleSuivi(nouveau.id)), ancien, nouveau, { immatDe });
+  if (s) ecrire.push({ cle: cleSuivi(nouveau.id), valeur: s });
+  const e = avant.length ? correctionALaSaisie(avant, anomaliesBrutes().get(nouveau.id) || [], ancien, nouveau, immatDe) : null;
+  if (e) ecrire.push({ cle: 'anomaliesCorrigees', valeur: ajouterCorrigees(reglage('anomaliesCorrigees'), [{ ...e, l: e.l.map(a => ({ cle: a.cle, avant: [], apres: [] })) }]) });
+  if (ecrire.length) await enregistrerReglages(ecrire);
 }
 
 // ---------- Rattrapage depuis le fichier FlyLog d'origine ----------
@@ -95,29 +115,38 @@ async function fichierChoisi() {
   if (!r.ok) { c.innerHTML = `<p class="koc">${esc(r.message)}</p><button type="button" class="bigbtn second" id="at-ret">Retour</button>`; c.querySelector('#at-ret').addEventListener('click', ecranAnomaliesTraitees); return; }
   const flAvions = new Map([...etat.avions, ...r.avions.map(a => [a.id, a])]);
   const res = rattrapage({ flVols: r.aCreer, flAvions, vols: etat.vols, avions: etat.avions, terrainDe: x => terrain(x), existantes: reglage('anomaliesCorrigees') || [] });
-  if (res.nouvelles.length) await enregistrerReglage('anomaliesCorrigees', ajouterCorrigees(reglage('anomaliesCorrigees'), res.nouvelles));
-  await enregistrerReglage('rattrapageCorrections', { le: new Date().toISOString(), n: res.corrections });
+  // v0.63 (R157) : en plus des anomalies corrigées, l'origine FlyLog de tous les champs changés depuis l'import
+  // colonnes absentes du fichier choisi (export brut sans FEU / largages) : jamais comptées comme modifiées
+  const sauf = champsAbsents(lireCSVObjets(f.texte).entetes);
+  const su = rattrapageSuivis({ paires: res.paires, suivis: suivis(), immatFl: res.immatFl, immatIci: res.immatIci, sauf });
+  const le = new Date().toISOString(), ecrire = su.suivis.map(([id, valeur]) => ({ cle: cleSuivi(id), valeur }));
+  if (res.nouvelles.length) ecrire.push({ cle: 'anomaliesCorrigees', valeur: ajouterCorrigees(reglage('anomaliesCorrigees'), res.nouvelles) });
+  ecrire.push({ cle: 'rattrapageCorrections', valeur: { le, n: res.corrections } }, { cle: 'rattrapageModifications', valeur: { le, n: su.modifies } });
+  await enregistrerReglages(ecrire);
   $('#rq-modal').hidden = true;
   onglet = 'corrigees';
   ecranAnomaliesTraitees();
-  toast(`${res.corrections} correction${res.corrections > 1 ? 's' : ''} retrouvée${res.corrections > 1 ? 's' : ''}`, 4000);
+  const pl = (k, mot) => `${k} ${mot}${k > 1 ? 's' : ''}`;
+  const texte = `${pl(su.modifies, 'vol')} modifié${su.modifies > 1 ? 's' : ''} retrouvé${su.modifies > 1 ? 's' : ''}`;
+  toast(texte, 4000);
   const p = document.createElement('p');
   p.className = 'at-res'; p.id = 'at-res';
-  p.textContent = `${res.corrections} correction${res.corrections > 1 ? 's' : ''} retrouvée${res.corrections > 1 ? 's' : ''}` + (res.nonRetrouves ? ` · ${res.nonRetrouves} vol${res.nonRetrouves > 1 ? 's' : ''} du fichier pas retrouvé${res.nonRetrouves > 1 ? 's' : ''} dans le carnet (ignoré${res.nonRetrouves > 1 ? 's' : ''})` : '');
+  p.textContent = texte + (res.corrections ? ` · ${pl(res.corrections, 'correction')} d'anomalie ajoutée${res.corrections > 1 ? 's' : ''}` : '')
+    + (res.nonRetrouves ? ` · ${pl(res.nonRetrouves, 'vol')} du fichier pas retrouvé${res.nonRetrouves > 1 ? 's' : ''} dans le carnet (ignoré${res.nonRetrouves > 1 ? 's' : ''})` : '');
   $('#ou-c').prepend(p);
 }
 
-// ---------- Question au premier lancement de la v0.62 ----------
-// Réglage PRIVÉ `questionCorrections` : 'a-poser' (carnet avec des vols FlyLog à l'arrivée de cette version), 'non' (carnet vide :
-// rien à retrouver), 'posee'. Réglage PARTAGÉ `rattrapageCorrections` : fait sur un appareil -> jamais demandé sur les autres.
-const aDemander = () => reglage('questionCorrections') === 'a-poser' && !reglage('rattrapageCorrections') && !enConsultation();
+// ---------- Question au premier lancement de la v0.63 (remplace celle de la v0.62 : le rattrapage fait les deux) ----------
+// Réglage PRIVÉ `questionModifications` : 'a-poser' (carnet avec des vols FlyLog à l'arrivée de cette version), 'non' (carnet vide :
+// rien à retrouver), 'posee'. Réglage PARTAGÉ `rattrapageModifications` : fait sur un appareil -> jamais demandé sur les autres.
+const aDemander = () => reglage('questionModifications') === 'a-poser' && !reglage('rattrapageModifications') && !enConsultation();
 export async function initAnomaliesTraitees() {
   $('#pl-anom').addEventListener('click', ecranAnomaliesTraitees);
   $('#file-rq').addEventListener('change', fichierChoisi);
-  $('#rq-non').addEventListener('click', async () => { $('#rq-modal').hidden = true; await ecrireReglageDiscret('questionCorrections', 'posee'); });
-  $('#rq-oui').addEventListener('click', async () => { $('#rq-modal').hidden = true; await ecrireReglageDiscret('questionCorrections', 'posee'); choisirFichier(); });
-  if (reglage('questionCorrections') === undefined) {
-    await ecrireReglageDiscret('questionCorrections', etat.vols.some(v => v.source === 'flylog') ? 'a-poser' : 'non');
+  $('#rq-non').addEventListener('click', async () => { $('#rq-modal').hidden = true; await ecrireReglageDiscret('questionModifications', 'posee'); });
+  $('#rq-oui').addEventListener('click', async () => { $('#rq-modal').hidden = true; await ecrireReglageDiscret('questionModifications', 'posee'); choisirFichier(); });
+  if (reglage('questionModifications') === undefined) {
+    await ecrireReglageDiscret('questionModifications', etat.vols.some(v => v.source === 'flylog') ? 'a-poser' : 'non');
   }
   // fait sur un autre appareil (reçu par la synchro) : la question se referme
   surChangement(() => { if (!$('#rq-modal').hidden && !aDemander()) $('#rq-modal').hidden = true; });

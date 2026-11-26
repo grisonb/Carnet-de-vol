@@ -20,7 +20,8 @@ export const REGLAGES_PRIVES = ['nasAdresse', 'nasMotDePasse', 'nasAuto', 'nasEt
   'totauxOuverts', // v0.55 (R143) : sections des Totaux laissées ouvertes (cet appareil)
   'nasDerniereVersion', // v0.56 (R146) : date de la dernière version gardée lue sur le NAS (cet appareil)
   'profilPlein', // v0.60 (R152) : profil laissé ouvert dans la carte en plein écran (cet appareil)
-  'questionCorrections']; // v0.62 (R156) : question du rattrapage FlyLog déjà posée sur cet appareil
+  'questionCorrections', // v0.62 (R156) : question du rattrapage FlyLog déjà posée sur cet appareil
+  'questionModifications']; // v0.63 (R157) : question « toutes les modifications » déjà posée sur cet appareil
 
 // contenu : { vols, avions, personnes, suppressions, reglages: [{cle, valeur}] }
 export function creerSauvegarde(contenu, maintenant = new Date().toISOString()) {

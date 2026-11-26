@@ -112,7 +112,8 @@ const lignes = p => p.$$eval('#at-l .lv', l => l.map(e => ({ vol: e.dataset.vol,
   barre: [...e.querySelectorAll('.lv-av-v')].map(x => { const s = getComputedStyle(x); return [x.textContent, s.textDecorationLine, s.color]; }),
   vert: [...e.querySelectorAll('.lv-ap')].map(x => [x.textContent, getComputedStyle(x).color]) })));
 const badge = p => p.evaluate(() => { const b = document.getElementById('pl-anom-n'); return b.hidden ? null : b.textContent; });
-const tabs = p => p.$$eval('.an-onglets button', l => l.map(b => b.textContent));
+// v0.63 (R157) : l'onglet « Modifiés » est vérifié par v063.mjs
+const tabs = p => p.$$eval('.an-onglets button', l => l.map(b => b.textContent).filter(t => !t.startsWith('Modifiés')));
 const etatCarnet = async p => p.evaluate(async () => { const e = await import('./js/etat.js'), t = await import('./js/totaux.js'), s = await import('./js/sauvegarde.js'), d = await import('./js/pdf.js');
   const v = e.etat.vols; return { vols: JSON.stringify([...v].sort((a, b) => a.id.localeCompare(b.id))), totaux: JSON.stringify(t.calculerTotaux(v, e.etat.avions, '2026-12-31')),
     csv: s.texteTableur([...v].reverse(), e.etat.avions, e.listeDesCompteurs()), pdf: JSON.stringify(d.totauxPDF([...v].reverse(), e.etat.avions)) }; });
@@ -124,20 +125,21 @@ try {
   const A = await appareil('A');
   const version = await A.p.evaluate(async () => (await import('./js/version.js')).VERSION);
   verifier(Number(version.split('.')[1]) >= 62, `version ${version} (0.62 ou suivante)`);
-  verifier(await reg(A.p, 'questionCorrections') === 'non', 'carnet vide au premier lancement : aucune question à poser');
+  verifier(await reg(A.p, 'questionModifications') === 'non', 'carnet vide au premier lancement : aucune question à poser');
   await onglet(A.p, 'plus'); await A.p.setInputFiles('#file-flylog', FICHIER); await A.p.waitForSelector('#im-ok'); await A.p.click('#im-ok'); await A.p.waitForSelector('.ctab'); await A.p.click('#ou-x');
   // corrections faites AVANT la mise à jour (vol 1 : le 20/11/2026 ; vol 2 : date inconnue), vol 6 supprimé ; la nouvelle version arrive
   const v1 = await volDu(A.p, '2026-06-13'), v2 = await volDu(A.p, '2026-07-14'), v6 = await volDu(A.p, '2026-10-02');
   await base(A.p, { mettre: [{ ...v1, escales: [{ ...v1.escales[0], attJour: 1 }], attJour: 1, modifieLe: '2026-11-20T08:00:00.000Z' },
-    { ...v2, escales: [{ code: 'LFMV', attJour: 1, attNuit: 0 }], attJour: 1, modifieLe: null }], enlever: [v6.id], sansReglages: ['questionCorrections'] });
+    { ...v2, escales: [{ code: 'LFMV', attJour: 1, attNuit: 0 }], attJour: 1, modifieLe: null }], enlever: [v6.id], sansReglages: ['questionModifications'] });
 
   console.log('Premier lancement de la nouvelle version : une seule question, « Plus tard »');
   await A.p.waitForSelector('#rq-modal:not([hidden])', { timeout: 8000 });
-  verifier(await A.p.textContent('#rq-txt') === 'Retrouver les corrections déjà faites dans le fichier FlyLog d\'origine ?' && await A.p.textContent('#rq-oui') === 'Choisir le fichier' && await A.p.textContent('#rq-non') === 'Plus tard',
-    'question « Retrouver les corrections déjà faites dans le fichier FlyLog d\'origine ? » avec « Choisir le fichier » et « Plus tard »');
+  // v0.63 (R157) : la question devient « Compléter avec toutes les modifications déjà faites ? »
+  verifier(await A.p.textContent('#rq-txt') === 'Compléter avec toutes les modifications déjà faites ?' && await A.p.textContent('#rq-oui') === 'Choisir le fichier FlyLog d\'origine' && await A.p.textContent('#rq-non') === 'Plus tard',
+    'question « Compléter avec toutes les modifications déjà faites ? » avec « Choisir le fichier FlyLog d\'origine » et « Plus tard »');
   await A.p.screenshot({ path: join(CAPT, 'v062-question.png') });
   await A.p.click('#rq-non'); await A.p.waitForTimeout(200);
-  verifier(await A.p.isHidden('#rq-modal') && await reg(A.p, 'questionCorrections') === 'posee', '« Plus tard » : la question se ferme');
+  verifier(await A.p.isHidden('#rq-modal') && await reg(A.p, 'questionModifications') === 'posee', '« Plus tard » : la question se ferme');
   await A.p.reload(); await A.p.waitForSelector('body[data-pret="1"]'); await A.p.waitForTimeout(3500);
   verifier(await A.p.isHidden('#rq-modal'), 'relance de l\'app : la question ne revient pas');
   const avant = await etatCarnet(A.p), anomAvant = await nbAnom(A.p), repAvant = await nbRep(A.p);
@@ -149,26 +151,26 @@ try {
   verifier(await A.p.$eval('#pl-anom-i svg path', e => e.getAttribute('fill')) === '#f5c400' && !/⚠/.test(await A.p.textContent('#pl-anom')), 'triangle jaune dessiné par l\'app (pas un emoji)');
   verifier(await badge(A.p) === null, 'badge caché (0 vol dans la liste)');
   await A.p.click('#pl-anom'); await A.p.waitForSelector('#at-l');
-  verifier(JSON.stringify(await tabs(A.p)) === '["Corrigées (0)","Ignorées (0)"]' && await A.p.isVisible('#at-fl') && await A.p.textContent('#at-fl') === 'Retrouver les corrections dans FlyLog',
-    'onglets « Corrigées (0) » / « Ignorées (0) », bouton « Retrouver les corrections dans FlyLog » en bas');
+  verifier(JSON.stringify(await tabs(A.p)) === '["Corrigées (0)","Ignorées (0)"]' && await A.p.isVisible('#at-fl') && await A.p.textContent('#at-fl') === 'Retrouver les modifications dans FlyLog',
+    'onglets « Corrigées (0) » / « Ignorées (0) », bouton « Retrouver les modifications dans FlyLog » en bas');
 
   console.log('Rattrapage avec le faux fichier FlyLog');
   const lancer = async () => { const [ch] = await Promise.all([A.p.waitForEvent('filechooser'), A.p.click('#at-fl')]); await ch.setFiles(FICHIER); await A.p.waitForSelector('#at-res'); return A.p.textContent('#at-res'); };
   let res = await lancer();
-  verifier(res === '3 corrections retrouvées · 1 vol du fichier pas retrouvé dans le carnet (ignoré)', `« ${res} »`);
+  verifier(res === '2 vols modifiés retrouvés · 3 corrections d\'anomalie ajoutées · 1 vol du fichier pas retrouvé dans le carnet (ignoré)', `« ${res} »`);
   let l = await lignes(A.p);
   verifier(l.length === 2, `2 vols dans « Corrigées » (${l.length})`);
   verifier(l[0].vol === v1.id && l[0].texte.includes('13/06/2026') && l[0].texte.includes('F-XZZX') && l[0].texte.includes('LFTW → LFML → LFTW') && l[0].texte.includes('Terrain intermédiaire, 0 att.')
     && l[0].texte.includes('Corrigé le 20/11/2026'), `vol corrigé le 20/11 en haut : « ${l[0].texte} »`);
   verifier(l[0].barre[0][0] === 'LFML : 0 att.' && l[0].barre[0][1] === 'line-through' && /^rgb\(179, 38, 30\)/.test(l[0].barre[0][2]) && l[0].vert[0][0] === 'LFML : 1 att.' && l[0].vert[0][1] === 'rgb(46, 125, 50)',
     'ancienne valeur barrée en rouge, nouvelle en vert');
-  verifier(l[1].vol === v2.id && l[1].texte.includes('Intermédiaire = départ ou arrivée') && l[1].texte.includes('Intermédiaire : LFTW') && l[1].texte.includes('Intermédiaire : LFMV')
+  verifier(l[1].vol === v2.id && l[1].texte.includes('Intermédiaire = départ ou arrivée') && l[1].texte.includes('Intermédiaires : LFTW') && l[1].texte.includes('Intermédiaires : LFMV')
     && l[1].texte.includes('Corrigé : date inconnue'), `sans « Modifié le » : date inconnue, en bas : « ${l[1].texte} »`);
   verifier(JSON.stringify(await tabs(A.p)) === '["Corrigées (2)","Ignorées (0)"]', 'onglet « Corrigées (2) »');
   const fait = await reg(A.p, 'rattrapageCorrections');
   verifier(fait && fait.n === 3, 'rattrapage noté comme fait (il suit la synchro)');
   res = await lancer(); l = await lignes(A.p);
-  verifier(res.startsWith('0 correction retrouvée') && l.length === 2, `relance : « ${res} », toujours 2 lignes (aucun doublon)`);
+  verifier(!res.includes('correction') && l.length === 2, `relance : « ${res} », toujours 2 lignes (aucun doublon)`);
   const stock = JSON.stringify(await reg(A.p, 'anomaliesCorrigees'));
   verifier(!/DATE|AIRCRAFT|ROUTE/.test(stock) && stock.length < 2000, `seules les lignes « Corrigées » sont gardées (${stock.length} caractères), pas le fichier`);
   let apres = await etatCarnet(A.p);
@@ -193,7 +195,7 @@ try {
   await A.p.click('#f-edit'); await A.p.fill('#c-fn', '1h00'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
   verifier(await A.p.isHidden('#tv-modal'), 'pas d\'alerte « Temps de vol modifié »');
   await ouvrirAT(A.p); l = await lignes(A.p);
-  verifier(l[0].vol === v3.id && l[0].texte.includes('Temps des fonctions différent du temps de vol') && l[0].barre[0][0] === 'CdB : 0h40' && l[0].vert[0][0] === 'CdB : 1h00'
+  verifier(l[0].vol === v3.id && l[0].texte.includes('Temps des fonctions différent du temps de vol') && l[0].barre[0][0] === 'Temps CdB : 0h40' && l[0].vert[0][0] === 'Temps CdB : 1h00'
     && l[0].texte.includes(`Corrigé le ${jourFr()}`), `nouvelle ligne en haut : « ${l[0].texte} »`);
   await A.p.click('#ou-x');
 
@@ -205,7 +207,7 @@ try {
     `ligne dans « Ignorées » : « ${l[0] && l[0].texte} »`);
   verifier(JSON.stringify(await tabs(A.p)) === '["Corrigées (3)","Ignorées (1)"]', 'onglets « Corrigées (3) » / « Ignorées (1) »');
   await A.p.click('#ou-x'); await onglet(A.p, 'plus');
-  verifier(await badge(A.p) === '4', 'badge PLUS : 4 vols');
+  verifier(await badge(A.p) === '5', 'badge PLUS : 5 vols (v0.63 : + le vol modifié sans anomalie, onglet « Modifiés »)');
   await A.p.click('#pl-anom'); await A.p.waitForSelector('#at-l');
   for (const largeur of [360, 393]) {
     await A.p.setViewportSize({ width: largeur, height: 852 }); await A.p.waitForTimeout(200);
@@ -243,8 +245,8 @@ try {
   const B = await appareil('B'); await rejoindre(B.p, 'mod');
   const refB = await listeA(B);
   verifier(refB === refA, 'B : mêmes listes « Corrigées » et « Ignorées » que A');
-  await base(B.p, { sansReglages: ['questionCorrections'] }); await B.p.waitForTimeout(4000);
-  verifier(await reg(B.p, 'questionCorrections') === 'a-poser' && await B.p.isHidden('#rq-modal'), 'B (carnet avec des vols FlyLog, nouvelle version) : pas de question, déjà fait sur A');
+  await base(B.p, { sansReglages: ['questionModifications'] }); await B.p.waitForTimeout(4000);
+  verifier(await reg(B.p, 'questionModifications') === 'a-poser' && await B.p.isHidden('#rq-modal'), 'B (carnet avec des vols FlyLog, nouvelle version) : pas de question, déjà fait sur A');
   // ligne ajoutée sur chaque appareil avant la synchro : les deux gardées
   await A.ctx.setOffline(true);
   const ajouter = (X, id) => X.p.evaluate(async id => { const e = await import('./js/etat.js'), t = await import('./js/anomalies-traitees.js'), v = e.etat.vols[0];
@@ -266,7 +268,7 @@ try {
   await restaurer(fichierSv);
   verifier(await listeA(C) === refA2, 'C restauré : mêmes listes que A');
   const sv = JSON.parse(readFileSync(fichierSv, 'utf8'));
-  verifier(!sv.reglages.some(r => r.cle === 'questionCorrections'), 'la question (propre à l\'appareil) n\'est pas dans la sauvegarde');
+  verifier(!sv.reglages.some(r => r.cle === 'questionModifications'), 'la question (propre à l\'appareil) n\'est pas dans la sauvegarde');
   const vieux = { ...sv, versionApp: '0.60', reglages: sv.reglages.filter(r => !['anomaliesCorrigees', 'rattrapageCorrections'].includes(r.cle)), vols: sv.vols.map(v => { const { anomaliesIgnorees, ...r } = v; return r; }) };
   const fV = join(CAPT, 'v062-ancienne-sauvegarde.json'); writeFileSync(fV, JSON.stringify(vieux));
   await restaurer(fV);

@@ -14,7 +14,7 @@ import { verifierVolsNpf, texteNpf } from './npf.js';
 import { lireSocle } from './socle.js';
 import { nouvelId, cleDoublon } from '../modele.js';
 import { hm, dateFr } from '../temps.js';
-import { elementsDuCarnet, preparerEnvoi, majCarte, carteDepuisNas, trierRecus, lots, resumeSynchro, REGLAGES_PARTAGES,
+import { elementsDuCarnet, preparerEnvoi, majCarte, carteDepuisNas, trierRecus, lots, resumeSynchro, REGLAGES_PARTAGES, estReglagePartage,
   PAR_ENVOI, ENVOI_OCTETS, PAR_PAGE, PERIODE_CONSULTATION, cleElement, empreinteTexte, analyserRecus, compterSuppressions, SUPPRESSIONS_A_CONFIRMER,
   nomAppareil, differences, doublons, texteRafraichir, duNom, ceNom, ceNomMin as ceNomMinDe, leNom, estIPad } from '../synchro.js';
 
@@ -182,7 +182,7 @@ async function rattraperReglages(carte, deuxSensIci) {
   const connus = etatSynchro().reglagesConnus || [];
   if (REGLAGES_PARTAGES.every(k => connus.includes(k))) return { statut: 'ok', carte };
   const tous = [];
-  const r = await recevoirDepuis(0, async el => { tous.push(...el.filter(x => x.magasin === 'reglages' && REGLAGES_PARTAGES.includes(x.id))); });
+  const r = await recevoirDepuis(0, async el => { tous.push(...el.filter(x => x.magasin === 'reglages' && estReglagePartage(x.id))); });
   if (r.statut !== 'ok') return r;
   let c = carte, applique = 0;
   if (deuxSensIci) {
@@ -471,7 +471,7 @@ function confirmerReference() {
 // Recevoir tout le carnet du NAS et le ranger ici (vider : le carnet de cet appareil est remplacé)
 async function toutRecevoir(vider, progres) {
   if (vider) {
-    const reglagesIci = Object.entries(etat.reglages).filter(([k]) => !REGLAGES_PARTAGES.includes(k)).map(([cle, valeur]) => ({ cle, valeur }));
+    const reglagesIci = Object.entries(etat.reglages).filter(([k]) => !estReglagePartage(k)).map(([cle, valeur]) => ({ cle, valeur }));
     await restaurer({ vols: [], avions: [], personnes: [], suppressions: [], reglages: reglagesIci });
   }
   let carte = {}, n = 0;

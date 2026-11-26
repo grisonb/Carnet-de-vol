@@ -9,6 +9,7 @@
 
 import { seulReportDiffere, fusionnerEtats } from './report.js';
 import { fusionCorrigees } from './anomalies-traitees.js';
+import { estCleSuivi } from './suivi.js';
 
 export const MAGASINS = ['vols', 'avions', 'personnes', 'reglages'];
 // Réglages qui appartiennent au carnet (envoyés) ; les autres sont propres à chaque appareil (mot de passe, adresse du
@@ -21,7 +22,10 @@ export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMas
   'cartesMotDePasse', // v0.55 (R138) : mot de passe des traces (avant : propre à chaque appareil)
   'compteursFiches', 'compteursTypes', // v0.56 (R144) : compteurs créés / renommés / masqués, compteurs par défaut des types
   'volsGroupesTypes', // v0.58 (R149) : « Vols groupés » des types d'avion
-  'anomaliesCorrigees', 'rattrapageCorrections']; // v0.62 (R156) : Plus › Anomalies traitées, rattrapage FlyLog déjà fait
+  'anomaliesCorrigees', 'rattrapageCorrections', // v0.62 (R156) : Plus › Anomalies traitées, rattrapage FlyLog déjà fait
+  'rattrapageModifications']; // v0.63 (R157) : rattrapage « toutes les modifications » déjà fait
+// v0.63 (R157) : en plus, un réglage « suivi-<id du vol> » par vol modifié (valeurs d'origine, js/suivi.js)
+export const estReglagePartage = cle => REGLAGES_PARTAGES.includes(cle) || estCleSuivi(cle);
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)
 export const ENVOI_OCTETS = 3000000; // v0.55 : un envoi reste sous 3 Mo (le NAS : 4 Mo au plus)
 export const PAR_PAGE = 1000;      // éléments par page reçue
@@ -55,7 +59,7 @@ export function elementsDuCarnet(contenu) {
   for (const p of contenu.personnes || []) if (p && p.id) l.push({ magasin: 'personnes', id: p.id, donnees: p });
   for (const r of contenu.reglages || []) {
     // v0.49 (R123) : avec l'heure de sa modification (réglage changé depuis la v0.49 ; sinon rien : empreinte inchangée)
-    if (r && REGLAGES_PARTAGES.includes(r.cle) && r.valeur !== undefined) {
+    if (r && estReglagePartage(r.cle) && r.valeur !== undefined) {
       l.push({ magasin: 'reglages', id: r.cle, donnees: { cle: r.cle, valeur: r.valeur, ...(r.modifieLe ? { modifieLe: r.modifieLe } : {}) } });
     }
   }
@@ -124,7 +128,7 @@ export function trierRecus(elements) {
   const mettre = { vols: [], avions: [], personnes: [], reglages: [] }, enlever = { vols: [], avions: [], personnes: [], reglages: [] };
   for (const e of elements) {
     if (!MAGASINS.includes(e.magasin)) continue;
-    if (e.magasin === 'reglages' && !REGLAGES_PARTAGES.includes(e.id)) continue; // jamais un réglage propre à l'appareil
+    if (e.magasin === 'reglages' && !estReglagePartage(e.id)) continue; // jamais un réglage propre à l'appareil
     if (e.supprime || !e.donnees) { enlever[e.magasin].push(e.id); continue; }
     if (e.magasin === 'reglages') mettre.reglages.push({ cle: e.id, valeur: e.donnees.valeur, ...(e.donnees.modifieLe ? { modifieLe: e.donnees.modifieLe } : {}) });
     else if (e.donnees.id === e.id) mettre[e.magasin].push(e.donnees);
@@ -203,7 +207,7 @@ export function analyserRecus(recus, locaux, carte, ouvert = null) {
   const c = { ...carte }, appliquer = [], conflits = [];
   let fusions = 0;
   for (const e of recus) {
-    if (!MAGASINS.includes(e.magasin) || (e.magasin === 'reglages' && !REGLAGES_PARTAGES.includes(e.id))) continue;
+    if (!MAGASINS.includes(e.magasin) || (e.magasin === 'reglages' && !estReglagePartage(e.id))) continue;
     const cle = cleElement(e.magasin, e.id), b = c[cle];
     if (b && e.rev <= b[0]) continue; // déjà connu (dont ses propres envois qui reviennent)
     const hE = e.supprime || !e.donnees ? null : empreinteTexte(JSON.stringify(e.donnees));

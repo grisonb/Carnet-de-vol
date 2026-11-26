@@ -245,7 +245,7 @@
         <button type="button" class="prow2" id="rules-open"><span class="pi pi-mi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.4 11.6 12.4 2.6A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9a2 2 0 0 0 2.82 0l7-7a2 2 0 0 0 0-2.82zM6.5 8A1.5 1.5 0 1 1 8 6.5 1.5 1.5 0 0 1 6.5 8z"/></svg></span><span class="ptx"><b>Pastilles des missions</b><small>Ex. « commence par ENT. » → Entraînement</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-libelles"><span class="pi pi-mi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zm-4 6h2v2H3zm4 0h14v2H7z"/></svg></span><span class="ptx"><b>Libellés missions</b><small>Suggestions proposées quand tu tapes une mission</small></span><span class="pch" aria-hidden="true">›</span></button>
         <!-- v0.62 (R156) : vols corrigés après un « ! » et vols ignorés (badge jaune = nombre de vols, caché à 0) -->
-        <button type="button" class="prow2" id="pl-anom"><span class="pi pi-an" id="pl-anom-i"></span><span class="ptx"><b>Anomalies traitées</b><small>Vols corrigés après un « ! » et vols ignorés</small></span><span class="badge-an" id="pl-anom-n" hidden></span><span class="pch" aria-hidden="true">›</span></button>
+        <button type="button" class="prow2" id="pl-anom"><span class="pi pi-an" id="pl-anom-i"></span><span class="ptx"><b>Anomalies traitées</b><small>Vols corrigés, vols modifiés, anomalies ignorées</small></span><span class="badge-an" id="pl-anom-n" hidden></span><span class="pch" aria-hidden="true">›</span></button>
         <!-- v0.56 (R144) : compteurs (créer, renommer, compté dans les Totaux, masquer) -->
         <button type="button" class="prow2" id="pl-compteurs"><span class="pi pi-mi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm12 0h2v3h3v2h-3v3h-2v-3h-3v-2h3z"/></svg></span><span class="ptx"><b>Compteurs</b><small id="pl-compteurs-s">Feux, largages, écopages… : créer, renommer, masquer</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-cartes"><span class="pi pi-carte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9a.5.5 0 0 0-.36.48V20.5a.5.5 0 0 0 .5.5l.16-.03L9 18.9l6 2.1 5.64-1.9a.5.5 0 0 0 .36-.48V3.5a.5.5 0 0 0-.5-.5zM15 19l-6-2.11V5l6 2.11z"/></svg></span><span class="ptx"><b>Traces des vols</b><small id="pl-cartes-s">Mot de passe, traces ADS-B</small></span><span class="pch" aria-hidden="true">›</span></button>
@@ -467,12 +467,12 @@
   <button type="button" class="ghost primary" id="cptm-x">Fermer</button>
 </div></div>
 <!-- v0.58 (R150) : temps de vol changé en modifiant un vol enregistré -->
-<!-- v0.62 (R156) : une seule question, au premier lancement : retrouver les corrections faites avant, dans le fichier FlyLog -->
+<!-- v0.62 (R156), v0.63 (R157) : une seule question, au premier lancement : retrouver les modifications faites avant, dans le fichier FlyLog -->
 <div class="modal" id="rq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="rq-t" style="z-index:33"><div class="mbox">
   <h3 id="rq-t">Anomalies traitées</h3>
-  <p id="rq-txt">Retrouver les corrections déjà faites dans le fichier FlyLog d'origine ?</p>
+  <p id="rq-txt">Compléter avec toutes les modifications déjà faites ?</p>
   <p class="hint" id="rq-hint">Le fichier est lu sur cet appareil seulement ; il n'est ni gardé, ni envoyé au NAS.</p>
-  <div class="row2"><button type="button" class="ghost annuler" id="rq-non">Plus tard</button><button type="button" class="ghost vert" id="rq-oui">Choisir le fichier</button></div>
+  <div class="row2"><button type="button" class="ghost annuler" id="rq-non">Plus tard</button><button type="button" class="ghost vert" id="rq-oui">Choisir le fichier FlyLog d'origine</button></div>
 </div></div>
 <input type="file" id="file-rq" accept=".csv,text/csv" hidden>
 <div class="modal" id="tv-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tv-t" style="z-index:33"><div class="mbox">

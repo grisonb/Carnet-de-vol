@@ -10,6 +10,7 @@
 import { hm, dateFr } from './temps.js';
 import { cleDoublon, formaterImmat } from './modele.js';
 import { anomaliesDuCarnet, estIgnore } from './anomalies.js';
+import { lignesSuivi, suiviDepuisFlyLog } from './suivi.js';
 
 export const MAX_CORRIGEES = 300; // la liste voyage en un seul élément (le NAS refuse plus de 64 Ko)
 const n = x => Number(x) || 0;
@@ -77,10 +78,13 @@ export function correctionALaSaisie(avant, apres, ancien, nouveau, immatDe = () 
 const t = x => Date.parse(x || '') || 0;
 const parDate = (a, b) => t(b.le) - t(a.le) || String(b.id).localeCompare(String(a.id));
 // Lignes ajoutées à la liste (sans doublon d'id ; les plus récentes gardées)
+export const OCTETS_CORRIGEES = 50000; // v0.63 : la liste reste un seul élément de moins de 64 Ko
 export function ajouterCorrigees(liste, nouvelles) {
   const l = Array.isArray(liste) ? [...liste] : [], ids = new Set(l.map(x => x.id));
   for (const e of nouvelles || []) if (e && !ids.has(e.id)) { l.push(e); ids.add(e.id); }
-  return l.sort(parDate).slice(0, MAX_CORRIGEES);
+  const r = l.sort(parDate).slice(0, MAX_CORRIGEES);
+  while (r.length > 1 && JSON.stringify(r).length > OCTETS_CORRIGEES) r.pop();
+  return r;
 }
 // Synchro : liste changée sur deux appareils -> réunion
 export const fusionCorrigees = (ici, nas) => ajouterCorrigees(ici, nas);
@@ -144,5 +148,49 @@ export function rattrapage({ flVols, flAvions, vols, avions, terrainDe = () => n
     nouvelles.push({ id: `fl|${v.id}|${cles.join(',')}`, volId: v.id, le: v.modifieLe || null, origine: 'flylog', l: cles.map(c => ({ cle: c, ...avantApres(c, f, v, immat) })) });
     for (const c of cles) { const ty = c[0]; parType[ty] = (parType[ty] || 0) + 1; corrections++; }
   }
-  return { nouvelles, parType, retrouves: paires.length, parLigne, nonRetrouves, corrections };
+  return { nouvelles, parType, retrouves: paires.length, parLigne, nonRetrouves, corrections, paires, immatFl, immatIci };
+}
+
+// ---------- v0.63 (R157) : une carte par vol, trois onglets ----------
+// corrigees : réglage anomaliesCorrigees ; suivis : Map id du vol -> suivi (js/suivi.js) ; opts : { immatDe } ; nomCompteur(cle).
+// Corrigées : vols avec une anomalie corrigée (anomalies regroupées, la plus récente gardée par anomalie) ; dessous, tous les
+// champs changés (suivi) ; sans suivi (lignes d'avant la v0.63) : l'ancienne valeur liée à l'anomalie.
+// Modifiés : vols suivis, sans anomalie corrigée, dont au moins un champ diffère encore de son origine.
+export function cartesTraitees({ vols, corrigees, suivis = new Map(), opts = {}, nomCompteur = c => c }) {
+  const parId = new Map(vols.map(v => [v.id, v])), groupes = new Map();
+  for (const e of Array.isArray(corrigees) ? corrigees : []) {
+    if (!e || !parId.has(e.volId)) continue;
+    if (!groupes.has(e.volId)) groupes.set(e.volId, { volId: e.volId, vol: parId.get(e.volId), le: null, an: new Map() });
+    const g = groupes.get(e.volId);
+    if (t(e.le) > t(g.le)) g.le = e.le;
+    for (const a of e.l || []) {
+      const x = g.an.get(a.cle);
+      if (!x || (!(x.avant || []).length && (a.avant || []).length)) g.an.set(a.cle, a);
+    }
+  }
+  const lignes = id => (suivis.has(id) ? lignesSuivi(suivis.get(id), parId.get(id), opts, nomCompteur) : null);
+  const cCorrigees = [...groupes.values()].map(g => ({ volId: g.volId, id: g.volId, vol: g.vol, le: g.le, anomalies: [...g.an.values()], lignes: lignes(g.volId) })).sort(parDate);
+  const cModifies = [];
+  for (const [id, s] of suivis) {
+    if (groupes.has(id) || !parId.has(id)) continue;
+    const l = lignes(id);
+    if (l.length) { const v = parId.get(id); cModifies.push({ volId: id, id, vol: v, le: v.modifieLe || s.le || null, lignes: l }); }
+  }
+  return { corrigees: cCorrigees, modifies: cModifies.sort(parDate) };
+}
+export const nombreDeVols3 = (...listes) => new Set(listes.flat().map(x => x.volId || x.id)).size;
+
+// Rattrapage v0.63 : origines FlyLog de tous les vols retrouvés qui ont changé depuis l'import. suivis : Map id -> suivi existant.
+// Renvoie { suivis: [[id, suivi]] (à écrire), modifies (vols changés depuis FlyLog) }.
+export function rattrapageSuivis({ paires, suivis = new Map(), immatFl, immatIci, sauf = [] }) {
+  const ecrire = [];
+  let modifies = 0;
+  for (const [f, v] of paires) {
+    const opts = { immatDe: x => (x === f ? immatFl(f) : immatIci(x)), sauf };
+    if (!suiviDepuisFlyLog(null, f, v, opts)) continue; // rien n'a changé depuis FlyLog
+    modifies++;
+    const s = suiviDepuisFlyLog(suivis.get(v.id) || null, f, v, opts);
+    if (s) ecrire.push([v.id, s]);
+  }
+  return { suivis: ecrire, modifies };
 }

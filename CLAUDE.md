@@ -215,6 +215,12 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   `#pl-anom-n`, écran `ecranAnomaliesTraitees` (`#at-c`, `#at-i`, `#at-l .lv[data-vol]`, `[data-np]`, `#at-fl`, `#at-res`), question
   `#rq-modal` (`#rq-oui`, `#rq-non`), `#file-rq` ; saisie `enregistrer` -> `noterCorrection` ; app.js `ouvrir-vol-traite` (retour à
   l'écran à la fermeture du vol).
+- v0.63 : R157 `js/suivi.js` (pur : `textesDuVol` (champs suivis -> texte ; `att:CODE`, `cpt:cle`), `majSuivi`, `suiviDepuisFlyLog`,
+  `lignesSuivi`) ; réglage PARTAGÉ `suivi-<id du vol>` = { o: { champ: texte d'origine }, le } (un élément par vol ; `estReglagePartage`
+  dans synchro.js remplace `REGLAGES_PARTAGES.includes` partout) ; `enregistrerReglages(liste)` (etat.js, une écriture). Pas suivis :
+  rond, « ignoré », trace, « Modifié le », champs techniques. anomalies-traitees.js `cartesTraitees` (une carte par vol : Corrigées /
+  Modifiés), `rattrapageSuivis`, `OCTETS_CORRIGEES`. Onglet `#at-m` ; question v0.63 : PRIVÉ `questionModifications`, PARTAGÉ
+  `rattrapageModifications` (la question v0.62 n'est plus posée). Suivi noté seulement par la saisie (`noterCorrection`).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

@@ -1047,8 +1047,9 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .pi-an svg{width:22px;height:20px;fill:initial}
 .badge-an{flex:none;background:#f5c400;border:1.5px solid #c9a000;color:#1b2433;border-radius:999px;font-size:13px;font-weight:800;padding:1px 8px;line-height:1.4;font-family:var(--f-num)}
 .badge-an[hidden]{display:none}
-.an-onglets{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 10px}
-.an-onglets button{min-height:44px;border:0;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:15px;padding:8px 6px}
+.an-onglets{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 10px}
+.an-onglets button{min-height:44px;border:0;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:14.5px;padding:8px 3px;line-height:1.15}
+.an-onglets button+button{border-left:1px solid var(--line)}
 .an-onglets button[aria-selected="true"]{background:var(--primary);color:var(--primary-ink)}
 .lv{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 8px;font-size:15px;line-height:1.4;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent}
 .lv:active{background:var(--surface2)}

@@ -1,5 +1,33 @@
 # Journal des versions
 
+## v0.63 — 26/11/2026
+
+Remarque R157. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol
+réécrit ; PDF, CSV et totaux identiques).
+
+**R157 : toutes les modifications des vols dans « Anomalies traitées »** (maquette validée ; le menu garde son nom et sa place).
+Champs suivis : tous ceux du carnet (date, heures, terrains et atterrissages par terrain, avion, fonction, temps, colonnes, nuit, IFR,
+approches, atterrissages et décollages, personnes, indicatif, mission, feux, compteurs, étiquettes, remarque, note). Pas suivis : rond
+« reporté », « ignoré », trace, « Modifié le », champs techniques.
+Trois onglets : « Corrigées (N) », « Modifiés (N) », « Ignorées (N) ». Une seule carte par vol, la plus récente en haut ; chaque champ
+changé : « ancienne valeur barrée rouge -> nouvelle valeur verte », la valeur d'origine (FlyLog, ou avant la première modification
+dans l'app) comparée à la valeur actuelle : un champ revenu à son origine disparaît, une carte « Modifiés » sans champ changé aussi.
+Corrigées : la ligne grise de l'anomalie, puis tous les champs changés. Modifiés : vols changés sans anomalie corrigée, « Modifié le ».
+Un vol créé dans l'app n'apparaît qu'à sa première modification. Badge du menu = vols des trois onglets.
+Rangement : un petit réglage partagé « suivi-<vol> » par vol modifié (le vol n'est jamais réécrit ; bien sous 64 Ko) : synchro (le plus
+récent gagne) et sauvegarde ; une ancienne sauvegarde restaurée : listes vides, rien de cassé. Chaque enregistrement dans la saisie qui
+change un vol met sa carte à jour (une fiche personne corrigée, qui renomme dans plusieurs vols, ne crée pas de carte).
+Rattrapage : la question est reposée UNE fois après la mise à jour : « Compléter avec toutes les modifications déjà faites ? » /
+« Choisir le fichier FlyLog d'origine » / « Plus tard » (bouton « Retrouver les modifications dans FlyLog » en bas de l'écran) ; chaque
+vol FlyLog comparé au vol actuel ; les cartes « Corrigées » déjà là sont complétées (sans doublon) ; à la fin « N vols modifiés
+retrouvés ». Fait sur un appareil : plus de question sur les autres. Le fichier n'est ni gardé, ni envoyé.
+Un export FlyLog brut (sans les colonnes décodées FEU et largages) peut être choisi : ces colonnes, absentes du fichier, ne sont
+jamais comptées comme modifiées (sinon 139 fausses cartes « Modifiés » sur un vrai carnet).
+
+**Tests** : `tests/unitaires/v063.test.js`, `tests/navigateur/v063.mjs` (faux FlyLog inventé, faux NAS, A -> B, sauvegarde, ancienne
+sauvegarde, 360 / 393 px, 1 500 suivis : accueil 8 ms) ; v062.mjs, v09, v056 adaptés (nouvelle question, onglet, badge) ; test complet ;
+contrôle local avec le vrai fichier.
+
 ## v0.62 — 26/11/2026
 
 Remarque R156. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (aucun vol

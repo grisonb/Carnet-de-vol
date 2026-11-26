@@ -178,7 +178,8 @@ try {
   await attendre(T, 8000);
   verifier(nas.envois.length > n0 && nas.el.get(`vols/${idSupprime}`).supprime && nas.el.get(`vols/${idModifie}`).donnees.remarques === 'MODIFIE SUR LE TELEPHONE',
     `envoyé tout seul quelques secondes après : ${nas.envois.slice(n0).map(e => e.n).join(' + ')} modification(s)`);
-  verifier(nas.envois.slice(n0).reduce((s, e) => s + e.n, 0) === 3, '  seulement ce qui a changé (3), pas tout le carnet');
+  // v0.63 (R157) : la modification du vol envoie aussi son suivi (« suivi-<id> », valeur d'origine de la remarque)
+  verifier(nas.envois.slice(n0).reduce((s, e) => s + e.n, 0) === 4 && nas.el.has(`reglages/suivi-${idModifie}`), '  seulement ce qui a changé (vol, son suivi, suppression, réglage : 4), pas tout le carnet');
 
   console.log('PC : reçoit les nouveautés (retour dans l\'app)');
   await P.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
