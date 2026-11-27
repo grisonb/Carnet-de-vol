@@ -94,7 +94,7 @@ try {
   const lignes = await p.$$eval('#v-plus .pcard', cs => cs.map(c => [...c.querySelectorAll('.prow2 b')].map(b => b.textContent)));
   verifier(JSON.stringify(lignes) === JSON.stringify([ // v0.56 (R145) : nouvel ordre, « Compteurs » (R144) ; v0.62 (R156) : « Anomalies traitées »
     ['Mes avions', "Types d'avion", 'Personnes', 'Heures affichées en haut', 'Pastilles des missions', 'Libellés missions', 'Anomalies traitées', 'Compteurs', 'Traces des vols', 'Socle OPS / IFR'],
-    ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet'],
+    ['Carnet officiel (PDF EASA)', 'Tableur (CSV)', 'Titulaire du carnet', 'Frais d\'escale' /* v0.68 (R166) */],
     ['Sauvegarde de secours', 'Synchro du carnet', 'Restaurer'],
     ['Contrôle import'], ['Stockage']]), 'toutes les entrées, rangées dans leur section');
   const forme = await p.$$eval('#v-plus .prow2', l => l.map(r => {

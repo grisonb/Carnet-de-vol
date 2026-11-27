@@ -16,6 +16,7 @@ import { initNpf, verifierVolsNpf } from './ui/npf.js';
 import { initSocle } from './ui/socle.js';
 import { initSynchro, synchroModifiee, majBandeaux } from './ui/synchro.js';
 import { initAnomaliesTraitees, ecranAnomaliesTraitees } from './ui/anomalies-traitees.js';
+import { initFrais } from './ui/frais.js';
 import { etat } from './etat.js';
 import { invaliderStats } from './ui/avions.js';
 import { VERSION } from './version.js';
@@ -54,18 +55,21 @@ async function demarrer() {
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   initCarnet(ouvrirVol);
   // v0.62 (R156) : vol ouvert depuis Plus › Anomalies traitées : on y revient en le fermant
-  let retourAnomalies = false;
+  // v0.68 (R166) : même chose depuis Plus › Frais d'escale (« ouvrir-vol-retour » : { id, retour })
+  let retourEcran = null;
   initSaisie({ fermer: () => {
-    if (retourAnomalies) { retourAnomalies = false; montrer('plus'); ecranAnomaliesTraitees(); return; }
+    if (retourEcran) { const f = retourEcran; retourEcran = null; montrer('plus'); f(); return; }
     montrer('carnet');
   } });
-  document.addEventListener('ouvrir-vol-traite', e => {
-    const v = etat.vols.find(x => x.id === e.detail);
+  const ouvrirDepuisPlus = (id, retour) => {
+    const v = etat.vols.find(x => x.id === id);
     if (!v) return;
     $('#outil').hidden = true; $('#ou-c').innerHTML = '';
-    retourAnomalies = true;
+    retourEcran = retour;
     ouvrirVol(v);
-  });
+  };
+  document.addEventListener('ouvrir-vol-traite', e => ouvrirDepuisPlus(e.detail, ecranAnomaliesTraitees));
+  document.addEventListener('ouvrir-vol-retour', e => ouvrirDepuisPlus(e.detail.id, e.detail.retour));
   initTotaux();
   initPlus();
   initRegles();
@@ -122,6 +126,7 @@ async function demarrer() {
   initSynchro();
   initSocle(); // v0.48 (R122) : socle OPS / IFR
   initAnomaliesTraitees(); // v0.62 (R156)
+  initFrais(); // v0.68 (R166)
   setTimeout(verifierVolsNpf, 1200); // vols envoyés par NPF-Q400, discrètement
   finLancement(); // v0.40 (R102) : l'écran de lancement bleu nuit laisse place au carnet
   document.body.dataset.pret = '1';

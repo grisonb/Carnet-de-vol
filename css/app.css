@@ -1060,3 +1060,35 @@ body.consultation #at-bas,body.consultation .lv-btn{display:none!important}
 /* v0.64 (R161) : petit temps en dixièmes « 1,4 » (.fl-dix) supprimé en v0.67 (R164 : le temps encadré suit le format choisi) */
 /* v0.64 (R159) : « Remettre 0h12 » sous une ligne « Nuit » */
 .lv-chg .lv-rem{display:block;margin-top:4px}
+/* v0.68 (R166) : frais d'escale : zone de la fiche du vol, fenêtre « Détachement », Plus › Frais d'escale (zones d'appui ≥ 40 px) */
+.fe-choix{display:flex;flex-wrap:wrap;gap:2px 16px}
+.fe-choix .cbox{width:auto;font-weight:700;font-size:15px}
+.fe-pays{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+.fe-pays[hidden]{display:none}
+.fe-pays select,.dt-nuit select,#dt-pays{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);font:inherit;font-weight:700;padding:4px 8px;max-width:60%}
+#dt-pays{max-width:100%;width:100%}
+.fe-info{margin:6px 0 0}
+.fe-info[hidden],#fe-voir[hidden]{display:none}
+.dt-box{max-height:calc(100dvh - 40px);overflow:auto}
+.dt-h{margin:12px 0 4px;font-size:14px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dt-nuit{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:4px 0}
+.dt-nuit.modifie select{background:#fff8d6;color:#1b2433}
+.dt-tot{font-size:16px}
+.dt-tot b{color:#2e7d32}
+.dt-del{width:100%;margin-top:8px;color:var(--feu);border-color:var(--feu);min-height:44px}
+.dt-del[hidden]{display:none}
+.fr-an{align-items:center;min-height:48px}
+.fr-an span{font-weight:700;color:var(--ink)}
+.fb-j{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.fb-j label{font-weight:700}
+.fb-j input,.fb-row input,.fb-row select{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);font:inherit;padding:4px 8px;min-width:0}
+.fb-j input{width:9em;text-align:right}
+.fb-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}
+.fb-row .fb-nom{grid-column:1 / -1}
+.fb-row .fb-m{text-align:right}
+.fb-row .fb-x{width:40px;height:40px;align-self:center}
+.fr-m{color:#2e7d32;white-space:nowrap}
+.fr-m.manquant{color:#b3261e}
+.fr-l.incomplet{border-style:dashed}
+.fr-tot{font-size:17px;margin:10px 0}
+#v-saisie.lecture #fe-zone{pointer-events:auto} /* v0.68 : cases utilisables en lecture (comme « Ignorer ») */

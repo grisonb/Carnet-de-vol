@@ -18,7 +18,7 @@ export function basculerReport(v, maintenant = new Date().toISOString()) {
 
 // Champs propres à cet état, au « ! » ignoré (R155, anomaliesIgnorees) et l'heure d'enregistrement : ce ne sont pas des
 // données du carnet
-const HORS_REPORT = ['aReporter', 'reporteLe', 'anomaliesIgnorees', 'modifieLe'];
+const HORS_REPORT = ['aReporter', 'reporteLe', 'anomaliesIgnorees', 'modifieLe', 'frais']; // v0.68 (R166) : case « frais d'escale »
 const sansReport = v => JSON.stringify(Object.keys(v || {}).filter(k => !HORS_REPORT.includes(k)).sort().map(k => [k, v[k]]));
 // Deux versions d'un vol qui ne diffèrent que par « reporté / à reporter » et / ou le « ! » ignoré
 export const seulReportDiffere = (a, b) => !!a && !!b && sansReport(a) === sansReport(b);
@@ -39,5 +39,8 @@ export function fusionnerEtats(ici, nas) {
   }
   const li = ici.anomaliesIgnorees, ln = nas.anomaliesIgnorees;
   if (t(li && li.le) > t(ln && ln.le)) r.anomaliesIgnorees = li;
+  // v0.68 (R166) : case « frais d'escale » : la plus récente (frais.le)
+  const fi = ici.frais, fn = nas.frais;
+  if (t(fi && fi.le) > t(fn && fn.le)) r.frais = fi;
   return r;
 }

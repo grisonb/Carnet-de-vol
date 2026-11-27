@@ -243,6 +243,14 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   minutes exactes tant que le champ n'a pas reçu de frappe ; `reformaterDurees` au changement d'avion). temps.js `enDixiemesPoint`
   (« 1.4 »), `dureeAffichee`, `lireDuree` lit « 1.4 » / « 1,4 ». Totaux, PDF, CSV, alerte R150, Anomalies traitées : heures et minutes.
   `.fl-dix` (R161) supprimé.
+- v0.68 : R166 frais d'escale. `js/frais.js` (pur : montants en CENTIMES, `euros`, `lireMontant`, `baremeDe` (France d'office), `calculer`
+  (Euro : 1 par nuit, la dernière 1,5 ; Monde : 1 par jour au pays de sa nuit ; zone = pays principal / pays de la nuit),
+  `lignesFrais` (détachements, vols journée par jour, J+2 par paires de jours, sinon « incomplet »), `anneeFrais`, `anneesFrais`).
+  Données : vol `frais` { type 'journee' | 'j2' | null, pays, le } (écrit avec `garderDate`, fusionné par `fusionnerEtats`, hors
+  `seulReportDiffere`) ; réglages PARTAGÉS `detachement-<id>` { id, du, au, pays, nuits (exceptions), le | supprime } et `bareme-<année>`
+  (`estCleFrais` dans `estReglagePartage`). `js/ui/frais.js` : zone `#fe-zone` (permise en lecture), fenêtre `#dt-modal`, Plus `#pl-frais`
+  (`ecranFrais`, `ecranAnneeFrais`, `#fb-*` barème, `#fa-l` lignes, `#fa-pdf`), `modelePdf` / `dessinerPdf` (jsPDF portrait, « € » permis).
+  app.js : événement `ouvrir-vol-retour` { id, retour }.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

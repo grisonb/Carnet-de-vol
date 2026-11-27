@@ -10,6 +10,7 @@
 import { seulReportDiffere, fusionnerEtats } from './report.js';
 import { fusionCorrigees } from './anomalies-traitees.js';
 import { estCleSuivi } from './suivi.js';
+import { estCleFrais } from './frais.js';
 
 export const MAGASINS = ['vols', 'avions', 'personnes', 'reglages'];
 // Réglages qui appartiennent au carnet (envoyés) ; les autres sont propres à chaque appareil (mot de passe, adresse du
@@ -26,7 +27,8 @@ export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMas
   'rattrapageModifications', // v0.63 (R157) : rattrapage « toutes les modifications » déjà fait
   'dixiemesTypes']; // v0.67 (R164) : « Temps en dixièmes » des types d'avion
 // v0.63 (R157) : en plus, un réglage « suivi-<id du vol> » par vol modifié (valeurs d'origine, js/suivi.js)
-export const estReglagePartage = cle => REGLAGES_PARTAGES.includes(cle) || estCleSuivi(cle);
+// v0.68 (R166) : et un réglage par détachement (« detachement-<id> ») et par barème (« bareme-<année> ») des frais d'escale
+export const estReglagePartage = cle => REGLAGES_PARTAGES.includes(cle) || estCleSuivi(cle) || estCleFrais(cle);
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)
 export const ENVOI_OCTETS = 3000000; // v0.55 : un envoi reste sous 3 Mo (le NAS : 4 Mo au plus)
 export const PAR_PAGE = 1000;      // éléments par page reçue
@@ -224,7 +226,8 @@ export function analyserRecus(recus, locaux, carte, ouvert = null) {
     // chaque état pris là où il a été changé le plus récemment, sans conflit à choisir
     if (e.magasin === 'vols' && hE !== null && l && cle !== ouvert && seulReportDiffere(l.donnees, e.donnees)) {
       const f = fusionnerEtats(l.donnees, e.donnees), ici = l.donnees;
-      const memeQueIci = f.aReporter === ici.aReporter && f.reporteLe === ici.reporteLe && JSON.stringify(f.anomaliesIgnorees) === JSON.stringify(ici.anomaliesIgnorees);
+      const memeQueIci = f.aReporter === ici.aReporter && f.reporteLe === ici.reporteLe && JSON.stringify(f.anomaliesIgnorees) === JSON.stringify(ici.anomaliesIgnorees)
+        && JSON.stringify(f.frais) === JSON.stringify(ici.frais);
       if (!memeQueIci) appliquer.push({ magasin: 'vols', id: e.id, donnees: f });
       c[cle] = [e.rev, hE]; // base = version du NAS : si la version fusionnée en diffère, elle repart
       continue;

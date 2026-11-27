@@ -171,7 +171,7 @@ function controlerEntete(nom, e, n) {
 }
 
 // ---------- R112 : lecture seule ----------
-const AUTORISES = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #ctr-open';
+const AUTORISES = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #ctr-open, #fe-zone'; // v0.68 (R166) : frais d'escale, utilisables en lecture (pas une donnée du carnet)
 const photo = p => p.evaluate(() => JSON.stringify({
   champs: [...document.querySelectorAll('#v-saisie input, #v-saisie textarea')].map(e => e.type === 'checkbox' ? e.checked : e.value),
   etats: [...document.querySelectorAll('#v-saisie [aria-pressed], #v-saisie [aria-checked]')].filter(e => !e.closest('.tz-groupe')).map(e => (e.getAttribute('aria-pressed') || '') + (e.getAttribute('aria-checked') || '')),

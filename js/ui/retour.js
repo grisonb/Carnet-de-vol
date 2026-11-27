@@ -18,6 +18,7 @@ const COUCHES = {
   'cpt-modal': '#cptm-x', 'cpc-modal': '#cpc-b [data-po=""]', // v0.56 (R144) : compteurs du vol, question « ce vol / cet avion / le type »
   'tv-modal': '#tv-no', // v0.58 (R150) : temps de vol modifié
   'rq-modal': '#rq-non', // v0.62 (R156) : question du rattrapage FlyLog
+  'dt-modal': '#dt-no', // v0.68 (R166) : détachement (frais d'escale)
 };
 
 let opts = null;

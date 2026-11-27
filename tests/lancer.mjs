@@ -19,7 +19,7 @@ const JOURNAUX = join(RACINE, NAV, 'journaux');
 // Batterie entière, dans l'ordre historique
 export const COMPLET = ['parcours', 'installation', 'mise-a-jour', 'v04', 'v05', 'v06', 'v07', 'v08', 'v09', 'v010', 'v011', 'v012', 'v013',
   'v014', 'v015', 'v016', 'v016b', 'v017', 'v017b', 'v018', 'v019', 'v020', 'v021', 'v022', 'v023', 'v024', 'v025', 'v026', 'v027',
-  'v028', 'v029', 'v030', 'v031', 'v032', 'v033', 'v034', 'v035', 'v036', 'v037', 'v038', 'v039', 'v041', 'v042', 'v043', 'v044', 'v045', 'v046', 'v047', 'v048', 'v049', 'v050', 'v051', 'v052', 'v053', 'v054', 'v055', 'v056', 'v057', 'v058', 'v059', 'v060', 'v061', 'v061b', 'v062', 'v063', 'v064', 'v065', 'v066', 'v067'];
+  'v028', 'v029', 'v030', 'v031', 'v032', 'v033', 'v034', 'v035', 'v036', 'v037', 'v038', 'v039', 'v041', 'v042', 'v043', 'v044', 'v045', 'v046', 'v047', 'v048', 'v049', 'v050', 'v051', 'v052', 'v053', 'v054', 'v055', 'v056', 'v057', 'v058', 'v059', 'v060', 'v061', 'v061b', 'v062', 'v063', 'v064', 'v065', 'v066', 'v067', 'v068'];
 // Non-régression courte (voir l'inventaire dans CLAUDE.md) : lancement sans erreur + parcours d'un vol + sauvegarde et
 // restauration + PDF (parcours) ; mise à jour de version sans perte de données (mise-a-jour) ; synchro NAS de base sur un
 // faux NAS (v012) ; accueil à 390 et 360 px (v044 et le test de la version). Le test de la version en cours est ajouté seul.

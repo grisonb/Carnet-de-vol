@@ -176,6 +176,19 @@
       </div>
     </div>
 
+    <!-- v0.68 (R166) : frais d'escale (une seule case à la fois, ou aucune ; « Détachement » : dates du détachement) -->
+    <div class="sec fe-sec" id="fe-zone">
+      <h3>Frais d'escale</h3>
+      <div class="fe-choix" role="group" aria-label="Frais d'escale">
+        <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="journee">VOL JOURNÉE</button>
+        <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="j2">J+2</button>
+        <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="detachement">DÉTACHEMENT</button>
+      </div>
+      <div class="fe-pays" id="fe-pays-z" hidden><label for="fe-pays">Pays de la nuit</label><select id="fe-pays"></select></div>
+      <p class="hint fe-info" id="fe-info"></p>
+      <button type="button" class="linkbtn" id="fe-voir" hidden>Voir le détachement ›</button>
+    </div>
+
     <div class="sec c-tp">
       <h3>Temps du carnet</h3>
       <div>
@@ -255,6 +268,8 @@
         <button type="button" class="prow2" id="pl-pdf"><span class="pi pi-vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z"/></svg></span><span class="ptx"><b>Carnet officiel (PDF EASA)</b><small>Pages, totaux de page, reports, signature</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-csv"><span class="pi pi-vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zm2 2v4h6V5zm8 0v4h6V5zM5 11v4h6v-4zm8 0v4h6v-4zM5 17v2h6v-2zm8 0v2h6v-2z"/></svg></span><span class="ptx"><b>Tableur (CSV)</b><small>Toutes les colonnes, mission comprise</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-tit"><span class="pi pi-vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span><span class="ptx"><b>Titulaire du carnet</b><small id="pl-tit-s">Nom imprimé sur le PDF</small></span><span class="pch" aria-hidden="true">›</span></button>
+        <!-- v0.68 (R166) : frais d'escale (indemnités journalières, frais réels) : une ligne par année, barème, liste, PDF -->
+        <button type="button" class="prow2" id="pl-frais"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zm2 2v8h14V8zm7 1.5a2.5 2.5 0 1 1-2.5 2.5A2.5 2.5 0 0 1 12 9.5zM6 9h2v2H6zm10 4h2v2h-2z"/></svg></span><span class="ptx"><b>Frais d'escale</b><small id="pl-frais-s">Vols journée, J+2, détachements : montants par année, PDF</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
       <h3 class="pgrp">Sauvegarde</h3>
       <div class="pcard">
@@ -474,6 +489,20 @@
   <div class="row2"><button type="button" class="ghost annuler" id="rq-non">Plus tard</button><button type="button" class="ghost vert" id="rq-oui">Choisir le fichier FlyLog d'origine</button></div>
 </div></div>
 <input type="file" id="file-rq" accept=".csv,text/csv" hidden>
+<!-- v0.68 (R166) : détachement (frais d'escale) -->
+<div class="modal" id="dt-modal" hidden role="dialog" aria-modal="true" aria-labelledby="dt-t" style="z-index:34"><div class="mbox dt-box">
+  <h3 id="dt-t">Détachement</h3>
+  <div class="row2"><div class="field"><label for="dt-du">Du</label><input type="date" id="dt-du"></div><div class="field"><label for="dt-au">Au</label><input type="date" id="dt-au"></div></div>
+  <div class="field"><label for="dt-pays">Pays principal</label><select id="dt-pays"></select></div>
+  <h4 class="dt-h">Nuits (modifiables)</h4>
+  <div id="dt-nuits"></div>
+  <p class="hint" id="dt-vols"></p>
+  <p class="hint" id="dt-calc"></p>
+  <div class="tline dt-tot"><span>Montant</span><b id="dt-montant"></b></div>
+  <p class="apname bad" id="dt-err"></p>
+  <div class="row2"><button type="button" class="ghost annuler" id="dt-no">Annuler</button><button type="button" class="ghost vert" id="dt-ok">Enregistrer</button></div>
+  <button type="button" class="ghost dt-del" id="dt-del" hidden>Supprimer le détachement</button>
+</div></div>
 <div class="modal" id="tv-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tv-t" style="z-index:33"><div class="mbox">
   <h3 id="tv-t">Temps de vol modifié</h3>
   <p id="tv-txt"></p>

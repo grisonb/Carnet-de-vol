@@ -1,5 +1,26 @@
 # Journal des versions
 
+## v0.68 — 27/11/2026
+
+Remarque R166. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données du carnet inchangées (PDF EASA,
+CSV, totaux d'heures, anomalies identiques ; aucun « Modifié le » changé).
+
+**R166 : frais d'escale** (indemnités journalières, frais réels ; maquette validée). Fiche du vol : zone « FRAIS D'ESCALE » entre
+« Règles des pastilles » et « Temps du carnet », cases VOL JOURNÉE / J+2 / DÉTACHEMENT (une seule, ou aucune ; utilisables aussi en
+lecture ; enregistrées tout de suite, sans alerte R150 ni ligne « Anomalies traitées »). Vol journée : ½ indemnité zone euro (montant
+« Vol journée » du barème). J+2 : « Pays de la nuit » (France par défaut) ; deux jours qui se suivent = une ligne (2 jours, 1 nuit),
+sinon « J+2 incomplet » (0 €). Détachement : fenêtre Du / Au / Pays principal recopié sur chaque nuit (modifiable) ; jours sans vol
+comptés ; les vols de ses dates se cochent tout seuls (« Fait partie du détachement du … au … », « Voir le détachement ») et ne comptent
+qu'une fois. Calcul : Euro-Europe = 1 indemnité du pays de chaque nuit, la dernière 1,5 ; Monde = 1 par jour au pays de sa nuit ; détail
+sur chaque ligne. Plus › Frais d'escale : une ligne par année (date de début) avec son total ; dans l'année : barème à saisir (vol
+journée, pays avec montant et zone, France d'office ; « Montant manquant » = 0 €), liste (plus récent en haut ; appui = vol ou
+détachement), total, « Exporter 20XX en PDF » (barème, résumé, puis chaque ligne en ordre chronologique avec ses vols ; temps au format
+du type, heures de bloc en heures). Synchro et sauvegarde : case du vol (avec le vol, le plus récent gagne), un réglage par détachement
+et par barème ; ancienne sauvegarde : rien de coché.
+
+**Tests** : `tests/unitaires/v068.test.js`, `tests/navigateur/v068.mjs` (barème inventé, faux NAS, 360 / 393 px, PDF) ; v09 et v056
+(menu Plus) mis à jour ; test complet ; contrôle local avec le vrai fichier.
+
 ## v0.67 — 27/11/2026
 
 Remarques R163 et R164 (corrigée avant livraison ; R165 abandonnée). carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS

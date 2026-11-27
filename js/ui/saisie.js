@@ -28,6 +28,7 @@ import { volsGroupesAvion, alerteTemps, dixiemesAvion } from '../vols-groupes.js
 import { anomaliesDe } from './anomalies.js';
 import { ignorer } from '../anomalies.js';
 import { anomaliesAvant, noterCorrection } from './anomalies-traitees.js';
+import { afficherFrais, fraisPourNouveauVol } from './frais.js';
 
 let F = null;          // brouillon du vol en cours
 let quitter = () => {};
@@ -883,6 +884,7 @@ export function ouvrirSaisie(vol, opts = {}) {
   $('#f-ancien').hidden = !(F.ancien && !brouillon);
   $('#f-sim').hidden = !F.simulation;
   rendreAnomalies(brouillon ? null : vol); // v0.61 (R155)
+  afficherFrais({ id: vol ? vol.id : null, date: () => (instants() || {}).dateUTC || $('#f-date').value }); // v0.68 (R166)
   recap(); apercu();
   F.empreinte = empreinte();
   // carte du vol enregistré (sans jamais toucher aux heures) ; brouillon NPF : positions des feux reçues
@@ -916,7 +918,7 @@ async function ignorerAnomalies() {
 // le crayon, LF / LOC / UTC, la carte (flammes figées : voir carte.js), la fiche de l'avion (« i », sans son crayon) et
 // l'ouverture du détail des compteurs. Ni « Enregistrer » ni « Supprimer » (style).
 let lecture = false;
-const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #an-cadre'; // v0.61 : « Ignorer » ne change aucune donnée // v0.56 : « Compteurs › » bloqué en lecture
+const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #an-cadre, #fe-zone'; // v0.68 : frais d'escale (pas une donnée du carnet) // v0.61 : « Ignorer » ne change aucune donnée // v0.56 : « Compteurs › » bloqué en lecture
 export const enLecture = () => lecture;
 function fixerLecture(oui) {
   lecture = oui;
@@ -1021,6 +1023,7 @@ async function enregistrer() {
   if (!F.vol) v.source = 'saisie';
   // v0.61 (R154) : un vol créé (saisi ou importé de NPF-Q400) arrive « à reporter » sur le carnet papier (pas une simulation)
   if (!F.vol && !F.simulation) v.aReporter = true;
+  if (!F.vol) { const fr = fraisPourNouveauVol(); if (fr) v.frais = fr; } // v0.68 (R166) : case cochée avant le premier enregistrement
   // Vol reçu de NPF-Q400 : son id (pas de doublon), la date de l'export et les positions des feux (Carte du vol)
   const npf = F.npf;
   // v0.31 (R72) : feux déplacés / supprimés sur la Carte du vol pendant que ce vol était ouvert : la dernière version enregistrée
@@ -1031,7 +1034,8 @@ async function enregistrer() {
     // v0.55 (R139) : trace importée (ou retirée) pendant que ce vol était ouvert : celle de la dernière version enregistrée
     if (actuel.traceImportee) v.traceImportee = actuel.traceImportee; else delete v.traceImportee;
     // v0.61 (R154, R155) : rond et « ! » ignoré changés pendant que ce vol était ouvert : ceux de la dernière version enregistrée
-    for (const k of ['aReporter', 'reporteLe', 'anomaliesIgnorees']) if (k in actuel) v[k] = actuel[k]; else delete v[k];
+    // v0.68 (R166) : et la case « frais d'escale » (enregistrée dès l'appui)
+    for (const k of ['aReporter', 'reporteLe', 'anomaliesIgnorees', 'frais']) if (k in actuel) v[k] = actuel[k]; else delete v[k];
   }
   if (npf) {
     v.npfId = npf.id; v.npfExporteLe = npf.exporteLe;
