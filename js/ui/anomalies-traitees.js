@@ -40,7 +40,7 @@ let onglet = 'corrigees';
 const tete = v => `<div class="lv-h"><span>${esc(dateFr(v.date))}</span><span class="lv-av">${esc(immatDe(v))}</span></div><div class="lv-tr">${esc(trajet(v))}</div>`;
 const chg = (avant, apres, bouton = '') => `<div class="lv-chg">${avant ? `<span class="lv-av-v">${esc(avant)}</span> → ` : ''}<span class="lv-ap">${esc(apres)}</span>${bouton}</div>`;
 // v0.64 (R159) : ligne « Nuit » changée : « Remettre 0h12 » (valeur d'origine remise dans le vol, sans rien recalculer)
-const ligneChamp = (x, l) => chg(l.avant, l.apres, l.k === 'tempsNuit' ? `<button type="button" class="lv-btn lv-rem" data-remettre="${esc(x.volId)}" data-val="${esc(l.origine)}">Remettre ${esc(l.origine)}</button>` : '');
+const ligneChamp = (x, l) => chg(l.avant, l.apres, l.k === 'tempsNuit' ? `<button type="button" class="lv-btn lv-rem" data-remettre="${esc(x.volId)}" data-val="${esc(l.origine)}">Remettre ${esc(l.origineAffichee || l.origine)}</button>` : '');
 // v0.63 (R157) : la ligne grise de chaque anomalie corrigée, puis TOUS les champs changés du vol (sans suivi : l'ancienne valeur liée)
 function ligneCorrigee(x) {
   const gris = [...new Set(x.anomalies.map(a => libelleAnomalie(a.cle)))].map(t => `<div class="lv-q">${esc(t)}</div>`).join('');

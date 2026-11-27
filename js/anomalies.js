@@ -11,7 +11,8 @@
 //   e. arrivée avant le départ (un vol qui passe minuit n'en est pas une : c'est alors un vol de plus de 10 h), vol de plus de 10 h ;
 //   f. deux vols qui se chevauchent (se toucher n'est pas chevaucher) ;
 //   g. terrain intermédiaire identique au départ ou à l'arrivée (un aller-retour sans intermédiaire est normal) ;
-//   h. vol saisi deux fois : même date, mêmes heures, même immatriculation (les deux sont signalés).
+//   h. vol saisi deux fois : même date, mêmes heures, même immatriculation (les deux sont signalés) ;
+//   i. (v0.67, R163) au moins 1 atterrissage de nuit (arrivée ou terrain intermédiaire) mais temps de nuit 0.
 //
 // Ignorer : vol.anomaliesIgnorees = { empreinte, le } ; empreinte = celle des données du vol qui servent au contrôle au moment
 // d'ignorer. Tant que ces données ne changent pas, le « ! » ne revient pas ; vol modifié ensuite et anomalie : il revient.
@@ -63,6 +64,9 @@ export function anomaliesDuVol(v, terrainDe = () => null) {
       l.push({ type: 'b', cle: 'b', texte: `Arrivée de nuit (${v.arr || 'arrivée'} ${heure(v.hArr)} UTC) : 0 atterrissage de nuit` });
     }
   }
+  // i (v0.67, R163) : atterrissage de nuit sans temps de nuit (vol.attNuit = total, terrains intermédiaires compris)
+  const attNuit = Math.max(n(v.attNuit), (v.escales || []).reduce((s, e) => s + n(e.attNuit), 0));
+  if (attNuit >= 1 && n(v.tempsNuit) === 0) l.push({ type: 'i', cle: 'i', texte: 'Att. de nuit sans temps de nuit' });
   // c : nuit / IFR plus grands que le temps de vol
   if (n(v.tempsNuit) > T) l.push({ type: 'c', cle: 'c-nuit', texte: `Temps de nuit (${hm(n(v.tempsNuit))}) plus grand que le temps de vol (${hm(T)})` });
   if (n(v.tempsIFR) > T) l.push({ type: 'c', cle: 'c-ifr', texte: `Temps IFR (${hm(n(v.tempsIFR))}) plus grand que le temps de vol (${hm(T)})` });

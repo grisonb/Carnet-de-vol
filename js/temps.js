@@ -1,10 +1,20 @@
 // Durées et heures. Toutes les durées sont stockées en minutes entières, les heures en "HH:MM" UTC.
 
-// Lecture d'une durée : "1:30", "1h30", "1H30", "90" (minutes) -> 90 ; vide -> null ; invalide -> NaN
+// v0.67 (R164, corrigé) : « 1.4 » = dixièmes d'heure avec un POINT, pour l'affichage des vols dont le TYPE a « Temps en dixièmes »
+// (accueil, fiche du vol). Les vols gardent toujours des minutes ; totaux, PDF et CSV restent en heures et minutes.
+export function enDixiemesPoint(minutes) {
+  const d = Math.round(arrondiDixieme(minutes) / 6); // dixièmes entiers
+  return `${Math.floor(d / 10).toLocaleString('fr-FR')}.${d % 10}`;
+}
+
+// Lecture d'une durée : "1:30", "1h30", "1H30", "90" (minutes) -> 90 ; v0.67 (R164) : "1.4" / "1,4" (dixièmes d'heure) -> 84 ;
+// vide -> null ; invalide -> NaN
 export function lireDuree(texte) {
   if (texte === null || texte === undefined) return null;
   const s = String(texte).trim().replace(/\s/g, '');
   if (s === '') return null;
+  const dix = s.match(/^(\d{0,5})[.,](\d{1,2})$/);
+  if (dix) return Math.round(Number(`${dix[1] || 0}.${dix[2]}`) * 60);
   let m = s.match(/^(\d{1,5})[:hH](\d{1,2})?$/);
   if (m) {
     const min = Number(m[2] || 0);
@@ -20,6 +30,9 @@ export function hm(minutes) {
   const m = Math.max(0, Math.round(minutes || 0));
   return Math.floor(m / 60).toLocaleString('fr-FR') + 'h' + String(m % 60).padStart(2, '0');
 }
+export const hmFixe = hm; // v0.67 : textes gardés (suivi des modifications) : toujours en heures et minutes
+// v0.67 (R164) : durée d'un vol affichée en dixièmes (« 1.4 ») ou en heures (« 1h24 ») selon son type
+export const dureeAffichee = (minutes, dixiemes) => (dixiemes ? enDixiemesPoint(minutes) : hm(minutes));
 
 // Pour les tableurs et le PDF : "1:18" ; 0 ou null -> ""
 export function hmPoints(minutes) {
@@ -96,5 +109,4 @@ export function arrondiDixieme(minutes) {
   const m = Math.max(0, Math.round(Number(minutes) || 0)), r = m % 6;
   return m - r + (r >= 3 ? 6 : 0);
 }
-// « 1,4 » (dixièmes d'heure, virgule française)
-export const enDixiemes = minutes => (arrondiDixieme(minutes) / 60).toFixed(1).replace('.', ',');
+

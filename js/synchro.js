@@ -23,7 +23,8 @@ export const REGLAGES_PARTAGES = ['etiquettes', 'missionsAjoutees', 'missionsMas
   'compteursFiches', 'compteursTypes', // v0.56 (R144) : compteurs créés / renommés / masqués, compteurs par défaut des types
   'volsGroupesTypes', // v0.58 (R149) : « Vols groupés » des types d'avion
   'anomaliesCorrigees', 'rattrapageCorrections', // v0.62 (R156) : Plus › Anomalies traitées, rattrapage FlyLog déjà fait
-  'rattrapageModifications']; // v0.63 (R157) : rattrapage « toutes les modifications » déjà fait
+  'rattrapageModifications', // v0.63 (R157) : rattrapage « toutes les modifications » déjà fait
+  'dixiemesTypes']; // v0.67 (R164) : « Temps en dixièmes » des types d'avion
 // v0.63 (R157) : en plus, un réglage « suivi-<id du vol> » par vol modifié (valeurs d'origine, js/suivi.js)
 export const estReglagePartage = cle => REGLAGES_PARTAGES.includes(cle) || estCleSuivi(cle);
 export const PAR_ENVOI = 500;      // modifications par envoi (≈ 500 Ko)

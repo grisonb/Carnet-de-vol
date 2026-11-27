@@ -11,7 +11,7 @@ import { estSimulation, volVide, FONCTIONS, TEMPS_FONCTION, COMPTEURS, colonnesA
 import { supprimerVolAvecAnnuler } from './suppression.js';
 import { afficherCarteVol } from './carte.js';
 import { changerFuseauProfil } from './profil.js';
-import { hm, lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujourdhui, dateFr, heureH, arrondiDixieme } from '../temps.js';
+import { lireDuree, lireHeure, minutesDuJour, ajouterJours, dateValide, aujourdhui, dateFr, heureH, arrondiDixieme, dureeAffichee } from '../temps.js';
 import { versLocal, versUTC } from '../fuseaux.js';
 import { terrain, fuseau } from '../terrains.js';
 import { drapeau } from '../drapeaux.js';
@@ -24,13 +24,36 @@ import { ouvrirRegles } from './regles.js';
 import { brouillonNpf } from '../npf.js';
 import { ignorerVolNpf, volNpfEnregistre } from './npf.js';
 import { ROLES_IE, nomReel } from '../inst-exam.js';
-import { volsGroupesAvion, alerteTemps } from '../vols-groupes.js';
+import { volsGroupesAvion, alerteTemps, dixiemesAvion } from '../vols-groupes.js';
 import { anomaliesDe } from './anomalies.js';
 import { ignorer } from '../anomalies.js';
 import { anomaliesAvant, noterCorrection } from './anomalies-traitees.js';
 
 let F = null;          // brouillon du vol en cours
 let quitter = () => {};
+
+// ---------- v0.67 (R164) : champs de durée ----------
+// Avion du vol dont le TYPE a « Temps en dixièmes » (DH8D, CL2T d'office) : durées montrées et tapées en dixièmes (« 0.2 » = 12 min) ;
+// sinon en heures et minutes. Le champ garde ses minutes exactes (data-min) : tant que son texte n'a pas été retouché, ce sont
+// elles qui sont lues (un vol de 0h14 de nuit, ouvert puis enregistré, garde 14 min, pas 12). Les heures de bloc ne changent pas.
+const dxSaisie = () => !!F && dixiemesAvion(avion(), reglage('dixiemesTypes'));
+const D = m => dureeAffichee(m, dxSaisie());
+const CHAMPS_DUREE = ['#c-nuit', '#c-ifr', '#c-col', '#c-fn', '#f-bloc-in'];
+// avion changé : les champs non retouchés passent dans le format de son type
+function reformaterDurees() {
+  for (const sel of CHAMPS_DUREE) { const el = $(sel); if (el.dataset.txt !== undefined && el.value === el.dataset.txt) poser(sel, Number(el.dataset.min)); }
+  if (F && !F.groupe) $('#f-bloc').textContent = D(F.bloc);
+}
+function poser(sel, minutes) {
+  const el = $(sel);
+  if (minutes === null || minutes === undefined) { el.value = ''; delete el.dataset.min; delete el.dataset.txt; return; }
+  el.value = D(minutes); el.dataset.min = String(Math.round(Number(minutes) || 0)); el.dataset.txt = el.value;
+}
+function lireChamp(sel) {
+  const el = $(sel);
+  if (el.dataset.txt !== undefined && el.value === el.dataset.txt) return Number(el.dataset.min);
+  return lireDuree(el.value);
+}
 
 // ---------- Terrains ----------
 const nomTerrain = c => (c.length < 4 ? '' : (terrain(c)?.nom || 'Terrain inconnu : vérifie le code'));
@@ -166,26 +189,26 @@ function recalculer() {
   if (memesHeures) {
     if (F.sigH !== sH) { // retour aux heures enregistrées : les valeurs enregistrées reviennent
       F.bloc = g.bloc;
-      $('#c-col').value = F.avionId === g.avionId ? g.col : hm(colonneAuto());
-      $('#c-fn').value = F.fonction === g.fonction ? g.fn : hm(avion()?.sim ? 0 : F.bloc);
-      if (F.ifr) $('#c-ifr').value = F.ifr === g.ifrRegle ? g.ifr : hm(F.bloc);
+      poser('#c-col', F.avionId === g.avionId ? g.col : colonneAuto());
+      poser('#c-fn', F.fonction === g.fonction ? g.fn : (avion()?.sim ? 0 : F.bloc));
+      if (F.ifr) poser('#c-ifr', F.ifr === g.ifrRegle ? g.ifr : F.bloc);
     }
   } else {
     F.bloc = i ? Math.round((i.mb - i.ma) / 60000) : (F.heuresInconnues ? F.vol.tempsTotal || F.vol.simTemps || 0 : 0);
-    if (F.ifr) $('#c-ifr').value = hm(F.bloc);
-    $('#c-col').value = hm(colonneAuto());
-    $('#c-fn').value = hm(avion()?.sim ? 0 : F.bloc);
+    if (F.ifr) poser('#c-ifr', F.bloc);
+    poser('#c-col', colonneAuto());
+    poser('#c-fn', avion()?.sim ? 0 : F.bloc);
   }
   F.sigH = sH;
   const bloc = F.bloc;
-  $('#f-bloc').textContent = hm(bloc);
+  $('#f-bloc').textContent = D(bloc);
   $('#f-j1').hidden = !(i && i.ma && new Date(i.mb).toISOString().slice(0, 10) > i.dateUTC && minutesDuJour(heureDe('#f-t1')) < minutesDuJour(heureDe('#f-t0')));
   const p = points();
   if (!F.nuitMain) {
-    if (g && sN === g.n) { if (F.sigN !== sN) $('#c-nuit').value = g.nuit; }
+    if (g && sN === g.n) { if (F.sigN !== sN) poser('#c-nuit', g.nuit); }
     // v0.64 (R160) : nuit calculée arrondie au dixième d'heure (multiple de 6 min), jamais plus que le temps de vol
-    else if (i && p) $('#c-nuit').value = hm(Math.min(arrondiDixieme(minutesDeNuit(i.ma, bloc, p)), bloc));
-    else if (i) $('#c-nuit').value = hm(0);
+    else if (i && p) poser('#c-nuit', Math.min(arrondiDixieme(minutesDeNuit(i.ma, bloc, p)), bloc));
+    else if (i) poser('#c-nuit', 0);
   }
   F.sigN = sN;
   // v0.54 (R134) : atterrissages jour / nuit répartis par la règle quand les heures ou les terrains changent ; sinon la
@@ -226,13 +249,13 @@ function majAtt() { sortie('attJour'); sortie('attNuit'); recap(); }
 // JAMAIS remplacés par un calcul ; la nuit calculée (si les heures et les terrains la permettent) est seulement proposée
 function recalculerAncien(i) {
   F.bloc = F.ancien.temps;
-  $('#f-bloc').textContent = hm(F.bloc);
+  $('#f-bloc').textContent = D(F.bloc);
   $('#f-j1').hidden = !(i && new Date(i.mb).toISOString().slice(0, 10) > i.dateUTC && minutesDuJour(heureDe('#f-t1')) < minutesDuJour(heureDe('#f-t0')));
   const p = points();
-  const calcul = i && p ? Math.min(arrondiDixieme(minutesDeNuit(i.ma, F.bloc, p)), F.bloc) : null, garde = lireDuree($('#c-nuit').value); // v0.64 (R160)
+  const calcul = i && p ? Math.min(arrondiDixieme(minutesDeNuit(i.ma, F.bloc, p)), F.bloc) : null, garde = lireChamp('#c-nuit'); // v0.64 (R160)
   F.nuitProposee = calcul !== null && calcul !== (Number.isNaN(garde) ? 0 : garde || 0) ? calcul : null;
   $('#nuit-calc').hidden = F.nuitProposee === null;
-  if (F.nuitProposee !== null) $('#nuit-calc-t').textContent = `Calcul de nuit : ${hm(calcul)} (gardé : ${$('#c-nuit').value || '0h00'})`;
+  if (F.nuitProposee !== null) $('#nuit-calc-t').textContent = `Calcul de nuit : ${D(calcul)} (gardé : ${$('#c-nuit').value || '0h00'})`;
   recap(); apercu();
 }
 
@@ -241,7 +264,7 @@ function recalculerAncien(i) {
 // tapé à la main (#f-bloc-in), les heures bloc restent saisies et gardées telles quelles ; ni la nuit ni la répartition
 // jour / nuit des atterrissages (R134) ne sont recalculées (les atterrissages des terrains intermédiaires s'ajoutent).
 const vgPossible = () => volsGroupesAvion(avion(), reglage('volsGroupesTypes'));
-const tempsTape = () => { const d = lireDuree($('#f-bloc-in').value); return Number.isNaN(d) ? null : d || 0; };
+const tempsTape = () => { const d = lireChamp('#f-bloc-in'); return Number.isNaN(d) ? null : d || 0; };
 function rendreVG() {
   $('#vg-zone').hidden = !(F.groupe || vgPossible());
   $('#f-vg').setAttribute('aria-checked', String(!!F.groupe));
@@ -250,7 +273,7 @@ function rendreVG() {
 function basculerVG() {
   if (!F) return;
   F.groupe = !F.groupe;
-  if (F.groupe) $('#f-bloc-in').value = hm(F.bloc);
+  if (F.groupe) poser('#f-bloc-in', F.bloc);
   $('#f-bloc-in').classList.remove('bad');
   rendreVG(); recalculer();
 }
@@ -263,9 +286,9 @@ function recalculerGroupe(i) {
   if (esc.j !== avant.j || esc.n !== avant.n) {
     F.s.attJour = Math.max(0, F.s.attJour + esc.j - avant.j); F.s.attNuit = Math.max(0, F.s.attNuit + esc.n - avant.n); F.attEsc = esc; majAtt();
   }
-  if (F.ifr) $('#c-ifr').value = hm(F.bloc);
-  $('#c-col').value = hm(colonneAuto());
-  $('#c-fn').value = hm(avion()?.sim ? 0 : F.bloc);
+  if (F.ifr) poser('#c-ifr', F.bloc);
+  poser('#c-col', colonneAuto());
+  poser('#c-fn', avion()?.sim ? 0 : F.bloc);
   recap(); apercu();
 }
 
@@ -360,7 +383,8 @@ function choisirAvion(a, changement = true) {
   appliquerEquipage();
   rendreEtiquettes();
   rendreCompteurs(); rendreVG();
-  if (!F.charge) { $('#c-col').value = hm(colonneAuto()); $('#c-fn').value = hm(a.sim ? 0 : F.bloc); }
+  if (!F.charge) { poser('#c-col', colonneAuto()); poser('#c-fn', a.sim ? 0 : F.bloc); }
+  if (!F.charge) reformaterDurees(); // v0.67 (R164) : type avec ou sans « Temps en dixièmes »
   recap();
 }
 // Fiche de l'avion courant modifiée (nom, étiquettes, monopilote…) : on remet la saisie à jour
@@ -633,13 +657,13 @@ async function cocherCompteur(cle) {
 function recap() {
   if (!F) return;
   const a = avion(), f = FONCTIONS[F.fonction];
-  $('#r-tot').textContent = hm(a && a.sim ? 0 : F.bloc);
+  $('#r-tot').textContent = D(a && a.sim ? 0 : F.bloc);
   $('#r-col-l').textContent = !a ? 'Colonne avion' : a.sim ? 'Simulateur (FSTD)' : a.equipage === 'SP' ? 'Mono-pilote ' + (a.moteurs === 'ME' ? 'ME' : 'SE') : 'Multi-pilote';
   $('#r-fn-l').textContent = f.libelle;
   const rows = [];
-  const n = lireDuree($('#c-nuit').value), i = lireDuree($('#c-ifr').value);
-  if (n) rows.push(['Nuit', hm(n)]);
-  if (i) rows.push(['IFR', hm(i)]);
+  const n = lireChamp('#c-nuit'), i = lireChamp('#c-ifr');
+  if (n) rows.push(['Nuit', D(n)]);
+  if (i) rows.push(['IFR', D(i)]);
   rows.push(['Atterrissages', `${F.s.attJour} jour · ${F.s.attNuit} nuit`]);
   const qui = $('#f-copi').value.trim();
   rows.push(['Nom du CdB', F.fonction === 'cdb' || F.fonction === 'inst' ? 'SELF' : (qui || 'à remplir')]);
@@ -654,7 +678,7 @@ function choisirIFR(v) {
   F.ifr = v;
   $('#f-ifr').setAttribute('aria-checked', String(v));
   $('#lbl-vfr').classList.toggle('on', !v); $('#lbl-ifr').classList.toggle('on', v);
-  if (v) $('#c-ifr').value = hm(F.bloc);
+  if (v) poser('#c-ifr', F.bloc);
   recap();
 }
 
@@ -773,9 +797,9 @@ export function ouvrirSaisie(vol, opts = {}) {
   // v0.27 (R64) : TOUTES les cases repartent de zéro (le formulaire sert à chaque vol : sans cela, « Temps IFR » et
   // « Temps nuit » tapés dans le vol précédent restaient affichés, et étaient enregistrés avec le vol suivant)
   for (const c of CHAMPS) $(c).value = '';
-  $('#c-ifr').value = hm(0); $('#c-nuit').value = hm(0); $('#c-col').value = hm(0); $('#c-fn').value = hm(0);
-  $('#f-bloc').textContent = hm(0); $('#f-j1').hidden = true; $('#nuit-calc').hidden = true;
-  $('#f-bloc-in').value = F.groupe ? hm(F.bloc) : ''; $('#tv-modal').hidden = true; // v0.58 (R149, R150)
+  poser('#c-ifr', 0); poser('#c-nuit', 0); poser('#c-col', 0); poser('#c-fn', 0);
+  $('#f-bloc').textContent = D(0); $('#f-j1').hidden = true; $('#nuit-calc').hidden = true;
+  if (F.groupe) poser('#f-bloc-in', F.bloc); else poser('#f-bloc-in', null); $('#tv-modal').hidden = true; // v0.58 (R149, R150)
   $$('#v-saisie input.bad').forEach(el => el.classList.remove('bad'));
   majBoutonLF();
   $('#f-err').textContent = '';
@@ -831,12 +855,12 @@ export function ouvrirSaisie(vol, opts = {}) {
   choisirIFR(F.ifr);
   if (vol && !brouillon) {
     // On montre exactement ce qui est enregistré (aucun recalcul tant qu'on ne touche à rien)
-    $('#f-bloc').textContent = hm(F.bloc);
+    $('#f-bloc').textContent = D(F.bloc);
     $('#f-j1').hidden = !(vol.hDep && vol.hArr && minutesDuJour(vol.hArr) < minutesDuJour(vol.hDep));
-    $('#c-nuit').value = hm(vol.tempsNuit); $('#c-ifr').value = hm(vol.tempsIFR);
+    poser('#c-nuit', vol.tempsNuit); poser('#c-ifr', vol.tempsIFR);
     const c = colonnesAvion(vol, a);
-    $('#c-col').value = hm(a && a.sim ? vol.simTemps : (c.mp || c.se || c.me));
-    $('#c-fn').value = hm(vol[FONCTIONS[F.fonction].temps]);
+    poser('#c-col', a && a.sim ? vol.simTemps : (c.mp || c.se || c.me));
+    poser('#c-fn', vol[FONCTIONS[F.fonction].temps]);
   } else recalculer();
   if (brouillon) {
     choisir('.seg.mini', 1);
@@ -851,8 +875,8 @@ export function ouvrirSaisie(vol, opts = {}) {
   F.nuitMain = !!(vol && vol.nuitManuelle);
   if (vol && !brouillon) {
     const i0 = instants();
-    F.garde = { h: sigHeures(i0), n: sigNuit(i0), bloc: F.bloc, nuit: $('#c-nuit').value, ifr: $('#c-ifr').value, ifrRegle: F.ifr, col: $('#c-col').value,
-      fn: $('#c-fn').value, avionId: F.avionId, fonction: F.fonction, groupe: !!vol.volsGroupes };
+    F.garde = { h: sigHeures(i0), n: sigNuit(i0), bloc: F.bloc, nuit: lireChamp('#c-nuit') || 0, ifr: lireChamp('#c-ifr') || 0, ifrRegle: F.ifr,
+      col: lireChamp('#c-col') || 0, fn: lireChamp('#c-fn') || 0, avionId: F.avionId, fonction: F.fonction, groupe: !!vol.volsGroupes }; // minutes
     F.sigH = F.garde.h; F.sigN = F.garde.n;
   } else F.garde = null;
   F.charge = false;
@@ -935,7 +959,7 @@ async function enregistrer() {
   const i = instants();
   if ((t0 || t1) && !i) return err('Heures bloc incomplètes : tape 4 chiffres, ex. 0942.');
   if (!i && !F.heuresInconnues) return err('Indique les heures bloc (départ et arrivée).');
-  const lire = (sel, nom) => { const d = lireDuree($(sel).value); if (Number.isNaN(d)) throw new Error(`${nom} : format attendu 1h30`); return d || 0; };
+  const lire = (sel, nom) => { const d = lireChamp(sel); if (Number.isNaN(d)) throw new Error(`${nom} : format attendu ${dxSaisie() ? '1.5' : '1h30'}`); return d || 0; };
   let nuit, ifr, col, fn;
   try {
     nuit = lire('#c-nuit', 'Temps nuit'); ifr = lire('#c-ifr', 'Temps IFR');
@@ -1071,6 +1095,8 @@ function ajusterDate() {
 
 // ---------- Branchements ----------
 export function initSaisie({ fermer }) {
+  // v0.67 (R164) : une frappe dans un champ de durée compte comme une valeur tapée (même si le texte redevient celui affiché)
+  for (const sel of CHAMPS_DUREE) $(sel).addEventListener('input', () => { delete $(sel).dataset.txt; });
   // v0.37 (R90) : la ligne Avion se réajuste quand sa largeur change (saisie affichée, rotation, PC) et quand la police est prête
   // v0.44 : seulement quand la LARGEUR change, ajusté à l'image suivante (jamais de boucle « ResizeObserver loop » sur Safari)
   if (window.ResizeObserver) {
@@ -1144,7 +1170,7 @@ export function initSaisie({ fermer }) {
   // v0.32 (R76) : appliquer la nuit calculée (seulement si on le demande)
   $('#nuit-appl').addEventListener('click', () => {
     if (!F || F.nuitProposee === null) return;
-    $('#c-nuit').value = hm(F.nuitProposee); F.nuitProposee = null; $('#nuit-calc').hidden = true; recap();
+    poser('#c-nuit', F.nuitProposee); F.nuitProposee = null; $('#nuit-calc').hidden = true; recap();
   });
   $('#c-nuit').addEventListener('input', () => {
     if (F) F.nuitMain = true; // v0.64 (R159) : tapée à la main : plus jamais remplacée par un calcul (gardé avec le vol)
@@ -1155,7 +1181,9 @@ export function initSaisie({ fermer }) {
   $('#an-ign').addEventListener('click', ignorerAnomalies); // v0.61 (R155)
   const vgIn = $('#f-bloc-in');
   vgIn.addEventListener('input', () => {
-    if (/^\d+$/.test(vgIn.value.replace('h', '')) || /^\d*h?\d*$/.test(vgIn.value)) {
+    // v0.67 (R164) : en dixièmes, « 1.4 » (ou « 1,4 ») tel quel ; en heures, « 145 » -> 1h45 (comme avant)
+    if (dxSaisie()) { if (vgIn.value.includes(',')) vgIn.value = vgIn.value.replace(',', '.'); }
+    else if (/^\d+$/.test(vgIn.value.replace('h', '')) || /^\d*h?\d*$/.test(vgIn.value)) {
       const d = vgIn.value.replace(/\D/g, '').replace(/^0+(?=\d{3})/, '').slice(0, 4);
       vgIn.value = d.length > 2 ? Number(d.slice(0, -2)) + 'h' + d.slice(-2) : d;
     }

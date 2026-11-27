@@ -11,6 +11,16 @@ import { hm } from './temps.js';
 import { estSimulation } from './modele.js';
 
 export const volsGroupesDuType = (code, parType) => (parType || {})[String(code || '').toUpperCase()] === true;
+
+// v0.67 (R164, corrigé) : « Temps en dixièmes » par TYPE d'avion : réglage PARTAGÉ « dixiemesTypes » { [code]: true | false } ;
+// absent = allumé pour Dash 8 Q400 (DH8D) et CL-415 (CL2T), éteint pour les autres. Affichage seulement (accueil, fiche du vol).
+export const DIXIEMES_DEFAUT = ['DH8D', 'CL2T'];
+// (CARNET_DIXIEMES_DEFAUT : posé seulement par le serveur des anciens tests, écrits en heures et minutes avec des Dash 8 inventés)
+export function dixiemesDuType(code, parType) {
+  const c = String(code || '').toUpperCase(), p = parType || {};
+  return typeof p[c] === 'boolean' ? p[c] : (globalThis.CARNET_DIXIEMES_DEFAUT ?? DIXIEMES_DEFAUT).includes(c);
+}
+export const dixiemesAvion = (a, parType) => !!a && !a.sim && dixiemesDuType(codeType(a), parType);
 export const avionReglageVG = a => !!a && typeof a.volsGroupes === 'boolean';
 // Priorité : l'avion (s'il est réglé), puis son type
 export function volsGroupesAvion(a, parType) {

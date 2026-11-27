@@ -97,7 +97,7 @@
       <div id="via-list" class="vialist"></div>
       <div class="blocrow">
         <div class="field"><label for="f-t0">Bloc Départ</label><input class="big tm" id="f-t0" type="text" inputmode="numeric" autocomplete="off" placeholder="hhmm"></div>
-        <div class="bloccenter"><b id="f-bloc" class="num">0h00</b><input id="f-bloc-in" class="tin num" inputmode="numeric" autocomplete="off" aria-label="Temps de vol (vols groupés)" hidden></div>
+        <div class="bloccenter"><b id="f-bloc" class="num">0h00</b><input id="f-bloc-in" class="tin num" inputmode="decimal" autocomplete="off" aria-label="Temps de vol (vols groupés)" hidden></div>
         <div class="field"><label for="f-t1">Bloc Arrivée</label><input class="big tm" id="f-t1" type="text" inputmode="numeric" autocomplete="off" placeholder="hhmm"></div>
       </div>
       <!-- v0.58 (R149) : vols groupés (avion ou type réglé) : le temps de vol se tape à la main, les heures bloc restent -->
@@ -109,12 +109,12 @@
         <div class="mstep"><span class="mlbl">Règles</span>
           <div class="swwrap"><span id="lbl-vfr" class="on">VFR</span><button type="button" class="sw" id="f-ifr" role="switch" aria-checked="false" aria-label="VFR ou IFR"><span></span></button><span id="lbl-ifr">IFR</span></div></div>
         <div class="mstep"><span class="mlbl">Appr</span><span class="ctl"><button type="button" data-s="approches" data-d="-1" aria-label="Approches moins"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.75h16v2.5H4z"/></svg></button><output id="s-approches">0</output><button type="button" data-s="approches" data-d="1" aria-label="Approches plus"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.75 4h2.5v16h-2.5zM4 10.75h16v2.5H4z"/></svg></button></span></div>
-        <div class="mstep"><label class="mlbl" for="c-ifr">Temps IFR</label><input id="c-ifr" class="tin num" value="0h00" inputmode="numeric" autocomplete="off"></div>
+        <div class="mstep"><label class="mlbl" for="c-ifr">Temps IFR</label><input id="c-ifr" class="tin num" value="0h00" inputmode="decimal" autocomplete="off"></div>
       </div>
       <div class="condrow">
         <div class="mstep"><span class="mlbl">Att. Jour</span><span class="ctl"><button type="button" data-s="attJour" data-d="-1" aria-label="Atterrissages jour moins"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.75h16v2.5H4z"/></svg></button><output id="s-attJour">1</output><button type="button" data-s="attJour" data-d="1" aria-label="Atterrissages jour plus"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.75 4h2.5v16h-2.5zM4 10.75h16v2.5H4z"/></svg></button></span></div>
         <div class="mstep"><span class="mlbl">Att. Nuit</span><span class="ctl"><button type="button" data-s="attNuit" data-d="-1" aria-label="Atterrissages nuit moins"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.75h16v2.5H4z"/></svg></button><output id="s-attNuit">0</output><button type="button" data-s="attNuit" data-d="1" aria-label="Atterrissages nuit plus"><svg class="ip" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.75 4h2.5v16h-2.5zM4 10.75h16v2.5H4z"/></svg></button></span></div>
-        <div class="mstep"><label class="mlbl" for="c-nuit">Temps nuit</label><input id="c-nuit" class="tin num" value="0h00" inputmode="numeric" autocomplete="off"></div>
+        <div class="mstep"><label class="mlbl" for="c-nuit">Temps nuit</label><input id="c-nuit" class="tin num" value="0h00" inputmode="decimal" autocomplete="off"></div>
       </div>
       <!-- v0.32 (R76) : ancien vol : le calcul de nuit ne remplace jamais le temps saisi ; on le propose seulement -->
       <p class="nuit-calc" id="nuit-calc" role="status" hidden><span id="nuit-calc-t"></span><button type="button" class="linkbtn" id="nuit-appl">Appliquer</button></p>
@@ -181,8 +181,8 @@
       <div>
         <p class="hint" style="margin-bottom:4px">Tout ce qui sera écrit dans ton carnet EASA pour ce vol.</p>
         <div class="tline"><span>Temps total du vol</span><b class="rv" id="r-tot">0h00</b></div>
-        <div class="tline"><span id="r-col-l">Multi-pilote</span><input id="c-col" class="num" value="0h00" inputmode="numeric" aria-label="Temps colonne avion"></div>
-        <div class="tline"><span id="r-fn-l">Commandant de bord</span><input id="c-fn" class="num" value="0h00" inputmode="numeric" aria-label="Temps de ma fonction"></div>
+        <div class="tline"><span id="r-col-l">Multi-pilote</span><input id="c-col" class="num" value="0h00" inputmode="decimal" aria-label="Temps colonne avion"></div>
+        <div class="tline"><span id="r-fn-l">Commandant de bord</span><input id="c-fn" class="num" value="0h00" inputmode="decimal" aria-label="Temps de ma fonction"></div>
         <div id="rec-x"></div>
       </div>
     </div>

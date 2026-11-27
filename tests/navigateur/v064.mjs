@@ -62,22 +62,13 @@ try {
   verifier(Number(version.split('.')[1]) >= 64, `version ${version} (0.64 ou suivante)`);
   const carnet0 = await etatCarnet();
 
-  console.log('R161 : temps de vol en dixièmes sur l\'accueil');
+  // v0.67 (R164) : le petit temps « 1,4 » de R161 est retiré (le temps encadré suit le format choisi : test v067.mjs)
+  console.log('R161 -> R164 : plus de petit temps en dixièmes à gauche du temps de vol');
   for (const largeur of [360, 393]) {
     await p.setViewportSize({ width: largeur, height: 852 }); await p.waitForTimeout(250);
-    const m = await p.$$eval('#list .flight', l => l.map(c => {
-      const d = c.querySelector('.fl-dix'), b = c.querySelector('.fl-bloc'), r = c.querySelector('.fl-route'), sd = getComputedStyle(d), sb = getComputedStyle(b);
-      const rd = d.getBoundingClientRect(), rb = b.getBoundingClientRect(), rr = r.getBoundingClientRect(), rc = c.getBoundingClientRect();
-      const fondPlein = sb.backgroundColor !== 'rgba(0, 0, 0, 0)' && sb.color === 'rgb(255, 255, 255)';
-      return { id: c.dataset.id, dix: d.textContent, bloc: b.textContent, couleur: sd.color, attendu: fondPlein ? sb.backgroundColor : sb.color, bord: sd.borderStyle, souligne: sd.textDecorationLine,
-        petit: parseFloat(sd.fontSize) < parseFloat(sb.fontSize), gauche: rd.right <= rb.left, routeAvant: rr.right <= rd.left + 0.5, dedans: rb.right <= rc.right + 0.5, deborde: c.scrollWidth > c.clientWidth + 1 };
-    }));
-    const par = Object.fromEntries(m.map(x => [x.id, x]));
-    verifier(par.d84.dix === '1,4' && par.d84.bloc === '1h24' && par.d70.dix === '1,2' && par.d32.dix === '0,5' && par.groupe.dix === '1,5' && par.groupe.bloc === '1h27',
-      `${largeur} px : 1h24 -> 1,4 ; 1h10 -> 1,2 ; 0h32 -> 0,5 ; vol groupé 1h27 (temps saisi) -> 1,5`);
-    const pb = m.filter(x => x.couleur !== x.attendu || x.bord !== 'none' || x.souligne !== 'none' || !x.petit || !x.gauche || !x.routeAvant || !x.dedans || x.deborde);
-    verifier(!pb.length, `${largeur} px : même couleur que le temps de vol (feu : ${par.feu.couleur}), sans contour, non souligné, plus petit, à gauche, rien ne déborde ni ne chevauche (${m.length} cartes)${pb.length ? ' — ' + JSON.stringify(pb.slice(0, 2)) : ''}`);
-    await p.evaluate(() => scrollTo(0, 0)); await p.screenshot({ path: join(CAPT, `v064-dixiemes-${largeur}.png`) });
+    const m = await p.$$eval('#list .flight', l => l.map(c => ({ dix: !!c.querySelector('.fl-dix'), bloc: c.querySelector('.fl-bloc').textContent, deborde: c.scrollWidth > c.clientWidth + 1 })));
+    const par = Object.fromEntries((await p.$$eval('#list .flight', l => l.map(c => c.dataset.id))).map((id, k) => [id, m[k]]));
+    verifier(m.every(x => !x.dix && !x.deborde) && par.d84.bloc === '1h24' && par.groupe.bloc === '1h27', `${largeur} px : aucun « .fl-dix », temps en heures (format « Heures » du serveur de test), rien ne déborde`);
   }
   verifier(await etatCarnet() === carnet0, 'affichage seulement : totaux, CSV et PDF inchangés');
 

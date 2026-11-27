@@ -1,5 +1,26 @@
 # Journal des versions
 
+## v0.67 — 27/11/2026
+
+Remarques R163 et R164 (corrigée avant livraison ; R165 abandonnée). carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS
+non touchés ; aucun vol réécrit (minutes) ; TOUS les totaux, le PDF et le CSV identiques à la v0.66.
+
+**R163 : nouvelle anomalie « Att. de nuit sans temps de nuit »** : au moins 1 atterrissage de nuit (arrivée ou terrain intermédiaire)
+et temps de nuit 0 ; comme les autres (« ! », bouton jaune, cadre, Ignorer, Anomalies traitées) ; simulateur non contrôlé.
+
+**R164 : « Temps en dixièmes » par type d'avion.** Fiche du type : interrupteur « Temps en dixièmes » (comme « Vols groupés »), allumé
+d'office pour DH8D (Dash 8 Q400) et CL2T (CL-415), éteint pour les autres ; réglage partagé (synchro, sauvegarde). Pour les vols de ces
+types seulement : accueil (temps encadré, bulles IFR / Nuit) et fiche du vol (temps entre les blocs, Temps IFR, Temps nuit, Temps du
+carnet, vols groupés) en dixièmes d'heure avec un POINT (1h24 -> 1.4, arrondi R160) ; saisie en dixièmes (« 0.2 » ou « 0,2 » = 12 min).
+Un champ affiché « 1.4 » garde ses minutes exactes tant qu'on n'y tape rien. Les heures de bloc restent des heures. Tout le reste
+(totaux, 3 / 7 / 30 jours, Totaux, alerte R150, Anomalies traitées, PDF, CSV) reste en heures et minutes. Le petit « 1,4 » de R161 est
+retiré. Le réglage global « Format Tps de Vol » (R165) prévu d'abord n'existe pas : s'il arrivait par une synchro ou une sauvegarde, il
+est ignoré.
+
+**Tests** : `tests/unitaires/v067.test.js`, `tests/navigateur/v067.mjs` (types DH8D / CL2T / DR40, interrupteurs, faux NAS, ancien réglage
+reçu et restauré) ; `v064.mjs` adapté (plus de petit « 1,4 ») ; les anciens tests (écrits en heures avec des Dash 8 inventés)
+tournent sans type en dixièmes d'office (serveur de test) ; test complet ; contrôle local avec le vrai fichier.
+
 ## v0.66 — 27/11/2026
 
 Remarque R162. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (PDF, CSV, totaux,

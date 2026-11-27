@@ -1057,8 +1057,6 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .at-bas[hidden]{display:none}
 .at-res{background:#e5f3e6;border:1px solid #2e7d32;color:#1b2433;border-radius:12px;padding:8px 12px;font-weight:700;margin:0 0 10px}
 body.consultation #at-bas,body.consultation .lv-btn{display:none!important}
-/* v0.64 (R161) : temps de vol en dixièmes d'heure (carnet papier), à gauche du temps encadré : même couleur, sans contour, plus petit */
-.fl-top .fl-tps{flex:none;display:flex;align-items:center;gap:7px}
-.fl-dix{font-family:var(--f-num);font-weight:800;font-size:17px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;text-decoration:none;color:var(--vol,var(--ink))}
+/* v0.64 (R161) : petit temps en dixièmes « 1,4 » (.fl-dix) supprimé en v0.67 (R164 : le temps encadré suit le format choisi) */
 /* v0.64 (R159) : « Remettre 0h12 » sous une ligne « Nuit » */
 .lv-chg .lv-rem{display:block;margin-top:4px}

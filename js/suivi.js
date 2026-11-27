@@ -7,7 +7,7 @@
 // origine ne s'affiche plus.
 // Suivis : tous les champs du carnet. PAS suivis : rond « reporté », « ignoré », trace, « Modifié le », champs techniques (id,
 // ordre, source, mode d'affichage LOC / UTC, vol NPF, positions des feux, choix des compteurs affichés…).
-import { hm, dateFr } from './temps.js';
+import { hm, hmFixe, lireDuree, dateFr } from './temps.js';
 
 export const PREFIXE_SUIVI = 'suivi-';
 // Colonnes FlyLog ajoutées par le décodage (absentes d'un export FlyLog brut) -> champ suivi
@@ -23,8 +23,12 @@ const code = e => String((e && (e.code || e.nom)) || '').trim().toUpperCase();
 const texte = x => (x === null || x === undefined || String(x).trim() === '' ? VIDE : String(x).trim());
 const cite = x => (texte(x) === VIDE ? VIDE : `«\u00a0${String(x).trim()}\u00a0»`); // guillemets jamais seuls en bout de ligne
 const heure = h => (h ? `${h} UTC` : VIDE);
-const duree = x => hm(n(x));
-const colonne = x => (x === null || x === undefined ? 'auto' : hm(n(x)));
+// v0.67 (R164) : textes gardés TOUJOURS en heures et minutes (« 0h12 ») quel que soit le format affiché ; convertis à l'affichage
+const duree = x => hmFixe(n(x));
+const colonne = x => (x === null || x === undefined ? 'auto' : hmFixe(n(x)));
+const DUREES = new Set(['tempsTotal', 'simTemps', 'tempsCdB', 'tempsCopi', 'tempsDC', 'tempsPICUS', 'tempsInst', 'tempsExam', 'tempsSE', 'tempsME',
+  'tempsMP', 'tempsNuit', 'tempsIFR', 'tempsXC']);
+const affiche = (k, txt) => { if (!DUREES.has(k)) return txt; const m = lireDuree(txt); return m === null || Number.isNaN(m) ? txt : hm(m); };
 const FONCTIONS = { cdb: 'CdB', copi: 'Copi', dc: 'DC', inst: 'Inst', picus: 'PICUS', exam: 'Exam' };
 
 // Champs suivis, dans l'ordre d'affichage : [clé, libellé, texte(vol, opts)]
@@ -127,6 +131,9 @@ export function lignesSuivi(suivi, vol, opts = {}, nomCompteur = c => c) {
   const t = textesDuVol(vol, opts);
   return trier(Object.keys(suivi.o)).filter(k => valeur(t, k) !== suivi.o[k]).map(k => {
     const l = libelleChamp(k, nomCompteur);
-    return { k, origine: suivi.o[k], avant: `${l} : ${suivi.o[k]}`, apres: `${l} : ${valeur(t, k)}` };
+    // format « dixième » : deux durées différentes peuvent s'écrire pareil (0h12 et 0h14 : 0.2) : on les montre alors en minutes
+    let av = affiche(k, suivi.o[k]), ap = affiche(k, valeur(t, k));
+    if (av === ap) { av = suivi.o[k]; ap = valeur(t, k); }
+    return { k, origine: suivi.o[k], origineAffichee: av, avant: `${l} : ${av}`, apres: `${l} : ${ap}` };
   });
 }

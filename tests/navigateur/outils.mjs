@@ -39,7 +39,9 @@ function autreApp(chemin, res) {
 }
 
 // dossiers : où l'app est servie (le 1er donne url) ; fermerDossier(d, oui) : ce dossier répond « introuvable » (404)
-export function serveur({ dossiers = [DOSSIER] } = {}) {
+// v0.67 (R164) : dixiemesDefaut = types en dixièmes d'office. Les anciens tests ont été écrits en heures et minutes avec des Dash 8
+// inventés : aucun type ICI ([]) ; null = départ de l'app (DH8D et CL2T allumés : test v067).
+export function serveur({ dossiers = [DOSSIER], dixiemesDefaut = [] } = {}) {
   const fermes = new Set();
   const s = createServer(async (req, res) => {
     let chemin = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -50,7 +52,11 @@ export function serveur({ dossiers = [DOSSIER] } = {}) {
     if (chemin.endsWith('/')) chemin += 'index.html';
     const f = normalize(join(RACINE, chemin));
     if (!f.startsWith(RACINE) || /node_modules|tests|outils|\.git/.test(f.slice(RACINE.length))) { res.writeHead(404); return res.end(); }
-    try { const d = await readFile(f); res.writeHead(200, { 'Content-Type': TYPES[extname(f)] || 'application/octet-stream' }); res.end(d); }
+    try {
+      let d = await readFile(f);
+      if (dixiemesDefaut && chemin === '/index.html') d = d.toString().replace('<script', `<script>globalThis.CARNET_DIXIEMES_DEFAUT = ${JSON.stringify(dixiemesDefaut)};</script><script`);
+      res.writeHead(200, { 'Content-Type': TYPES[extname(f)] || 'application/octet-stream' }); res.end(d);
+    }
     catch { res.writeHead(404); res.end(); }
   });
   return new Promise(ok => s.listen(0, '127.0.0.1', () => ok({ origine: `http://127.0.0.1:${s.address().port}`, url: `http://127.0.0.1:${s.address().port}${dossiers[0]}`,

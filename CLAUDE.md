@@ -234,6 +234,15 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   fenêtre : champ du code vide (pas de focus, « LF » toléré), « <nom> · Terrain sans code OACI », « Valider » garde code et nom.
 - v0.66 : R162 ligne « À reporter sur le carnet » (`#rep-ligne`, `#rep-n`, `#rep-tous`) et `filtreReport` supprimés ; le rond `.fl-rep` reste ;
   `#an-btn` seul filtre (`filtreAnomalies`).
+- v0.67 : R163 anomalie `i` « Att. de nuit sans temps de nuit » (attNuit ≥ 1, tempsNuit 0). R164 (corrigé ; R165 « Format Tps de
+  Vol » global retiré, `formatTemps` ignoré s'il arrive) : « Temps en dixièmes » PAR TYPE, réglage PARTAGÉ `dixiemesTypes` { code: bool }
+  (absent : DH8D et CL2T allumés, `DIXIEMES_DEFAUT`), vols-groupes.js `dixiemesDuType` / `dixiemesAvion` ; fiche type `#te-dx`.
+  Tests : `serveur()` pose `CARNET_DIXIEMES_DEFAUT = []` (anciens tests en heures avec des Dash 8 inventés) ; `serveur({ dixiemesDefaut: null })`
+  = départ réel de l'app (v067.mjs).
+  Affichage seulement : carnet.js `carteVol` (fl-bloc, bulles IFR / Nuit), saisie (`dxSaisie`, `D`, `poser` / `lireChamp` : data-min =
+  minutes exactes tant que le champ n'a pas reçu de frappe ; `reformaterDurees` au changement d'avion). temps.js `enDixiemesPoint`
+  (« 1.4 »), `dureeAffichee`, `lireDuree` lit « 1.4 » / « 1,4 ». Totaux, PDF, CSV, alerte R150, Anomalies traitées : heures et minutes.
+  `.fl-dix` (R161) supprimé.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

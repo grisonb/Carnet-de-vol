@@ -24,7 +24,7 @@ import { ecranNas, ecranRestaurerNas, resumeCopieNas, configNas, etatNas, lireDe
 import { ecranSynchro, resumeSynchroActuel } from './synchro.js';
 import { ecranCompteurs, resumeCompteurs, htmlCases, basculerCase } from './compteurs.js';
 import { compteursDuType } from '../compteurs.js';
-import { volsGroupesDuType } from '../vols-groupes.js';
+import { volsGroupesDuType, dixiemesDuType } from '../vols-groupes.js';
 import { copieNasAJour, depuis } from '../copieur.js';
 import { majBadgeAnomalies } from './anomalies-traitees.js';
 
@@ -271,6 +271,9 @@ function editerType(t) {
     <div class="sec" id="te-vgsec"><h3>Vols groupés</h3>
       <div class="tline"><span id="te-vg-l">Vols groupés</span><button type="button" class="sw" role="switch" id="te-vg" aria-checked="false" aria-labelledby="te-vg-l"><span></span></button></div>
       <p class="hint">Plusieurs rotations sur une ligne (largage para, remorquage…) : dans la saisie, une case « Vols groupés » permet de taper le temps de vol à la main. Pour tous les avions de ce type, sauf avion réglé autrement dans sa fiche.</p></div>
+    <div class="sec" id="te-dxsec"><h3>Temps en dixièmes</h3>
+      <div class="tline"><span id="te-dx-l">Temps en dixièmes</span><button type="button" class="sw" role="switch" id="te-dx" aria-checked="false" aria-labelledby="te-dx-l"><span></span></button></div>
+      <p class="hint">Les vols de ce type affichent leurs temps en dixièmes d'heure (1h24 → 1.4) sur l'accueil et dans la fiche du vol, et se saisissent en dixièmes (0.2 = 12 min). Totaux, PDF et CSV restent en heures et minutes.</p></div>
     <button type="button" class="bigbtn" id="te-ok">Enregistrer</button><button type="button" class="bigbtn second" id="te-no">Retour</button>`);
   // v0.56 (R144) : compteurs par défaut du type (réglage « compteursTypes » ; jamais changé : compteurs de départ)
   let cases = compteursDuType(v.code, v, reglage('compteursTypes'), reglage('compteurs'));
@@ -284,6 +287,12 @@ function editerType(t) {
   const rendreVG = () => c.querySelector('#te-vg').setAttribute('aria-checked', String(vg));
   rendreVG();
   c.querySelector('#te-vg').addEventListener('click', () => { vg = !vg; rendreVG(); });
+  // v0.67 (R164) : « Temps en dixièmes » du type (réglage « dixiemesTypes » ; allumé d'office pour DH8D et CL2T)
+  const dxDepart = dixiemesDuType(v.code, reglage('dixiemesTypes'));
+  let dx = dxDepart;
+  const rendreDX = () => c.querySelector('#te-dx').setAttribute('aria-checked', String(dx));
+  rendreDX();
+  c.querySelector('#te-dx').addEventListener('click', () => { dx = !dx; rendreDX(); });
   c.querySelector('#te-no').addEventListener('click', ecranTypes);
   c.querySelector('#te-ok').addEventListener('click', async () => {
     const code = $('#te-code').value.trim().toUpperCase();
@@ -294,6 +303,7 @@ function editerType(t) {
     const parType = reglage('compteursTypes') || {};
     if (JSON.stringify(cases) !== casesDepart || (!t && cases.length)) await enregistrerReglage('compteursTypes', { ...parType, [code]: cases });
     if (vg !== vgDepart || (!t && vg)) await enregistrerReglage('volsGroupesTypes', { ...(reglage('volsGroupesTypes') || {}), [code]: vg });
+    if (dx !== dxDepart) await enregistrerReglage('dixiemesTypes', { ...(reglage('dixiemesTypes') || {}), [code]: dx });
     // v0.56 : seulement les compteurs changés : le type n'est pas marqué « modifié »
     const pareil = t && !t.inconnu && ['constructeur', 'modele', 'equipage', 'moteurs', 'moteur', 'surface', 'train'].every(k => String(t[k] ?? '') === String(n[k] ?? ''));
     if (pareil) { ecranTypes(); return; }

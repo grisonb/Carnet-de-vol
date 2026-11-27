@@ -26,6 +26,7 @@ export function libelleAnomalie(cle) {
     'd-fn': 'Temps des fonctions différent du temps de vol', 'd-inst': 'Temps instructeur plus grand que le temps de vol',
     'd-exam': 'Temps examinateur plus grand que le temps de vol', e: 'Arrivée avant le départ ou vol de plus de 10 h',
     f: 'Vols qui se chevauchent', g: 'Intermédiaire = départ ou arrivée', h: 'Vol saisi deux fois',
+    i: 'Att. de nuit sans temps de nuit', // v0.67 (R163)
   })[t] || 'Anomalie';
 }
 
@@ -52,6 +53,7 @@ function parties(cle, v, immatDe) {
     case 'e': return [date, dep, arr, T];
     case 'f': return [date, dep, arr];
     case 'h': return [date, dep, arr, P('av', `Avion : ${immatDe(v) || '—'}`)];
+    case 'i': return [P('attNuit', `Att. nuit : ${n(v.attNuit)}`), P('nuit', `Nuit : ${hm(n(v.tempsNuit))}`)]; // v0.67 (R163)
     default: return [];
   }
 }
