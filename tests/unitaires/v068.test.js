@@ -25,8 +25,8 @@ test('montants en centimes, écrits à la française', () => {
 test('vol journée : 87,00 € ; deux vols le même jour : une seule ligne ; barème absent : « Montant manquant »', () => {
   let l = L([vol('a', '2026-06-14', { type: 'journee' }), vol('b', '2026-06-14', { type: 'journee' }, { hDep: '14:00' })]);
   assert.equal(l.length, 1); assert.equal(l[0].montant, 8700); assert.equal(l[0].vols.length, 2);
-  l = lignesFrais({ vols: [vol('a', '2025-06-14', { type: 'journee' })], baremes });
-  assert.equal(montantLigne(l[0]), 'Montant manquant'); assert.equal(anneeFrais(l, 2025).total, 0);
+  l = lignesFrais({ vols: [vol('a', '2021-06-14', { type: 'journee' })], baremes }); // v0.69 : 2022 à 2025 ont un barème intégré
+  assert.equal(montantLigne(l[0]), 'Montant manquant'); assert.equal(anneeFrais(l, 2021).total, 0);
 });
 
 test('J+2 : deux jours qui se suivent = une ligne (1,5 × 174 = 261) ; seul : incomplet, 0 € ; Monde : 2 indemnités', () => {
@@ -64,10 +64,11 @@ test('détachement Monde : 3 jours × 203,75 = 611,25 ; pays sans montant : « M
 test('années : une ligne par année (date de début), plus récente en haut ; total ; barème par année, France d\'office', () => {
   const l = L([vol('a', '2026-06-14', { type: 'journee' }), vol('b', '2025-12-20', { type: 'journee' })], [{ id: 'w', du: '2025-12-30', au: '2026-01-02', pays: 'France', nuits: {} }]);
   assert.deepEqual(anneesFrais(l), ['2026', '2025']);
-  assert.equal(anneeFrais(l, 2025).lignes.length, 2, 'le détachement du 30/12 au 02/01 compte en 2025');
-  assert.equal(anneeFrais(l, 2026).total, 8700);
-  assert.deepEqual(baremeDe(new Map(), 2024).pays, [{ nom: 'France', montant: null, zone: 'euro' }]);
-  assert.equal(baremeDe(new Map([['2024', { journee: 1, pays: [{ nom: 'Espagne', montant: 1, zone: 'euro' }] }]]), 2024).pays[0].nom, 'France');
+  // v0.69 (R167) : le détachement du 30/12 au 02/01 est coupé : nuits du 30 et du 31 en 2025, nuit du 01 (1,5) en 2026
+  assert.equal(anneeFrais(l, 2025).lignes.length, 2);
+  assert.equal(anneeFrais(l, 2026).total, 8700 + 26100);
+  assert.deepEqual(baremeDe(new Map(), 2021).pays.map(p => [p.nom, p.montant, p.zone]), [['France', null, 'euro']]);
+  assert.equal(baremeDe(new Map([['2021', { journee: 1, pays: [{ nom: 'Espagne', montant: 1, zone: 'euro' }] }]]), 2021).pays[0].nom, 'France');
 });
 
 test('synchro et sauvegarde : détachements et barèmes partagés, case du vol fusionnée (la plus récente), carnet EASA inchangé', () => {

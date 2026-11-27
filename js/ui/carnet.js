@@ -15,6 +15,8 @@ import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
 import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide, dureeAffichee } from '../temps.js';
 import { dixiemesAvion } from '../vols-groupes.js';
+import { typeDuVol } from '../frais.js';
+import { detachementsActuels } from './frais.js';
 import { heuresLocales } from '../fuseaux.js';
 import { fuseau } from '../terrains.js';
 import { FONCTIONS, COMPTEURS, identiteAvion, estSimulation } from '../modele.js';
@@ -193,11 +195,12 @@ export function carteVol(v, voir = false) {
 // v0.61 (R154) : rond « reporté sur le carnet papier » en bas à droite (vert coché = reporté ; vide = à reporter).
 // Zone d'appui 40 × 40 px ; un appui coche / décoche seulement (n'ouvre pas le vol). Pas pour un vol de simulation.
 // dessiné en SVG : trait exact de 1,5 px (Chrome arrondit une bordure CSS de 1,5 px à 1 px)
-const COCHE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="7.25"/><path d="M4.6 8.3l2.3 2.3 4.5-4.9"/></svg>';
+// v0.69 (R170) : anneau noir (vol avec frais d'escale) : 2 px d'espace puis 2 px de trait, autour du rond (caché sinon)
+const COCHE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle class="fe-fond" cx="8" cy="8" r="9"/><circle class="fe-anneau" cx="8" cy="8" r="11"/><circle class="rond" cx="8" cy="8" r="7.25"/><path d="M4.6 8.3l2.3 2.3 4.5-4.9"/></svg>';
 function rondReport(v) {
   if (estSimulation(v)) return '';
-  const fait = !estAReporter(v);
-  return `<span class="fl-rep${fait ? ' on' : ''}" role="checkbox" aria-checked="${fait}" aria-label="${fait ? 'Reporté sur le carnet papier' : 'À reporter sur le carnet papier'}" data-rep="${esc(v.id)}">${COCHE}</span>`;
+  const fait = !estAReporter(v), frais = !!typeDuVol(v, detachementsActuels()); // v0.69 (R170)
+  return `<span class="fl-rep${fait ? ' on' : ''}${frais ? ' frais' : ''}" role="checkbox" aria-checked="${fait}" aria-label="${fait ? 'Reporté sur le carnet papier' : 'À reporter sur le carnet papier'}" data-rep="${esc(v.id)}">${COCHE}</span>`;
 }
 // v0.61 (R155) : bouton jaune « N vols à vérifier » (vols avec « ! ») ; appui : seulement ces vols, nouvel appui : tous.
 // v0.66 (R162) : la ligne « À reporter sur le carnet : N vols » et son filtre sont supprimés (le rond de chaque carte reste).

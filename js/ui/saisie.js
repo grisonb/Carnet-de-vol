@@ -926,6 +926,7 @@ function fixerLecture(oui) {
   s.classList.toggle('lecture', oui);
   document.body.classList.toggle('vol-lecture', oui);
   for (const el of s.querySelectorAll('input, textarea')) {
+    if (el.closest('#fe-zone')) continue; // v0.69 : frais d'escale utilisables en lecture (pays de la nuit)
     if (oui && !el.readOnly) { el.readOnly = true; el.dataset.lecture = '1'; }
     else if (!oui && el.dataset.lecture) { el.readOnly = false; delete el.dataset.lecture; }
   }

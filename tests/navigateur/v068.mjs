@@ -114,14 +114,16 @@ async function bareme(p, journee, pays) {
     if (i >= rows.length) await p.click('#fb-add');
     const r = p.locator('#fb-pays .fb-row').nth(i);
     if (i > 0) await r.locator('.fb-nom').fill(pays[i][0]);
-    await r.locator('.fb-m').fill(pays[i][1]); await r.locator('.fb-z').selectOption(pays[i][2]);
+    await r.locator('.fb-m').fill(pays[i][1]);
+    if (await r.locator('select.fb-z').count()) await r.locator('.fb-z').selectOption(pays[i][2]); // v0.69 : ligne du bulletin : zone du bulletin
   }
   await p.click('#fb-ok'); await p.waitForTimeout(300);
 }
 const detachement = async (p, du, au, pays, nuits = {}) => {
   await p.fill('#dt-du', du); await p.dispatchEvent('#dt-du', 'change'); await p.fill('#dt-au', au); await p.dispatchEvent('#dt-au', 'change');
-  await p.selectOption('#dt-pays', pays); await p.waitForTimeout(100);
-  for (const [d, x] of Object.entries(nuits)) await p.selectOption(`#dt-nuits [data-nuit="${d}"]`, x);
+  // v0.69 (R169) : le pays se tape (liste du barème, recherche par les premières lettres)
+  await p.fill('#dt-pays', pays); await p.dispatchEvent('#dt-pays', 'change'); await p.waitForTimeout(100);
+  for (const [d, x] of Object.entries(nuits)) { await p.fill(`#dt-nuits [data-nuit="${d}"]`, x); await p.dispatchEvent(`#dt-nuits [data-nuit="${d}"]`, 'change'); }
   await p.waitForTimeout(100);
   return { montant: await p.textContent('#dt-montant'), calc: await p.textContent('#dt-calc'), vols: await p.textContent('#dt-vols'),
     modifiees: await p.$$eval('#dt-nuits .dt-nuit.modifie', l => l.length) };
@@ -228,26 +230,27 @@ try {
   await detachement(p, '2025-12-30', '2026-01-02', 'France'); await p.click('#dt-ok'); await p.waitForTimeout(300); await fermer(p);
   await annee(p, '2025'); await bareme(p, '80', [['France', '160,00', 'euro']]);
   l = await lignes(p);
-  verifier(l.some(x => x.startsWith('Détachement 4 jours 560,00 €') && x.includes('30/12 → 02/01/2026')) && (await total(p)) === '640,00 €', 'détachement du 30/12 au 02/01 : compté en 2025 (date de début), barème 2025 : 560,00 € ; total 2025 640,00 €');
+  // v0.69 (R167) : détachement à cheval sur deux années : nuits du 30 et du 31 en 2025 (2 × 160,00 saisi), nuit du 01 en 2026 (1,5 × 174,00)
+  verifier(l.some(x => x.startsWith('Détachement 4 jours (partie 2025) 320,00 €') && x.includes('30/12 → 31/12/2025')) && (await total(p)) === '400,00 €', 'détachement du 30/12 au 02/01 : partie 2025 = 320,00 € ; total 2025 400,00 €');
   await p.click('#fa-ret'); await p.waitForSelector('#fr-l');
   const an = await p.$$eval('#fr-l [data-an]', l => l.map(b => b.innerText.replace(/\s+/g, ' ')));
-  verifier(an.length === 2 && an[0].startsWith('2026') && an[0].includes('1 568,25 €') && an[1].includes('640,00 €'), `une ligne par année : ${an.join(' | ')}`);
+  verifier(an.length === 2 && an[0].startsWith('2026') && an[0].includes('1 829,25 €') && an[1].includes('400,00 €'), `une ligne par année : ${an.join(' | ')}`);
   await p.screenshot({ path: join(CAPT, 'v068-annees.png') });
   await p.click('#ou-x');
 
   console.log('PDF de l\'année');
   const m = await p.evaluate(async () => (await import('./js/ui/frais.js')).modelePdf('2026'));
-  verifier(JSON.stringify(m.resume.map(x => x.join(' | ').replace(/\u202f/g, ' '))) === JSON.stringify(['Vols journée | 1 | 87,00 €', 'J+2 | 1 | 261,00 €', 'Détachements | 3 (9 jours, 6 nuits) | 1 220,25 €', 'Total 2026 |  | 1 568,25 €']),
+  verifier(JSON.stringify(m.resume.map(x => x.join(' | ').replace(/\u202f/g, ' '))) === JSON.stringify(['Vols journée | 1 | 87,00 €', 'J+2 | 1 | 261,00 €', 'Détachements | 4 (11 jours, 7 nuits) | 1 481,25 €', 'Total 2026 |  | 1 829,25 €']),
     `résumé : ${m.resume.map(x => x.join(' ')).join(' · ')}`);
   const titres = m.lignes.map(x => x.titre);
-  verifier(titres[0].startsWith('J+2 · 02/06') && titres[1].startsWith('Vol journée · 14/06') && titres[2].startsWith('J+2 incomplet') && titres.at(-1).startsWith('Détachement 2 jours'), `ordre chronologique : ${titres.join(' | ')}`);
-  const j2 = m.lignes[0];
+  verifier(titres[0].startsWith('Détachement 4 jours (partie 2026) — suite') && titres[1].startsWith('J+2 · 02/06') && titres[2].startsWith('Vol journée · 14/06') && titres[3].startsWith('J+2 incomplet') && titres.at(-1).startsWith('Détachement 2 jours'), `ordre chronologique : ${titres.join(' | ')}`);
+  const j2 = m.lignes[1];
   verifier(j2.vols.length === 2 && JSON.stringify(j2.vols[0].slice(0, 9)) === JSON.stringify(['02/06/26', 'LFTW', '09h00', 'LFMN', '10h24', 'DH8D', 'F-XZZA', '1.4', 'CdB']) && j2.detail === 'Nuit : France — calcul : 1,5 indemnité × 174,00 €',
     `lignes du carnet sous chaque ligne (Dash en dixièmes : ${j2.vols[0][7]}, heures de bloc ${j2.vols[0][2]})`);
-  verifier(m.lignes.find(x => x.titre.startsWith('Détachement 4')).detail === 'Nuits : 06 Espagne · 07 Portugal · 08 Espagne — calcul : 1 + 1 + 1,5 indemnité × 174,00 €', 'détail : nuits et calcul');
+  verifier(m.lignes.find(x => x.titre.startsWith('Détachement 4 jours · 06/07')).detail === 'Nuits : 06 Espagne · 07 Portugal · 08 Espagne — calcul : 1 + 1 + 1,5 indemnité × 174,00 €', 'détail : nuits et calcul');
   const pdf = await p.evaluate(async () => { const f = await import('./js/ui/frais.js'), d = f.dessinerPdf(window.jspdf.jsPDF, f.modelePdf('2026')), s = d.output();
-    return { pages: d.getNumberOfPages(), euro: s.includes('1 568,25 \x80'), resume: s.includes('(RÉSUMÉ)') || s.includes('(R\xc9SUM\xc9)'), dix: s.includes('(1.4)') }; });
-  verifier(pdf.pages >= 1 && pdf.euro && pdf.dix, `PDF dessiné (${pdf.pages} page) : « 1 568,25 € », temps « 1.4 »`);
+    return { pages: d.getNumberOfPages(), euro: s.includes('1 829,25 \x80'), resume: s.includes('(RÉSUMÉ)') || s.includes('(R\xc9SUM\xc9)'), dix: s.includes('(1.4)') }; });
+  verifier(pdf.pages >= 1 && pdf.euro && pdf.dix, `PDF dessiné (${pdf.pages} page) : « 1 829,25 € », temps « 1.4 »`);
   await annee(p, '2026');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#fa-pdf')]);
   verifier(/^frais-escale-2026.*\.pdf$/.test(dl.suggestedFilename()), `« Exporter 2026 en PDF » : ${dl.suggestedFilename()}`);

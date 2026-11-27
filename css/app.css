@@ -1009,12 +1009,12 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 .flight.swfront{position:relative}
 .fl-rep{position:absolute;right:0;bottom:0;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fl-rep svg{width:16px;height:16px;overflow:visible}
-.fl-rep circle{fill:var(--surface);stroke:#9aa3b1;stroke-width:1.5}
+.fl-rep .rond{fill:var(--surface);stroke:#9aa3b1;stroke-width:1.5}
 .fl-rep path{fill:none;stroke:transparent;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.fl-rep.on circle{fill:#2e7d32;stroke:#2e7d32}
+.fl-rep.on .rond{fill:#2e7d32;stroke:#2e7d32}
 .fl-rep.on path{stroke:#fff}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fl-rep circle{stroke:#7d8a99}}
-:root[data-theme="dark"] .fl-rep circle{stroke:#7d8a99}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fl-rep .rond{stroke:#7d8a99}}
+:root[data-theme="dark"] .fl-rep .rond{stroke:#7d8a99}
 .flight .chips,.flight .fl-rem,.flight .fl-voir{padding-right:28px}
 /* v0.61 (R155) : triangle « ! » (20 × 18 px, juste à gauche de la zone d'appui du rond ; les dernières lignes s'arrêtent avant),
    bouton jaune sous OPS / IFR (même hauteur que leurs cases), cadre « Anomalie détectée » de la saisie */
@@ -1092,3 +1092,25 @@ body.consultation #at-bas,body.consultation .lv-btn{display:none!important}
 .fr-l.incomplet{border-style:dashed}
 .fr-tot{font-size:17px;margin:10px 0}
 #v-saisie.lecture #fe-zone{pointer-events:auto} /* v0.68 : cases utilisables en lecture (comme « Ignorer ») */
+/* v0.69 (R169) : barème : marques « bulletin » / « modifié » / « ajouté », montants datés, recherche ; R168 étapes des lignes */
+.fb-info{grid-column:1 / -1;color:var(--muted);font-size:13px;line-height:1.35}
+.fb-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:0 5px;margin-right:6px;border:1px solid currentColor;vertical-align:1px}
+.fb-t-bulletin{color:var(--muted)}
+.fb-t-modifie{color:#b45309}
+.fb-t-ajoute{color:#2e7d32}
+.fb-modifie .fb-m{border-color:#b45309}
+.fb-row[hidden]{display:none}
+.fb-q{margin:4px 0 6px}
+.fb-src{margin:-4px 0 8px}
+.fr-et{font-weight:700;overflow-wrap:anywhere}
+.pays-in{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);font:inherit;font-weight:700;padding:4px 8px;min-width:0;max-width:60%}
+#dt-pays{max-width:100%;width:100%}
+.dt-nuit.modifie .pays-in{background:#fff8d6;color:#1b2433}
+/* v0.69 (R170) : vol avec frais d'escale : fin cercle noir autour du rond (2 px d'espace de la couleur de la carte, 2 px de trait) */
+.fl-rep .fe-fond,.fl-rep .fe-anneau{display:none;fill:none}
+.fl-rep.frais .fe-fond{display:inline;stroke:var(--surface);stroke-width:2}
+.fl-rep.frais .fe-anneau{display:inline;stroke:#111;stroke-width:2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fl-rep.frais .fe-anneau{stroke:var(--ink)}}
+:root[data-theme="dark"] .fl-rep.frais .fe-anneau{stroke:var(--ink)}
+.fb-row.fb-off{grid-template-columns:minmax(0,1fr) 7.5em;align-items:center;padding:4px 0}
+.fb-row.fb-off .fb-nom{grid-column:auto;border-color:transparent;background:none;font-weight:700;padding-left:0}

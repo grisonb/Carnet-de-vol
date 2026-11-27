@@ -1,5 +1,33 @@
 # Journal des versions
 
+## v0.69 — 27/11/2026
+
+Remarques R167 à R170. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,
+PDF, CSV, anomalies identiques).
+
+**R169 : barèmes officiels 2022 à 2025 intégrés** (bulletins syndicaux, données publiques de la DGFiP : js/baremes-officiels.js). Vol
+journée et tous les pays (groupes Euro et Moyen en Euro-Europe, Monde en Monde) ; montants datés (« dès le 16/05 », « du … au … » :
+choisis d'après la date de la nuit, ou du jour en Monde) ; villes en choix à part (« États-Unis – New York », « Japon – Tokyo »…). Ce
+qui a été saisi à la main passe avant et reste gardé (seul ce qui diffère du bulletin est enregistré) ; marques discrètes « bulletin »,
+« modifié » (avec le montant du bulletin), « ajouté » ; recherche dans le barème ; lignes du bulletin sur une ligne. Autres années :
+à saisir comme avant. Choix du pays (J+2, Détachement, chaque nuit) : liste du barème de l'année, recherche par les premières lettres.
+
+**R167 : détachement à cheval sur deux années** : une ligne par année (« partie 2025 » / « partie 2026 »), chaque nuit (jour en Monde)
+au barème de son année, le 1,5 seulement sur la dernière nuit du détachement entier ; les deux parties ouvrent le même détachement ;
+PDF : « début » / « suite » avec les vols de sa partie.
+
+**R168 : toutes les étapes** des vols de chaque ligne J+2 et Détachement, enchaînées (« LFTW → LFML → LFQQ → LFML → LFTW ») : liste,
+PDF et résumé du PDF.
+
+**R170 : cercle noir des frais d'escale** (maquette validée) : sur l'accueil, un vol avec frais (coché, ou dans un détachement) a un fin
+cercle noir autour du rond « reporté », séparé par un petit espace ; le rond garde son rôle et reste cliquable.
+
+Défauts corrigés en route : en lecture seule, « Pays de la nuit » ne se tapait pas ; dans « Détachement », passer du pays principal à une
+nuit redessinait les nuits et perdait la nuit touchée.
+
+**Tests** : `tests/unitaires/v069.test.js`, `tests/navigateur/v069.mjs` ; v068 (choix du pays tapé, barème 2025 intégré, détachement de
+fin d'année coupé) et v061 (rond) adaptés ; test rapide et tests touchés ; contrôle local avec le vrai fichier.
+
 ## v0.68 — 27/11/2026
 
 Remarque R166. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données du carnet inchangées (PDF EASA,

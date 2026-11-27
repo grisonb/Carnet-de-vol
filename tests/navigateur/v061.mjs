@@ -136,7 +136,7 @@ try {
   verifier(r.n === 50 && r.verts === 50, `50 ronds verts (${r.verts} verts, ${r.vides} vides)`);
   verifier(await aReporter(A.p) === 0 && await sansLigne(A.p), 'aucun vol à reporter, aucune ligne « À reporter »');
   verifier((await vols(A.p)).every(v => !('aReporter' in v) && v.modifieLe === H), 'aucun vol réécrit (pas de nouveau champ, même date d\'enregistrement)');
-  const style = await A.p.evaluate(() => { const c = document.querySelector('#list .fl-rep circle'), s = getComputedStyle(c), coche = getComputedStyle(document.querySelector('#list .fl-rep path'));
+  const style = await A.p.evaluate(() => { const c = document.querySelector('#list .fl-rep .rond') /* v0.69 : le rond (le cercle noir des frais est à part) */, s = getComputedStyle(c), coche = getComputedStyle(document.querySelector('#list .fl-rep path'));
     return { w: c.getBoundingClientRect().width + parseFloat(s.strokeWidth), b: s.strokeWidth, fond: s.fill, coche: coche.stroke }; });
   verifier(style.w === 16 && style.b === '1.5px' && style.fond === 'rgb(46, 125, 50)' && style.coche === 'rgb(255, 255, 255)', `rond 16 px, trait ${style.b}, vert plein (${style.fond}) avec ✓ blanc`);
 

@@ -184,7 +184,7 @@
         <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="j2">J+2</button>
         <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="detachement">DÉTACHEMENT</button>
       </div>
-      <div class="fe-pays" id="fe-pays-z" hidden><label for="fe-pays">Pays de la nuit</label><select id="fe-pays"></select></div>
+      <div class="fe-pays" id="fe-pays-z" hidden><label for="fe-pays">Pays de la nuit</label><input id="fe-pays" class="pays-in" autocomplete="off" autocapitalize="words" placeholder="Tape les premières lettres"></div>
       <p class="hint fe-info" id="fe-info"></p>
       <button type="button" class="linkbtn" id="fe-voir" hidden>Voir le détachement ›</button>
     </div>
@@ -493,7 +493,7 @@
 <div class="modal" id="dt-modal" hidden role="dialog" aria-modal="true" aria-labelledby="dt-t" style="z-index:34"><div class="mbox dt-box">
   <h3 id="dt-t">Détachement</h3>
   <div class="row2"><div class="field"><label for="dt-du">Du</label><input type="date" id="dt-du"></div><div class="field"><label for="dt-au">Au</label><input type="date" id="dt-au"></div></div>
-  <div class="field"><label for="dt-pays">Pays principal</label><select id="dt-pays"></select></div>
+  <div class="field"><label for="dt-pays">Pays principal</label><input id="dt-pays" class="pays-in" autocomplete="off" autocapitalize="words" placeholder="Tape les premières lettres"></div>
   <h4 class="dt-h">Nuits (modifiables)</h4>
   <div id="dt-nuits"></div>
   <p class="hint" id="dt-vols"></p>

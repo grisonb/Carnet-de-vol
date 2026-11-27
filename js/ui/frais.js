@@ -7,6 +7,7 @@ import { etat, reglage, enregistrerReglage, enregistrerVol, enConsultation } fro
 import { lignesFrais, anneeFrais, anneesFrais, baremeDe, euros, lireMontant, detachementDe, detachementsActifs, nuitsDe, cleBareme, cleDetachement,
   PREFIXE_DETACHEMENT, PREFIXE_BAREME, titreLigne, datesLigne, lieuLigne, montantLigne, paysDuBareme } from '../frais.js';
 import { ajouterJours, dateFr, heureH, dureeAffichee, aujourdhui } from '../temps.js';
+const norm = t => String(t || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 import { dixiemesAvion } from '../vols-groupes.js';
 import { remarqueCarnet } from '../missions.js';
 import { nomFichier } from '../sauvegarde.js';
@@ -28,6 +29,12 @@ export function lignesActuelles() {
   if (cache.cle !== cle || cache.vols !== etat.vols) cache = { cle, vols: etat.vols, lignes: lignesFrais(donneesFrais()) };
   return cache.lignes;
 }
+// v0.69 (R170) : détachements (pour le cercle noir de l'accueil), recalculés seulement quand le carnet change
+let cacheDet = { cle: null, dets: [] };
+export function detachementsActuels() {
+  if (cacheDet.cle !== etat.revision) cacheDet = { cle: etat.revision, dets: donneesFrais().detachements };
+  return cacheDet.dets;
+}
 const ligneDuVol = id => lignesActuelles().find(x => x.vols.some(v => v.id === id)) || null;
 
 // ---------- Zone de la fiche du vol ----------
@@ -38,10 +45,22 @@ export const fraisPourNouveauVol = () => fraisNouveau;
 const volEnregistre = () => (ctx && ctx.id ? etat.vols.find(v => v.id === ctx.id) || null : null);
 const fraisCourant = () => { const v = volEnregistre(); return v ? v.frais || null : fraisNouveau; };
 const dateCourante = () => { const v = volEnregistre(); return v ? v.date : (ctx && ctx.date()) || ''; };
-function optionsPays(annee, choisi) {
-  const b = baremeDe(donneesFrais().baremes, annee), noms = b.pays.map(p => p.nom);
-  if (choisi && !noms.some(n => n.toUpperCase() === choisi.toUpperCase())) noms.push(choisi);
-  return noms.map(n => `<option${n === choisi ? ' selected' : ''}>${esc(n)}</option>`).join('');
+// v0.69 (R169) : choix du pays = champ avec la liste des pays du barème de l'année (recherche en tapant les premières lettres)
+function listePays(annee) {
+  const id = `pays-${annee}`;
+  let dl = document.getElementById(id);
+  if (!dl) { dl = document.createElement('datalist'); dl.id = id; document.body.append(dl); }
+  dl.innerHTML = baremeDe(donneesFrais().baremes, annee).pays.map(p => `<option value="${esc(p.nom)}"></option>`).join('');
+  return id;
+}
+function poserPays(el, annee, valeur) { el.setAttribute('list', listePays(annee)); el.value = valeur || ''; el.dataset.avant = el.value; el.dataset.annee = annee; }
+// Valeur tapée -> nom du barème (accents et majuscules ignorés) ; inconnu : message, l'ancienne valeur revient ; null si refusé
+function lirePays(el) {
+  const p = paysDuBareme(baremeDe(donneesFrais().baremes, el.dataset.annee), el.value);
+  if (p) { el.value = p.nom; el.dataset.avant = p.nom; return p.nom; }
+  if (el.value.trim()) toast(`« ${el.value.trim()} » n'est pas dans le barème ${el.dataset.annee} : ajoute-le dans Plus › Frais d'escale`, 3500);
+  el.value = el.dataset.avant || '';
+  return null;
 }
 export function rendreFrais() {
   if (!ctx) return;
@@ -49,7 +68,7 @@ export function rendreFrais() {
   const type = det ? 'detachement' : (f && f.type) || null;
   document.querySelectorAll('#fe-zone [data-fe]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.fe === type)));
   $('#fe-pays-z').hidden = type !== 'j2';
-  if (type === 'j2') $('#fe-pays').innerHTML = optionsPays(date.slice(0, 4), (f && f.pays) || 'France');
+  if (type === 'j2') poserPays($('#fe-pays'), date.slice(0, 4), (f && f.pays) || 'France');
   $('#fe-voir').hidden = !det;
   let info = '';
   const b = baremeDe(d.baremes, (date || aujourdhui()).slice(0, 4));
@@ -100,11 +119,12 @@ export function ouvrirDetachement(det, { du, apres } = {}) {
 }
 function rendreDetachement() {
   const annee = (dt.du || aujourdhui()).slice(0, 4);
-  $('#dt-pays').innerHTML = optionsPays(annee, dt.pays);
+  poserPays($('#dt-pays'), annee, dt.pays);
   const valide = dt.du && dt.au && dt.du <= dt.au;
   const n = valide ? nuitsDe(dt) : [];
-  $('#dt-nuits').innerHTML = n.map(x => `<div class="dt-nuit${dt.nuits[x.date] ? ' modifie' : ''}"><span>Nuit du ${dateFr(x.date).slice(0, 5)}</span><select data-nuit="${x.date}" aria-label="Nuit du ${dateFr(x.date)}">${optionsPays(annee, x.pays)}</select></div>`).join('')
+  $('#dt-nuits').innerHTML = n.map(x => `<div class="dt-nuit${dt.nuits[x.date] ? ' modifie' : ''}"><span>Nuit du ${dateFr(x.date).slice(0, 5)}</span><input class="pays-in" data-nuit="${x.date}" autocomplete="off" aria-label="Nuit du ${dateFr(x.date)}"></div>`).join('')
     || '<p class="hint">Aucune nuit (un seul jour).</p>';
+  for (const el of document.querySelectorAll('#dt-nuits [data-nuit]')) poserPays(el, el.dataset.nuit.slice(0, 4), n.find(x => x.date === el.dataset.nuit).pays); // barème de l'année de la nuit
   const d = donneesFrais(), autres = d.detachements.filter(x => x.id !== dt.id);
   const l = valide ? lignesFrais({ vols: etat.vols, detachements: [...autres, dt], baremes: d.baremes }).find(x => x.detachementId === dt.id) : null;
   const vols = l ? l.vols : [];
@@ -151,21 +171,41 @@ export function ecranFrais() {
       || '<p class="hint">Aucun vol coché pour l\'instant.</p>'}</div>`);
   c.querySelector('#fr-l').addEventListener('click', e => { const b = e.target.closest('[data-an]'); if (b) ecranAnneeFrais(b.dataset.an); });
 }
+// v0.69 (R169) : lignes du barème : « bulletin » (barème officiel intégré), « modifié » (saisi à la main, passe avant), « ajouté »
+const TAGS = { bulletin: 'bulletin', modifie: 'modifié', ajoute: 'ajouté' };
+const montantTexte = c => (c === null || c === undefined ? '' : euros(c).replace(' €', ''));
 function htmlBareme(b) {
-  const ligne = (p, i) => `<div class="fb-row" data-i="${i}">
-      <input class="fb-nom" value="${esc(p.nom)}" placeholder="Pays" autocapitalize="words" aria-label="Pays" ${i === 0 ? 'readonly' : ''}>
-      <input class="fb-m" value="${p.montant === null || p.montant === undefined ? '' : euros(p.montant).replace(' €', '')}" inputmode="decimal" placeholder="Montant" aria-label="Montant ${esc(p.nom)}">
+  const ligne = (p, i) => {
+    const off = p.officiel, france = p.nom.toUpperCase() === 'FRANCE', fixe = !!off || france;
+    const per = (off && p.source === 'bulletin' ? off.periodes : []).map(x => `${x.du === '01-01' ? '' : `dès le ${x.du.slice(3)}/${x.du.slice(0, 2)}`}${x.au !== '12-31' ? `${x.du === '01-01' ? 'jusqu\'au' : ' au'} ${x.au.slice(3)}/${x.au.slice(0, 2)}` : ''} : ${euros(x.montant)}`);
+    const info = [...per, off && p.note ? p.note : '', p.source === 'modifie' && off ? `bulletin : ${off.montant === null ? 'montant daté' : euros(off.montant)} (${off.zone === 'monde' ? 'Monde' : 'Euro-Europe'})` : ''].filter(Boolean).join(' · ');
+    // ligne du bulletin : compacte (nom, montant ; zone et marque dessous) ; la zone suit le bulletin (modifiable : pays ajouté)
+    if (off) return `<div class="fb-row fb-off fb-${p.source}" data-i="${i}" data-off="${off.montant ?? ''}" data-offz="${off.zone}">
+      <input class="fb-nom" value="${esc(p.nom)}" aria-label="Pays" readonly>
+      <input class="fb-m" value="${montantTexte(p.montant)}" inputmode="decimal" placeholder="${off.montant !== null ? montantTexte(off.montant) : 'Montant'}" aria-label="Montant ${esc(p.nom)}">
+      <input type="hidden" class="fb-z" value="${p.zone}">
+      <small class="fb-info"><span class="fb-tag fb-t-${p.source}">${TAGS[p.source]}</span>${p.zone === 'monde' ? 'Monde' : 'Euro-Europe'}${info ? ` · ${esc(info)}` : ''}</small></div>`;
+    return `<div class="fb-row${b.officiel ? ` fb-${p.source}` : ''}" data-i="${i}">
+      <input class="fb-nom" value="${esc(p.nom)}" placeholder="Pays" autocapitalize="words" aria-label="Pays" ${fixe ? 'readonly' : ''}>
+      <input class="fb-m" value="${montantTexte(p.montant)}" inputmode="decimal" placeholder="${off && off.montant !== null ? montantTexte(off.montant) : 'Montant'}" aria-label="Montant ${esc(p.nom)}">
       <select class="fb-z" aria-label="Zone ${esc(p.nom)}"><option value="euro"${p.zone !== 'monde' ? ' selected' : ''}>Euro-Europe</option><option value="monde"${p.zone === 'monde' ? ' selected' : ''}>Monde</option></select>
-      ${i === 0 ? '<span></span>' : '<button type="button" class="xbtn fb-x" aria-label="Retirer ce pays"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>'}</div>`;
+      ${fixe ? '<span></span>' : '<button type="button" class="xbtn fb-x" aria-label="Retirer ce pays"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>'}
+      ${b.officiel || info ? `<small class="fb-info">${b.officiel ? `<span class="fb-tag fb-t-${p.source}">${TAGS[p.source]}</span>` : ''}${esc(info)}</small>` : ''}</div>`;
+  };
   const pays = [...b.pays].sort((x, y) => (x.nom.toUpperCase() === 'FRANCE' ? -1 : y.nom.toUpperCase() === 'FRANCE' ? 1 : 0));
   return `<div class="sec fb"><h3>Barème ${esc(b.annee)}</h3>
-      <div class="fb-j"><label for="fb-j">Vol journée</label><input id="fb-j" inputmode="decimal" placeholder="Montant" value="${b.journee === null || b.journee === undefined ? '' : euros(b.journee).replace(' €', '')}"></div>
+      ${b.officiel ? `<p class="hint fb-src">Barème du bulletin intégré (${esc(b.source)}). Un montant saisi passe avant ; laissé vide : celui du bulletin.</p>` : ''}
+      <div class="fb-j"><label for="fb-j">Vol journée${b.officiel ? ` <span class="fb-tag fb-t-${b.journeeModifiee ? 'modifie' : 'bulletin'}">${b.journeeModifiee ? 'modifié' : 'bulletin'}</span>` : ''}</label>
+        <input id="fb-j" inputmode="decimal" placeholder="${b.journeeOfficielle !== null ? montantTexte(b.journeeOfficielle) : 'Montant'}" value="${montantTexte(b.journee)}"></div>
+      ${pays.length > 8 ? '<input class="search fb-q" id="fb-q" placeholder="Rechercher un pays" autocomplete="off" aria-label="Rechercher un pays">' : ''}
       <div id="fb-pays">${pays.map(ligne).join('')}</div>
       <button type="button" class="bigbtn second" id="fb-add">+ Pays</button>
       <p class="apname bad" id="fb-err"></p>
       <button type="button" class="bigbtn" id="fb-ok">Enregistrer le barème</button></div>`;
 }
+// Ce qui est gardé : seulement ce qui diffère du bulletin (montant ou zone), et les pays ajoutés
 function lireBareme(annee) {
+  const b0 = baremeDe(donneesFrais().baremes, annee);
   const j = lireMontant($('#fb-j').value);
   if (Number.isNaN(j)) return { err: 'Vol journée : montant invalide (ex. 87,00)' };
   const pays = [], vus = new Set();
@@ -174,16 +214,21 @@ function lireBareme(annee) {
     if (!nom) continue;
     if (Number.isNaN(m)) return { err: `${nom} : montant invalide (ex. 174,00)` };
     if (vus.has(nom.toUpperCase())) return { err: `${nom} : pays en double` };
-    vus.add(nom.toUpperCase()); pays.push({ nom, montant: m, zone });
+    vus.add(nom.toUpperCase());
+    if ('off' in r.dataset) {
+      const off = r.dataset.off === '' ? null : Number(r.dataset.off);
+      if ((m !== null && m !== off) || zone !== r.dataset.offz) pays.push({ nom, montant: m, zone });
+    } else pays.push({ nom, montant: m, zone });
   }
-  return { b: { annee: String(annee), journee: j, pays } };
+  const journee = b0.officiel && j === b0.journeeOfficielle ? null : j;
+  return { b: { annee: String(annee), journee, pays } };
 }
 export function ecranAnneeFrais(annee) {
   anneeOuverte = String(annee);
   const d = donneesFrais(), b = baremeDe(d.baremes, annee), a = anneeFrais(lignesActuelles(), annee);
   const ligne = x => `<div class="lv fr-l${x.incomplet ? ' incomplet' : ''}" role="button" tabindex="0" data-ligne="${esc(x.id)}">
       <div class="lv-h"><span>${esc(titreLigne(x))}</span><span class="fr-m${x.manquant ? ' manquant' : ''}">${esc(montantLigne(x))}</span></div>
-      <div class="lv-tr">${esc(datesLigne(x))}</div><div class="lv-q">${esc(lieuLigne(x))}</div>${x.detail && !x.incomplet ? `<div class="lv-q">${esc(x.detail)}</div>` : x.incomplet ? `<div class="lv-q">${esc(x.detail)}</div>` : ''}</div>`;
+      <div class="lv-tr">${esc(datesLigne(x))}</div>${x.type !== 'journee' && x.etapes ? `<div class="lv-tr fr-et">${esc(x.etapes)}</div>` : ''}<div class="lv-q">${esc(lieuLigne(x))}</div>${x.detail && !x.incomplet ? `<div class="lv-q">${esc(x.detail)}</div>` : x.incomplet ? `<div class="lv-q">${esc(x.detail)}</div>` : ''}</div>`;
   const c = ouvrirOutil(`Frais d'escale ${anneeOuverte}`, `${htmlBareme(b)}
     <div id="fa-l">${a.lignes.map(ligne).join('') || '<p class="hint">Aucune ligne cette année.</p>'}</div>
     <div class="tline fr-tot"><span>Total ${anneeOuverte}</span><b id="fa-tot">${euros(a.total)}</b></div>
@@ -195,6 +240,8 @@ export function ecranAnneeFrais(annee) {
     $('#fb-pays').append(r); r.querySelector('.fb-nom').focus();
   });
   c.querySelector('#fb-pays').addEventListener('click', e => { const x = e.target.closest('.fb-x'); if (x) x.closest('.fb-row').remove(); });
+  const q = c.querySelector('#fb-q');
+  if (q) q.addEventListener('input', () => { const t = norm(q.value); for (const r of document.querySelectorAll('#fb-pays .fb-row')) r.hidden = !!t && !norm(r.querySelector('.fb-nom').value).includes(t); });
   c.querySelector('#fb-ok').addEventListener('click', async () => {
     const r = lireBareme(annee);
     if (r.err) { $('#fb-err').textContent = r.err; return; }
@@ -235,8 +282,11 @@ export function modelePdf(annee, donnees = donneesFrais()) {
     resume: [['Vols journée', String(r.journee.n), euros(r.journee.montant)], ['J+2', String(r.j2.n), euros(r.j2.montant)],
       ['Détachements', r.detachement.n ? `${r.detachement.n} (${r.detachement.jours} jours, ${r.detachement.nuits} nuits)` : '0', euros(r.detachement.montant)],
       [`Total ${a.annee}`, '', euros(a.total)]],
+    // v0.69 (R168) : toutes les étapes ; (R167) partie d'un détachement à cheval sur deux années : « début » / « suite »
+    etapes: chrono.map(x => [`${titreLigne(x)} · ${datesLigne(x)}`, x.etapes || '', montantLigne(x)]),
     lignes: chrono.map(x => ({
-      titre: `${titreLigne(x)} · ${datesLigne(x)}`, montant: montantLigne(x),
+      titre: `${titreLigne(x)}${x.partie ? ` — ${x.partie === 'debut' ? 'début' : 'suite'} (détachement du ${dateFr(x.detachementDu)} au ${dateFr(x.detachementAu)})` : ''} · ${datesLigne(x)}`, montant: montantLigne(x),
+      etapes: x.etapes || '',
       detail: [x.nuits.length ? `Nuit${x.nuits.length > 1 ? 's' : ''} : ${x.nuits.map(n => `${x.nuits.length > 1 ? dateFr(n.date).slice(0, 2) + ' ' : ''}${n.pays}`).join(' · ')}` : '',
         x.detail ? `calcul : ${x.detail}` : ''].filter(Boolean).join(' — '),
       vols: x.vols.map(vol),
@@ -259,13 +309,23 @@ export function dessinerPdf(jsPDF, m) {
     doc.setFont('helvetica', lib.startsWith('Total') ? 'bold' : 'normal');
     doc.rect(G, y, L, 6); txt(lib, G + 2, y + 4.2); txt(n, G + L - 45, y + 4.2, { align: 'right' }); txt(mt, G + L - 2, y + 4.2, { align: 'right' }); y += 6;
   }
+  // v0.69 (R168) : chaque ligne avec toutes ses étapes
+  doc.setFontSize(8);
+  for (const [t, et, mt] of m.etapes || []) {
+    const lignes = doc.splitTextToSize(pdfTexte(et), L - 95), h = Math.max(1, lignes.length) * 3.6 + 1.8;
+    page(h); doc.setFont('helvetica', 'normal'); doc.rect(G, y, L, h);
+    txt(doc.splitTextToSize(pdfTexte(t), 62)[0], G + 2, y + 3.6); lignes.forEach((l, i) => txt(l, G + 66, y + 3.6 + i * 3.6)); txt(mt, G + L - 2, y + 3.6, { align: 'right' }); y += h;
+  }
   y += 4;
   const largeurs = COLS.map(c => c[1]), reste = L - largeurs.reduce((s, x) => s + x, 0);
   for (const l of m.lignes) {
     page(22);
     doc.setDrawColor(27, 36, 51); doc.setLineWidth(0.5); doc.line(G, y, G + L, y); doc.setLineWidth(0.2); doc.setDrawColor(150);
-    y += 5; doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); txt(l.titre, G, y); txt(l.montant, G + L, y, { align: 'right' }); y += 4.5;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80);
+    y += 5; doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); txt(l.montant, G + L, y, { align: 'right' });
+    for (const t of doc.splitTextToSize(pdfTexte(l.titre), L - 40)) { txt(t, G, y); y += 4.5; }
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    if (l.etapes) for (const t of doc.splitTextToSize(pdfTexte(`Étapes : ${l.etapes}`), L)) { page(5); txt(t, G, y); y += 4; }
+    doc.setTextColor(80);
     for (const d of doc.splitTextToSize(pdfTexte(l.detail), L)) { page(5); txt(d, G, y); y += 4; }
     doc.setTextColor(0);
     if (!l.vols.length) { y += 2; continue; }
@@ -296,16 +356,18 @@ function exporterPdf(annee) {
 export function initFrais() {
   $('#pl-frais').addEventListener('click', ecranFrais);
   $('#fe-zone').addEventListener('click', e => { const b = e.target.closest('[data-fe]'); if (b) choisirCase(b.dataset.fe); });
-  $('#fe-pays').addEventListener('change', async () => { const f = fraisCourant(); if (f && f.type === 'j2') await ecrireFrais({ ...f, pays: $('#fe-pays').value, le: new Date().toISOString() }); });
+  $('#fe-pays').addEventListener('change', async () => { const f = fraisCourant(), p = lirePays($('#fe-pays')); if (p && f && f.type === 'j2' && p !== f.pays) await ecrireFrais({ ...f, pays: p, le: new Date().toISOString() }); });
   $('#fe-voir').addEventListener('click', () => { const det = detachementDe(donneesFrais().detachements, dateCourante()); if (det) ouvrirDetachement(det); });
   $('#dt-no').addEventListener('click', () => { $('#dt-modal').hidden = true; dt = null; dtApres = null; });
   $('#dt-ok').addEventListener('click', enregistrerDetachement);
   $('#dt-del').addEventListener('click', supprimerDetachement);
   for (const k of ['du', 'au']) $(`#dt-${k}`).addEventListener('change', () => { if (!dt) return; dt[k] = $(`#dt-${k}`).value; $('#dt-err').textContent = ''; rendreDetachement(); });
-  $('#dt-pays').addEventListener('change', () => { if (!dt) return; dt.pays = $('#dt-pays').value; for (const [d, p] of Object.entries(dt.nuits)) if (p === dt.pays) delete dt.nuits[d]; rendreDetachement(); });
+  // (rien n'est redessiné si le pays ne change pas : sinon la nuit qu'on vient de toucher serait remplacée)
+  $('#dt-pays').addEventListener('change', () => { if (!dt) return; const p = lirePays($('#dt-pays')); if (!p || p === dt.pays) return; dt.pays = p; for (const [d, x] of Object.entries(dt.nuits)) if (x === dt.pays) delete dt.nuits[d]; rendreDetachement(); });
   $('#dt-nuits').addEventListener('change', e => {
     const s = e.target.closest('[data-nuit]'); if (!s || !dt) return;
-    if (s.value === dt.pays) delete dt.nuits[s.dataset.nuit]; else dt.nuits[s.dataset.nuit] = s.value;
+    const p = lirePays(s); if (!p || p === (dt.nuits[s.dataset.nuit] || dt.pays)) return;
+    if (p === dt.pays) delete dt.nuits[s.dataset.nuit]; else dt.nuits[s.dataset.nuit] = p;
     rendreDetachement();
   });
 }

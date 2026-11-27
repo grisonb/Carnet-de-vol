@@ -251,6 +251,14 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   (`estCleFrais` dans `estReglagePartage`). `js/ui/frais.js` : zone `#fe-zone` (permise en lecture), fenêtre `#dt-modal`, Plus `#pl-frais`
   (`ecranFrais`, `ecranAnneeFrais`, `#fb-*` barème, `#fa-l` lignes, `#fa-pdf`), `modelePdf` / `dessinerPdf` (jsPDF portrait, « € » permis).
   app.js : événement `ouvrir-vol-retour` { id, retour }.
+- v0.69 : R169 `js/baremes-officiels.js` (données PUBLIQUES 2022-2025 en texte, `BAREMES_OFFICIELS`, `baremeOfficiel` ; « France
+  métropolitaine » -> « France » ; ville = « Pays – Ville » ; périodes { du, au 'MM-JJ', montant }). frais.js `baremeDe` = bulletin +
+  saisie (saisie passe avant ; `source` 'bulletin' | 'modifie' | 'ajoute'), `montantA(pays, date)`, `calculerTermes` (chaque terme au
+  barème de l'année de SA date), `termesSejour`. ui/frais.js : réglage `bareme-<année>` ne garde que ce qui diffère du bulletin ;
+  lignes du bulletin compactes (`.fb-off`, zone du bulletin), recherche `#fb-q` ; choix du pays = `input.pays-in` + `datalist#pays-<année>`
+  (`poserPays` / `lirePays`). R167 détachement coupé au 31/12 (`partie` 'debut' | 'suite', id `det|<id>|<année>`, 1,5 sur la dernière
+  nuit du détachement entier). R168 `etapesDe(vols)` (liste, PDF, résumé). R170 carnet.js : `.fl-rep.frais` (anneau SVG `.fe-anneau` +
+  `.fe-fond`, rond = `.rond`), `detachementsActuels()` (ui/frais.js, cache par révision). Lecture seule : `#fe-zone` exclu du readOnly.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.
