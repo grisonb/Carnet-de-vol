@@ -1,5 +1,19 @@
 # Journal des versions
 
+## v0.66 — 27/11/2026
+
+Remarque R162. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; données inchangées (PDF, CSV, totaux,
+état des ronds identiques).
+
+**R162 : ligne « À reporter sur le carnet : N vols » supprimée**, avec son filtre ; rien ne la remplace (la liste suit directement,
+au même endroit qu'avant quand la ligne était cachée). Le rond « reporté » de chaque carte reste, avec le même fonctionnement (appui :
+coche / décoche sans ouvrir le vol ; état enregistré, synchronisé et sauvegardé). Le bouton jaune « N vols à vérifier » reste et
+filtre toujours les vols avec « ! ».
+
+**Tests** : `tests/navigateur/v066.mjs` ; `v061.mjs` et `v061b.mjs` mis à jour (ils lisaient la ligne et son filtre : ils comptent
+maintenant les vols à reporter dans le carnet et vérifient que la ligne n'existe plus) ; test rapide et tests v0.61 à v0.65 ; contrôle
+local avec le vrai fichier.
+
 ## v0.65 — 27/11/2026
 
 Remarque R158b. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; aucune donnée changée (totaux, PDF,

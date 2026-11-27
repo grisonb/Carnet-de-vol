@@ -6,7 +6,7 @@
 
 import { $, esc, codeAvecDrapeau } from './commun.js';
 import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret, nomAfficheVol, enregistrerVol } from '../etat.js';
-import { estAReporter, nbAReporter, basculerReport } from '../report.js';
+import { estAReporter, basculerReport } from '../report.js';
 import { anomaliesActuelles, TRIANGLE } from './anomalies.js';
 import { activerGlisser } from './glisser.js';
 import { instExamDuVol, ROLES_IE } from '../inst-exam.js';
@@ -196,23 +196,15 @@ function rondReport(v) {
   const fait = !estAReporter(v);
   return `<span class="fl-rep${fait ? ' on' : ''}" role="checkbox" aria-checked="${fait}" aria-label="${fait ? 'Reporté sur le carnet papier' : 'À reporter sur le carnet papier'}" data-rep="${esc(v.id)}">${COCHE}</span>`;
 }
-// Ligne « À reporter sur le carnet : N vols » (cachée à 0) ; appui : seulement ces vols, nouvel appui : tous
-// v0.61 (R155) : bouton jaune « N vols à vérifier » (vols avec « ! ») : même principe ; un seul filtre actif à la fois
-let filtreReport = false, filtreAnomalies = false;
+// v0.61 (R155) : bouton jaune « N vols à vérifier » (vols avec « ! ») ; appui : seulement ces vols, nouvel appui : tous.
+// v0.66 (R162) : la ligne « À reporter sur le carnet : N vols » et son filtre sont supprimés (le rond de chaque carte reste).
+let filtreAnomalies = false;
 function majBoutonAnomalies() {
   const n = anomaliesActuelles().size, b = $('#an-btn');
   if (!n) filtreAnomalies = false;
   b.hidden = !n;
   b.setAttribute('aria-pressed', String(filtreAnomalies));
   $('#an-n').textContent = `${n} vol${n > 1 ? 's' : ''} à vérifier`;
-}
-function majLigneReport() {
-  const n = nbAReporter(etat.vols), l = $('#rep-ligne');
-  if (!n) filtreReport = false;
-  l.hidden = !n;
-  l.setAttribute('aria-pressed', String(filtreReport));
-  $('#rep-n').textContent = `${n} vol${n > 1 ? 's' : ''}`;
-  $('#rep-tous').hidden = !filtreReport;
 }
 
 function afficherPaquet() {
@@ -445,8 +437,7 @@ export function rafraichirCarnet({ haut = false, versVol = null, retour = false 
   // Une date (06/05/25, 05/2025, 2025…) : les vols de cette date (date affichée sur la carte) ; sinon recherche texte
   const brut = $('#q').value, parDate = filtreDate(lireDate(brut)), q = normaliser(brut);
   resultats = parDate ? base.filter(v => parDate(dateAffichee(v) || '')) : q ? base.filter(v => texteRecherche(v).includes(q)) : base;
-  majLigneReport(); majBoutonAnomalies();
-  if (filtreReport) resultats = resultats.filter(estAReporter); // v0.61 (R154)
+  majBoutonAnomalies();
   if (filtreAnomalies) { const m = anomaliesActuelles(); resultats = resultats.filter(v => m.has(v.id)); } // v0.61 (R155)
   enRecherche = !!(parDate || q); // « Voir dans le carnet » : seulement pour une recherche (pas pour une période seule)
   // Fenêtre : commence au vol visé (ou au vol mémorisé) s'il est loin dans la liste, sinon au début
@@ -557,8 +548,7 @@ export function initCarnet(ouvrir) {
   new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) completerAvant(); }, { rootMargin: '600px' })
     .observe($('#list-debut'));
   $('#list-debut').addEventListener('click', afficherAvant);
-  $('#rep-ligne').addEventListener('click', () => { filtreReport = !filtreReport; if (filtreReport) filtreAnomalies = false; rafraichirCarnet({ haut: true }); });
-  $('#an-btn').addEventListener('click', () => { filtreAnomalies = !filtreAnomalies; if (filtreAnomalies) filtreReport = false; rafraichirCarnet({ haut: true }); });
+  $('#an-btn').addEventListener('click', () => { filtreAnomalies = !filtreAnomalies; rafraichirCarnet({ haut: true }); });
   $('#top-btn').addEventListener('click', allerAuDernierVol);
   addEventListener('scroll', () => {
     if (bhEnAttente) return;

@@ -106,7 +106,9 @@ async function rejoindre(p, role) {
 }
 const actualiser = async p => { await onglet(p, 'carnet'); await p.click('#rafraichir'); await p.waitForFunction(() => !document.getElementById('rafraichir').classList.contains('tourne'), null, { timeout: 30000 }); await p.waitForTimeout(400); };
 const ronds = p => p.$$eval('#list .fl-rep', l => ({ n: l.length, verts: l.filter(r => r.classList.contains('on')).length, vides: l.filter(r => !r.classList.contains('on')).length }));
-const ligne = p => p.evaluate(() => { const l = document.getElementById('rep-ligne'); return l.hidden ? null : { texte: [...l.children].filter(e => !e.hidden).map(e => e.textContent.trim()).join(' '), rouge: getComputedStyle(document.getElementById('rep-n')).color, presse: l.getAttribute('aria-pressed') }; });
+// v0.66 (R162) : plus de ligne « À reporter sur le carnet » : on compte les vols à reporter dans le carnet, et la ligne ne doit plus exister
+const aReporter = p => p.evaluate(async () => (await import('./js/report.js')).nbAReporter((await import('./js/etat.js')).etat.vols));
+const sansLigne = p => p.evaluate(() => !document.getElementById('rep-ligne') && ![...document.querySelectorAll('#v-carnet button')].some(b => /reporter/i.test(b.textContent)));
 const rond = (p, id) => p.locator(`.flight[data-id="${id}"] .fl-rep`);
 const tousLesVols = async p => { for (let i = 0; i < 4 && await p.isVisible('#list-debut'); i++) await p.click('#list-debut'); await p.evaluate(async () => { for (let i = 0; i < 10; i++) { scrollTo(0, document.body.scrollHeight); await new Promise(r => setTimeout(r, 80)); } scrollTo(0, 0); }); };
 // R154 : aucune bulle (ni texte) sous le rond ; zone d'appui ≥ 40 px, entièrement dans la carte
@@ -132,7 +134,7 @@ try {
   await tousLesVols(A.p);
   let r = await ronds(A.p);
   verifier(r.n === 50 && r.verts === 50, `50 ronds verts (${r.verts} verts, ${r.vides} vides)`);
-  verifier(await ligne(A.p) === null, 'ligne « À reporter » cachée');
+  verifier(await aReporter(A.p) === 0 && await sansLigne(A.p), 'aucun vol à reporter, aucune ligne « À reporter »');
   verifier((await vols(A.p)).every(v => !('aReporter' in v) && v.modifieLe === H), 'aucun vol réécrit (pas de nouveau champ, même date d\'enregistrement)');
   const style = await A.p.evaluate(() => { const c = document.querySelector('#list .fl-rep circle'), s = getComputedStyle(c), coche = getComputedStyle(document.querySelector('#list .fl-rep path'));
     return { w: c.getBoundingClientRect().width + parseFloat(s.strokeWidth), b: s.strokeWidth, fond: s.fill, coche: coche.stroke }; });
@@ -153,16 +155,15 @@ try {
   const nouveau = (await vols(A.p)).find(v => !v.id.startsWith('v'));
   verifier(nouveau && nouveau.aReporter === true, 'vol enregistré avec « à reporter »');
   verifier(await rond(A.p, nouveau.id).getAttribute('aria-checked') === 'false', 'rond vide sur sa carte');
-  let lg = await ligne(A.p);
-  verifier(lg && lg.texte === 'À reporter sur le carnet 1 vol' && lg.rouge === 'rgb(198, 40, 40)', `ligne : « ${lg && lg.texte} » (nombre en rouge)`);
+  verifier(await aReporter(A.p) === 1 && await sansLigne(A.p), '1 vol à reporter, et pas de ligne « À reporter » (v0.66, R162)');
   await A.p.screenshot({ path: join(CAPT, 'v061-a-reporter.png') });
   await rond(A.p, nouveau.id).click(); await A.p.waitForTimeout(400);
   verifier(await A.p.isVisible('#v-carnet') && await A.p.isHidden('#v-saisie'), 'appui sur le rond : le vol ne s\'ouvre pas');
-  verifier(await rond(A.p, nouveau.id).getAttribute('aria-checked') === 'true' && !(await volDe(A.p, nouveau.id)).aReporter && await ligne(A.p) === null,
-    'rond vert, ligne cachée');
+  verifier(await rond(A.p, nouveau.id).getAttribute('aria-checked') === 'true' && !(await volDe(A.p, nouveau.id)).aReporter && await aReporter(A.p) === 0,
+    'rond vert, plus de vol à reporter');
   verifier(await A.p.isHidden('#tv-modal'), 'pas d\'alerte « Temps de vol modifié »');
   await rond(A.p, nouveau.id).click(); await A.p.waitForTimeout(300);
-  verifier((await volDe(A.p, nouveau.id)).aReporter === true && (await ligne(A.p)).texte.endsWith('1 vol'), 'nouvel appui : de nouveau à reporter');
+  verifier((await volDe(A.p, nouveau.id)).aReporter === true && await aReporter(A.p) === 1, 'nouvel appui : de nouveau à reporter');
   await A.p.click(`.flight[data-id="${nouveau.id}"] .fl-route`); await A.p.waitForSelector('#v-saisie:not([hidden])');
   verifier(await A.p.isVisible('#v-saisie'), 'appui sur le vol (hors rond) : le vol s\'ouvre');
   await A.p.click('#cancel'); await A.p.waitForSelector('#v-carnet:not([hidden])');
@@ -174,25 +175,16 @@ try {
   await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(500);
   const vNpf = (await vols(A.p)).find(v => v.npfId === npf.id);
   verifier(vNpf && vNpf.aReporter === true && await rond(A.p, vNpf.id).getAttribute('aria-checked') === 'false', 'vol NPF-Q400 enregistré : rond vide');
-  lg = await ligne(A.p);
-  verifier(lg && lg.texte === 'À reporter sur le carnet 2 vols', `ligne : « ${lg && lg.texte} »`);
-
-  console.log('Filtre « À reporter »');
-  await A.p.click('#rep-ligne'); await A.p.waitForTimeout(300);
-  let ids = await A.p.$$eval('#list .flight', l => l.map(c => c.dataset.id));
-  verifier(ids.length === 2 && ids.includes(nouveau.id) && ids.includes(vNpf.id) && (await ligne(A.p)).presse === 'true' && await A.p.isVisible('#rep-tous'), `appui : seulement les 2 vols à reporter, « Tous › » affiché`);
-  await A.p.click('#rep-ligne'); await A.p.waitForTimeout(300);
-  ids = await A.p.$$eval('#list .flight', l => l.map(c => c.dataset.id));
-  verifier(ids.length > 2 && (await ligne(A.p)).presse === 'false', `nouvel appui : retour à tous les vols (${ids.length} affichés)`);
+  verifier(await aReporter(A.p) === 2 && await sansLigne(A.p), '2 vols à reporter (v0.66, R162 : ligne et filtre « À reporter » supprimés)');
 
   console.log('Synchro A -> B, puis décocher sur A');
   await actualiser(A.p);
   const B = await appareil('B', { remplir: false }); await rejoindre(B.p, 'mod');
-  verifier((await volDe(B.p, nouveau.id)).aReporter === true && (await volDe(B.p, 'v1')).aReporter === undefined && (await ligne(B.p)).texte.endsWith('2 vols'), 'B : mêmes états (2 à reporter, les anciens reportés)');
+  verifier((await volDe(B.p, nouveau.id)).aReporter === true && (await volDe(B.p, 'v1')).aReporter === undefined && await aReporter(B.p) === 2, 'B : mêmes états (2 à reporter, les anciens reportés)');
   await rond(A.p, nouveau.id).click(); await A.p.waitForTimeout(300); await actualiser(A.p);
   await rond(A.p, 'v50').scrollIntoViewIfNeeded(); await rond(A.p, 'v50').click(); await A.p.waitForTimeout(300); await actualiser(A.p); // ancien vol décoché sur A
   await actualiser(B.p);
-  verifier(!(await volDe(B.p, nouveau.id)).aReporter && (await volDe(B.p, 'v50')).aReporter === true && (await ligne(B.p)).texte.endsWith('2 vols'), 'B : coché / décoché comme sur A');
+  verifier(!(await volDe(B.p, nouveau.id)).aReporter && (await volDe(B.p, 'v50')).aReporter === true && await aReporter(B.p) === 2, 'B : coché / décoché comme sur A');
   // le rond changé des deux côtés avant la synchro : le plus récent gagne, sans conflit à choisir
   await A.ctx.setOffline(true);
   await rond(A.p, vNpf.id).click(); await A.p.waitForTimeout(300);           // A : coché
@@ -212,12 +204,12 @@ try {
   const restaurer = async f => { await onglet(C.p, 'plus'); await C.p.click('#pl-restore');
     const [ch] = await Promise.all([C.p.waitForEvent('filechooser'), C.p.click('#rs-fichier')]); await ch.setFiles(f); await C.p.waitForSelector('#rs-ok'); await C.p.click('#rs-ok'); await C.p.waitForTimeout(900); await onglet(C.p, 'carnet'); };
   await restaurer(fichierSv);
-  verifier((await vols(C.p)).map(v => [v.id, !!v.aReporter]).sort().join() === etatA && (await ligne(C.p)).texte === (await ligne(A.p)).texte, `C restauré : même état que A (« ${(await ligne(C.p)).texte} »)`);
+  verifier((await vols(C.p)).map(v => [v.id, !!v.aReporter]).sort().join() === etatA && await aReporter(C.p) === await aReporter(A.p), `C restauré : même état que A (${await aReporter(C.p)} à reporter)`);
   const ancienne = JSON.parse(readFileSync(fichierSv, 'utf8'));
   const sans = o => { if (Array.isArray(o)) return o.map(sans); if (o && typeof o === 'object') { const r = {}; for (const [k, v] of Object.entries(o)) if (k !== 'aReporter' && k !== 'reporteLe') r[k] = sans(v); return r; } return o; };
   const fAncienne = join(CAPT, 'v061-ancienne-sauvegarde.json'); writeFileSync(fAncienne, JSON.stringify(sans(ancienne)));
   await restaurer(fAncienne);
-  verifier((await vols(C.p)).every(v => !v.aReporter) && await ligne(C.p) === null, 'ancienne sauvegarde (sans l\'information) : tous les vols reportés');
+  verifier((await vols(C.p)).every(v => !v.aReporter) && await aReporter(C.p) === 0, 'ancienne sauvegarde (sans l\'information) : tous les vols reportés');
 
   console.log('PDF, CSV, totaux');
   const vA = await vols(A.p), anciens = vA.filter(v => v.id.startsWith('v'));

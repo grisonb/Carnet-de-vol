@@ -201,7 +201,7 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   un conflit n'est effacé que par une version reçue au moins aussi récente (`a.carte[k][0] >= c.rev`).
 - v0.61 : R154 `js/report.js` (`estAReporter` : vol `aReporter: true` ; absent = reporté ; `basculerReport` + `reporteLe` ;
   `seulReportDiffere` / `plusRecentReport` utilisés par `analyserRecus` : rond seul changé des deux côtés -> le plus récent).
-  carnet.js : `.fl-rep[data-rep]` (SVG, zone 40 px), `#rep-ligne` / `#rep-n` / `#rep-tous`, `filtreReport` ; saisie : nouveau vol
+  carnet.js : `.fl-rep[data-rep]` (SVG, zone 40 px), `#rep-ligne` / `#rep-n` / `#rep-tous`, `filtreReport` (supprimés en v0.66) ; saisie : nouveau vol
   (pas simulation) `aReporter: true` ; `enregistrerVol(v, { garderDate })` (etat.js) garde `modifieLe`.
   R155 `js/anomalies.js` (`anomaliesDuCarnet(vols, avions, terrainDe)` -> Map id -> [{ type a..h, texte }], `anomaliesDuVol`,
   `ignorer` / `estIgnore` : vol `anomaliesIgnorees` { empreinte des CHAMPS contrôlés, le }) ; `js/ui/anomalies.js` (cache par
@@ -232,6 +232,8 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
 - v0.65 : R158b terrain intermédiaire sans code : le nom peut être dans `nom` (NPF) OU dans `code` (import FlyLog : route
   « LFTW|NOM AVEC ESPACES|LFTW ») ; `formeCode` / `nomSansCode` (saisie.js) : tout ce qui n'est pas 4 lettres / chiffres est un nom ;
   fenêtre : champ du code vide (pas de focus, « LF » toléré), « <nom> · Terrain sans code OACI », « Valider » garde code et nom.
+- v0.66 : R162 ligne « À reporter sur le carnet » (`#rep-ligne`, `#rep-n`, `#rep-tous`) et `filtreReport` supprimés ; le rond `.fl-rep` reste ;
+  `#an-btn` seul filtre (`filtreAnomalies`).
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

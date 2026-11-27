@@ -125,7 +125,7 @@ async function rejoindre(p, role) {
 }
 const actualiser = async p => { await onglet(p, 'carnet'); await p.click('#rafraichir'); await p.waitForFunction(() => !document.getElementById('rafraichir').classList.contains('tourne'), null, { timeout: 30000 }); await p.waitForTimeout(400); };
 const ronds = p => p.$$eval('#list .fl-rep', l => ({ n: l.length, verts: l.filter(r => r.classList.contains('on')).length, vides: l.filter(r => !r.classList.contains('on')).length }));
-const ligne = p => p.evaluate(() => { const l = document.getElementById('rep-ligne'); return l.hidden ? null : { texte: [...l.children].filter(e => !e.hidden).map(e => e.textContent.trim()).join(' '), rouge: getComputedStyle(document.getElementById('rep-n')).color, presse: l.getAttribute('aria-pressed') }; });
+// v0.66 (R162) : la ligne « À reporter » et son filtre n'existent plus (le bouton jaune n'a plus d'autre filtre à désactiver)
 const rond = (p, id) => p.locator(`.flight[data-id="${id}"] .fl-rep`);
 const tousLesVols = async p => { for (let i = 0; i < 4 && await p.isVisible('#list-debut'); i++) await p.click('#list-debut'); await p.evaluate(async () => { for (let i = 0; i < 10; i++) { scrollTo(0, document.body.scrollHeight); await new Promise(r => setTimeout(r, 80)); } scrollTo(0, 0); }); };
 // R154 : aucune bulle (ni texte) sous le rond ; zone d'appui ≥ 40 px, entièrement dans la carte
@@ -173,10 +173,7 @@ try {
   verifier(ordre, 'sous les cases OPS / IFR');
   await A.p.click('#an-btn'); await A.p.waitForTimeout(300);
   verifier(JSON.stringify(await affiches(A.p)) === JSON.stringify(attendus) && (await bouton(A.p)).presse === 'true', 'appui : seulement les vols avec « ! »');
-  await A.p.click('#rep-ligne'); await A.p.waitForTimeout(300);
-  verifier(JSON.stringify(await affiches(A.p)) === '["h2"]' && (await bouton(A.p)).presse === 'false' && (await ligne(A.p)).presse === 'true', 'appui sur « À reporter » : son filtre remplace celui des anomalies (un seul à la fois)');
-  await A.p.click('#an-btn'); await A.p.waitForTimeout(300);
-  verifier((await ligne(A.p)).presse === 'false' && (await bouton(A.p)).presse === 'true', 'et inversement');
+  verifier(await A.p.evaluate(() => !document.getElementById('rep-ligne')), 'plus de ligne « À reporter » (v0.66, R162)');
   await A.p.click('#an-btn'); await A.p.waitForTimeout(300);
   verifier((await affiches(A.p)).length === VOLS.length && (await bouton(A.p)).presse === 'false', 'nouvel appui : tous les vols');
   await A.p.screenshot({ path: join(CAPT, 'v061b-accueil.png') });

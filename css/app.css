@@ -1016,16 +1016,6 @@ body.vol-lecture #fi-ed,body.vol-lecture #fi-web,body.vol-lecture #fiche .rcbtn{
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fl-rep circle{stroke:#7d8a99}}
 :root[data-theme="dark"] .fl-rep circle{stroke:#7d8a99}
 .flight .chips,.flight .fl-rem,.flight .fl-voir{padding-right:28px}
-.rep-ligne{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0;padding:8px 12px;border-radius:12px;border:1px solid var(--line);
-  background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:15px;text-align:left}
-.rep-ligne[hidden]{display:none}
-.rep-ligne>span:first-child{flex:1;min-width:0}
-.rep-ligne b{color:#c62828}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rep-ligne b{color:#ff8a80}}
-:root[data-theme="dark"] .rep-ligne b{color:#ff8a80}
-.rep-ligne[aria-pressed="true"]{border-color:#c62828;box-shadow:inset 0 0 0 1px #c62828}
-.rep-tous{color:var(--primary);font-weight:700}
-.rep-tous[hidden]{display:none}
 /* v0.61 (R155) : triangle « ! » (20 × 18 px, juste à gauche de la zone d'appui du rond ; les dernières lignes s'arrêtent avant),
    bouton jaune sous OPS / IFR (même hauteur que leurs cases), cadre « Anomalie détectée » de la saisie */
 .fl-an{position:absolute;right:40px;bottom:11px;width:20px;height:18px;line-height:0;pointer-events:none}
