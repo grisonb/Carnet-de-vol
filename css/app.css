@@ -1133,3 +1133,26 @@ body.consultation #at-bas,body.consultation .lv-btn{display:none!important}
 .fb-nm{color:#b45309;font-weight:700;font-size:13px}
 .fb-fl{color:var(--primary);font-weight:700;white-space:nowrap}
 #fb-plie[hidden]{display:none}
+/* v0.71 (R182) : fiche du vol : bandeau fixé en haut pendant le défilement ; boutons ronds brillants dessinés par l'app
+   (dégradé radial, reflet en haut, anneau gris) : Fermer rouge, crayon bleu, Valider vert. 52 px (zone d'appui ≥ 48 px). */
+#v-saisie .formhead{position:sticky;top:0;z-index:12;background:var(--bg);margin:0 -16px;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 8px;
+  margin-top:calc(-1 * env(safe-area-inset-top,0px));border-top:5px solid #1f4e79;box-shadow:0 3px 8px rgba(20,30,50,.15)}
+#v-saisie .formhead h2{margin:0}
+#v-saisie .formhead>div{min-width:0;flex:1}
+#f-sub{overflow-wrap:anywhere}
+.fh-droite{width:auto;flex:none}
+.brillant{flex:none;width:52px;height:52px;min-width:52px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;position:relative;overflow:hidden;cursor:pointer;
+  box-shadow:0 0 0 3px #e3e6ea,0 0 0 4px #b9bec6,0 3px 6px rgba(0,0,0,.35),inset 0 -4px 6px rgba(0,0,0,.25);margin:4px}
+.brillant::before{content:"";position:absolute;left:8px;right:8px;top:3px;height:22px;border-radius:50%;background:linear-gradient(rgba(255,255,255,.75),rgba(255,255,255,0));pointer-events:none}
+.brillant svg{position:relative;width:24px;height:24px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.brillant.b-vert svg{width:30px;height:30px}
+.b-rouge{background:radial-gradient(circle at 50% 30%,#ff9a8f 0%,#f03a2b 38%,#c21a0f 70%,#8f0f07 100%)}
+.b-bleu{background:radial-gradient(circle at 50% 30%,#8fd0ff 0%,#2f8fe0 38%,#1660b0 70%,#0d4585 100%)}
+.b-vert{background:radial-gradient(circle at 50% 30%,#8ff07a 0%,#3fc22b 38%,#1f9a12 70%,#137a0a 100%)}
+.brillant:active{filter:brightness(.92)}
+.f-edit.brillant{border:0;color:#fff}
+.f-edit.brillant svg{fill:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brillant{box-shadow:0 0 0 3px #2b3a4a,0 0 0 4px #46566a,0 3px 6px rgba(0,0,0,.5),inset 0 -4px 6px rgba(0,0,0,.25)}}
+:root[data-theme="dark"] .brillant{box-shadow:0 0 0 3px #2b3a4a,0 0 0 4px #46566a,0 3px 6px rgba(0,0,0,.5),inset 0 -4px 6px rgba(0,0,0,.25)}
+body.consultation #f-ok{display:none!important}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

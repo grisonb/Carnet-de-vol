@@ -4,7 +4,7 @@
 // recherche ouvre la liste complète SUR ce vol (fenêtre qui commence à ce vol : les vols plus récents se chargent
 // quand on remonte) ; bouton « ↑ Dernier vol » pour revenir en haut en un geste.
 
-import { $, esc, codeAvecDrapeau } from './commun.js';
+import { $, esc, codeAvecDrapeau, enchainerDates } from './commun.js';
 import { etat, avionDe, reglage, enregistrerReglage, ecrireReglageDiscret, nomAfficheVol, enregistrerVol } from '../etat.js';
 import { estAReporter, basculerReport } from '../report.js';
 import { anomaliesActuelles, TRIANGLE } from './anomalies.js';
@@ -15,7 +15,7 @@ import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
 import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide, dureeAffichee } from '../temps.js';
 import { dixiemesAvion } from '../vols-groupes.js';
-import { typeDuJour } from './frais.js';
+import { aDesFrais } from './frais.js';
 import { heuresLocales } from '../fuseaux.js';
 import { fuseau } from '../terrains.js';
 import { FONCTIONS, COMPTEURS, identiteAvion, estSimulation } from '../modele.js';
@@ -198,7 +198,7 @@ export function carteVol(v, voir = false) {
 const COCHE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle class="fe-fond" cx="8" cy="8" r="9"/><circle class="fe-anneau" cx="8" cy="8" r="11"/><circle class="rond" cx="8" cy="8" r="7.25"/><path d="M4.6 8.3l2.3 2.3 4.5-4.9"/></svg>';
 function rondReport(v) {
   if (estSimulation(v)) return '';
-  const fait = !estAReporter(v), frais = !estSimulation(v) && !!typeDuJour(v.date); // v0.69 (R170), v0.70 (R173) : case de la journée
+  const fait = !estAReporter(v), frais = aDesFrais(v); // v0.69 (R170), v0.71 (R180) : case de ce vol
   return `<span class="fl-rep${fait ? ' on' : ''}${frais ? ' frais' : ''}" role="checkbox" aria-checked="${fait}" aria-label="${fait ? 'Reporté sur le carnet papier' : 'À reporter sur le carnet papier'}" data-rep="${esc(v.id)}">${COCHE}</span>`;
 }
 // v0.61 (R155) : bouton jaune « N vols à vérifier » (vols avec « ! ») ; appui : seulement ces vols, nouvel appui : tous.
@@ -217,10 +217,10 @@ function afficherPaquet() {
   let html = '';
   for (let i = affiches; i < fin; i++) {
     const v = resultats[i];
-    const m = (v.date || '').slice(0, 7);
+    const m = moisDe(v);
     if (m !== moisCourant) {
       moisCourant = m;
-      html += `<h3 class="month lbl">${MOIS[Number(m.slice(5)) - 1] || ''} ${m.slice(0, 4)}</h3>`;
+      html += enteteMois(m);
     }
     html += carteVol(v, enRecherche);
   }
@@ -241,7 +241,12 @@ function ajusterTypes(tout = false) {
   }
 }
 
+// v0.71 (R179) : un seul titre par mois. Deux causes de titres en double : (1) les titres ajoutés en bas n'avaient pas de
+// « data-mois » : quand la liste s'ouvrait sur un vol plus ancien (retour d'un vol, « Voir dans le carnet ») et que les vols plus
+// récents étaient ajoutés au-dessus, le titre du même mois n'était pas reconnu ni retiré (titre au milieu du mois, même entre deux
+// vols du même jour) ; (2) le mois venait de la date UTC alors que la carte montre la date locale (vol de soirée en heure locale).
 const enteteMois = m => `<h3 class="month lbl" data-mois="${m}">${MOIS[Number(m.slice(5)) - 1] || ''} ${m.slice(0, 4)}</h3>`;
+const moisDe = v => (dateAffichee(v) || v.date || '').slice(0, 7);
 
 // Ajoute AU-DESSUS les vols plus récents (liste ouverte sur un vol ancien), sans faire bouger ce qu'on regarde
 function afficherAvant() {
@@ -249,7 +254,7 @@ function afficherAvant() {
   const de = Math.max(0, debut - PAQUET);
   let html = '', mois = '';
   for (let i = de; i < debut; i++) {
-    const v = resultats[i], m = (v.date || '').slice(0, 7);
+    const v = resultats[i], m = moisDe(v);
     if (m !== mois) { mois = m; html += enteteMois(m); }
     html += carteVol(v, enRecherche);
   }
@@ -482,6 +487,7 @@ export function initCarnet(ouvrir) {
     });
     $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
   }
+  enchainerDates($('#p-du'), $('#p-au')); // v0.71 (R184)
   $('#pb-x').addEventListener('click', () => { effacerPeriode(); rafraichirCarnet({ haut: true }); });
   // Loupe : ouvre la recherche ; la refermer efface la recherche (la période reste, bandeau avec sa croix)
   $('#q-open').addEventListener('click', () => {

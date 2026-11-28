@@ -115,7 +115,7 @@ try {
   await onglet('carnet'); await p.click('.flight[data-id="j2a"] .fl-route'); await p.waitForSelector('#v-saisie:not([hidden])');
   const liste = await p.evaluate(() => { const i = document.getElementById('fe-pays'), d = document.getElementById(i.getAttribute('list')); return [...d.options].map(o => o.value); });
   verifier(liste.includes('Japon – Tokyo') && liste.includes('Tunisie') && liste.length > 100, `« Pays de la nuit » : liste du barème 2025 (${liste.length} pays)`);
-  await p.fill('#fe-pays', 'japon – tokyo'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250);
+  await p.fill('#fe-pays', 'japon – tokyo'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250); await p.click('#f-ok'); await p.waitForTimeout(250); // v0.71 (R183) : Valider
   verifier(await p.inputValue('#fe-pays') === 'Japon – Tokyo' && (await p.evaluate(async () => (await import('./js/etat.js')).etat.vols.find(v => v.id === 'j2a').frais.pays)) === 'Japon – Tokyo', 'tapé en minuscules : « Japon – Tokyo » retenu');
   await p.fill('#fe-pays', 'Atlantide'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250);
   verifier(await p.inputValue('#fe-pays') === 'Japon – Tokyo' && (await p.textContent('#toast')).includes('n\'est pas dans le barème 2025'), 'pays inconnu : refusé avec un message');
@@ -143,7 +143,7 @@ try {
   verifier(await p.isHidden('#v-saisie') && !(await ronds()).jr.on && (await ronds()).jr.frais, 'le rond reste cliquable (décoché), le cercle reste');
   await p.locator('.flight[data-id="jr"] .fl-rep').click(); await p.waitForTimeout(250);
   await p.click('.flight[data-id="jr"] .fl-route'); await p.waitForSelector('#v-saisie:not([hidden])');
-  await p.click('#fe-zone [data-fe="journee"]'); await p.waitForTimeout(200); await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('#fe-zone [data-fe="journee"]'); await p.waitForTimeout(200); await p.click('#f-ok'); await p.waitForTimeout(250); await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])');
   r = await ronds();
   verifier(!r.jr.frais && !r.jr.visible && r.jr.on, 'frais décochés : le cercle disparaît, le rond reste vert');
 

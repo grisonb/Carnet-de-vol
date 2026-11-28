@@ -2,10 +2,10 @@
 // Plus › Frais d'escale (une ligne par année ; barème de l'année, liste, total, PDF). Calcul : js/frais.js.
 // Ce n'est pas une donnée du carnet EASA : cocher une case n'écrit que vol.frais (sans changer « Modifié le », sans alerte R150,
 // sans ligne « Anomalies traitées »).
-import { $, esc, toast, ouvrirOutil, proposerFichier } from './commun.js';
+import { $, esc, toast, ouvrirOutil, proposerFichier, enchainerDates } from './commun.js';
 import { etat, reglage, enregistrerReglage, enregistrerVolsFrais, enConsultation } from '../etat.js';
 import { lignesFrais, anneeFrais, anneesFrais, baremeDe, euros, lireMontant, detachementDe, detachementsActifs, nuitsDe, cleBareme, cleDetachement,
-  PREFIXE_DETACHEMENT, PREFIXE_BAREME, titreLigne, typeLigne, lieuLigne, montantLigne, paysDuBareme, fraisDuJour, paysAuto, nomBareme, nomAuto, nuitsAilleurs } from '../frais.js';
+  PREFIXE_DETACHEMENT, PREFIXE_BAREME, titreLigne, typeLigne, lieuLigne, montantLigne, paysDuBareme, paysAuto, nomBareme, nomAuto, nuitsAilleurs, changerCase, typeDuVol } from '../frais.js';
 import { estSimulation as estSimulationFrais } from '../modele.js';
 import { terrain } from '../terrains.js';
 import { nomPays } from '../pays.js';
@@ -40,30 +40,39 @@ export function detachementsActuels() {
   if (cacheDet.cle !== etat.revision) cacheDet = { cle: etat.revision, dets: donneesFrais().detachements };
   return cacheDet.dets;
 }
-// v0.70 (R173) : type de chaque journée (pour le cercle noir de l'accueil), recalculé seulement quand le carnet change
-let cacheJours = { cle: null, types: new Map() };
-export function typeDuJour(date) {
-  if (cacheJours.cle !== etat.revision || cacheJours.vols !== etat.vols) {
-    const types = new Map(), le = new Map();
-    for (const v of etat.vols) if (v.frais && v.date && !estSimulationFrais(v) && (!le.has(v.date) || (v.frais.le || '') > le.get(v.date))) { le.set(v.date, v.frais.le || ''); types.set(v.date, v.frais.type || null); }
-    cacheJours = { cle: etat.revision, vols: etat.vols, types };
-  }
-  return detachementDe(detachementsActuels(), date) ? 'detachement' : cacheJours.types.get(date) || null;
-}
+// v0.71 (R180) : le vol a des frais (sa propre case, ou sa date dans un détachement) : cercle noir de l'accueil
+export const aDesFrais = v => !estSimulationFrais(v) && !!typeDuVol(v, detachementsActuels());
 
 // ---------- Zone de la fiche du vol ----------
-// ctx : { id (vol enregistré) | null, date: () => 'AAAA-MM-JJ' } ; vol nouveau : la case est gardée ici et enregistrée avec le vol
-let ctx = null, fraisNouveau = null;
-export function afficherFrais(c) { ctx = c; fraisNouveau = null; rendreFrais(); }
+// ctx : { id (vol enregistré) | null, date: () => 'AAAA-MM-JJ', change: () => void } ; vol nouveau : sa case est gardée ici
+// (fraisNouveau) et enregistrée avec le vol. v0.71 (R183) : les changements faits dans la fiche (cases, pays de la nuit) restent
+// EN ATTENTE (attente : id -> vol avec sa nouvelle case) jusqu'à « Valider » (validerFrais) ; « Fermer » les abandonne.
+const NOUVEAU = '__nouveau-vol__';
+let ctx = null, fraisNouveau = null, attente = new Map();
+export function afficherFrais(c) { ctx = c; fraisNouveau = null; attente = new Map(); rendreFrais(); }
 export const fraisPourNouveauVol = () => fraisNouveau;
+export const fraisEnAttente = () => attente.size > 0;
+// Case en attente pour ce vol (undefined : rien en attente)
+export const fraisAttenduPour = id => (attente.has(id) ? attente.get(id).frais : undefined);
+export function abandonnerFrais() { attente = new Map(); fraisNouveau = null; }
+// Enregistre les cases en attente (sauf celle du vol `sauf`, enregistrée avec lui), « Modifié le » gardé
+export async function validerFrais({ sauf = null } = {}) {
+  const liste = [...attente.values()].filter(x => x.id !== sauf).map(x => { const v = etat.vols.find(y => y.id === x.id); return v ? { ...v, frais: x.frais } : null; }).filter(Boolean);
+  attente = new Map();
+  if (liste.length && await enregistrerVolsFrais(liste) === false) return false;
+  return true;
+}
+const volsVus = () => (attente.size ? etat.vols.map(v => attente.get(v.id) || v) : etat.vols);
+const lignesVues = () => (attente.size ? lignesFrais({ ...donneesFrais(), vols: volsVus() }) : lignesActuelles());
 const volEnregistre = () => (ctx && ctx.id ? etat.vols.find(v => v.id === ctx.id) || null : null);
 const dateCourante = () => { const v = volEnregistre(); return v ? v.date : (ctx && ctx.date()) || ''; };
-const volsDuJour = date => etat.vols.filter(v => v.date === date && !estSimulationFrais(v));
-// v0.70 (R173) : la case vaut pour toute la journée (celle cochée le plus récemment parmi ses vols) ; vol nouveau : son choix d'abord
+const volsDuJour = date => volsVus().filter(v => v.date === date && !estSimulationFrais(v));
+// v0.71 (R180) : la case de CE vol (en attente d'abord)
 const fraisCourant = () => {
-  if (!volEnregistre() && fraisNouveau) return fraisNouveau;
-  const date = dateCourante();
-  return date ? fraisDuJour(volsDuJour(date), date) : null;
+  const v = volEnregistre();
+  if (!v) return fraisNouveau;
+  const a = fraisAttenduPour(v.id);
+  return a !== undefined ? a : v.frais || null;
 };
 // v0.69 (R169) : choix du pays = champ avec la liste des pays du barème de l'année (recherche en tapant les premières lettres)
 function listePays(annee) {
@@ -89,7 +98,14 @@ function paysJ1(date, f) {
   const auto = paysAuto(volsDuJour(date), date, paysDe);
   return { pays: auto ? nomAuto(b, a, auto.pays) : null, manuel: false, code: auto ? auto.code : '' };
 }
-const ligneDuJour = date => lignesActuelles().find(x => (x.jourVols || []).some(j => j.date === date)) || null;
+// Ligne de frais de ce vol (pour un vol nouveau : celle de sa date et de sa case)
+function ligneDuVol(date, type) {
+  const l = lignesVues().filter(x => x.type !== 'detachement');
+  if (ctx && ctx.id) { const x = l.find(y => y.vols.some(v => v.id === ctx.id)); if (x) return x; }
+  if (type === 'journee') return l.find(x => x.id === `journee|${date}`) || null;
+  if (type === 'j1') return l.find(x => (x.sorte === 'paire' || x.sorte === 'j1') && x.du === date) || null;
+  return l.find(x => (x.sorte === 'paire' && x.au === date) || (x.sorte === 'j2' && x.du === date)) || null;
+}
 export function rendreFrais() {
   if (!ctx) return;
   const date = dateCourante(), d = donneesFrais(), det = date ? detachementDe(d.detachements, date) : null, f = fraisCourant();
@@ -105,9 +121,9 @@ export function rendreFrais() {
   }
   $('#fe-voir').hidden = !det;
   let info = '';
-  const b = baremeDe(d.baremes, (date || aujourdhui()).slice(0, 4)), n = date ? volsDuJour(date).length : 0;
-  const tous = n > 1 ? ` (les ${n} vols du jour)` : '';
-  const l = date ? ligneDuJour(date) : null;
+  const b = baremeDe(d.baremes, (date || aujourdhui()).slice(0, 4)), n = date && type ? volsDuJour(date).filter(v => (v.frais && v.frais.type) === type).length : 0;
+  const tous = n > 1 ? ` (${n} vols cochés ce jour)` : '';
+  const l = date && type && !det ? ligneDuVol(date, type) : null;
   if (det) info = `Fait partie du détachement du ${dateFr(det.du)} au ${dateFr(det.au)}`;
   else if (type === 'journee') info = (b.journee === null || b.journee === undefined ? `Vol journée : montant à saisir (Plus › Frais d'escale › ${b.annee})` : `Vol journée${tous} : ½ indemnité zone euro = ${euros(b.journee)}`);
   else if (type === 'j1' || type === 'j2') {
@@ -118,27 +134,28 @@ export function rendreFrais() {
   $('#fe-info').textContent = info;
   $('#fe-info').hidden = !info;
 }
-// v0.70 (R173) : la case cochée (ou décochée) l'est sur TOUS les vols de la journée
-async function ecrireFrais(frais) {
-  const v = volEnregistre();
-  if (!v) { fraisNouveau = frais; rendreFrais(); return; }
-  const liste = volsDuJour(v.date).map(x => ({ ...x, frais: { ...frais } }));
-  if (await enregistrerVolsFrais(liste) === false) return;
+// v0.71 (R180 / R181 / R183) : changements mis en attente (vol nouveau : sa case gardée ici) ; le bouton Valider s'allume
+function mettreEnAttente(changes) {
+  for (const x of changes) { if (x.id === NOUVEAU) fraisNouveau = x.frais; else attente.set(x.id, x); }
   rendreFrais();
+  if (ctx && ctx.change) ctx.change();
 }
-// le pays choisi à la main pour le J.1 reste (même si on décoche puis recoche)
-const paysGarde = f => (f && f.paysManuel && f.pays ? { pays: f.pays, paysManuel: true } : {});
-async function choisirCase(t) {
+// Vols vus + le vol nouveau (pas encore enregistré) à sa date
+function volsAvecNouveau() {
+  const l = volsVus(), date = dateCourante();
+  return volEnregistre() || !date ? l : [...l, { id: NOUVEAU, date, hDep: '', frais: fraisNouveau }];
+}
+function choisirCase(t) {
   if (!ctx || enConsultation()) return;
   const date = dateCourante(), d = donneesFrais(), det = date ? detachementDe(d.detachements, date) : null;
   if (det) { ouvrirDetachement(det); return; } // le vol fait partie d'un détachement : on le modifie (ou le supprime) là
-  const f = fraisCourant(), le = new Date().toISOString();
   if (t === 'detachement') {
     if (!date) { toast('Choisis d\'abord la date du vol.'); return; }
-    ouvrirDetachement(null, { du: date, apres: () => ecrireFrais({ type: null, ...paysGarde(f), le }) });
+    ouvrirDetachement(null, { du: date });
     return;
   }
-  await ecrireFrais({ type: f && f.type === t ? null : t, ...paysGarde(f), le });
+  if (!date) { toast('Choisis d\'abord la date du vol.'); return; }
+  mettreEnAttente(changerCase(volsAvecNouveau(), ctx.id || NOUVEAU, t));
 }
 
 // ---------- Fenêtre « Détachement » ----------
@@ -156,7 +173,8 @@ export function ouvrirDetachement(det, { du, apres } = {}) {
 function rendreDetachement() {
   const annee = (dt.du || aujourdhui()).slice(0, 4);
   poserPays($('#dt-pays'), annee, dt.pays);
-  const valide = dt.du && dt.au && dt.du <= dt.au;
+  // v0.71 : au plus un an (une date en cours de frappe, ex. année 0020, ne fait plus calculer des siècles de nuits)
+  const valide = dt.du && dt.au && dt.du <= dt.au && dt.du >= '1900' && (Date.parse(dt.au) - Date.parse(dt.du)) / 864e5 <= 366;
   const d0 = donneesFrais(), n = valide ? nuitsDe(dt, { vols: etat.vols.filter(v => v.date >= dt.du && v.date <= dt.au && !estSimulationFrais(v)), paysDe: c => nomAuto(d0.baremes, annee, paysDe(c)) }) : [];
   // v0.70 (R178) : nuit = pays du dernier atterrissage du jour (code affiché) ; choisie à la main : gardée, en jaune
   $('#dt-nuits').innerHTML = n.map(x => `<div class="dt-nuit${x.manuel ? ' modifie' : ''}"><span>Nuit du ${dateFr(x.date).slice(0, 5)}${x.code ? ` <small class="dt-code">${esc(x.code)}</small>` : ''}</span><input class="pays-in" data-nuit="${x.date}" autocomplete="off" aria-label="Nuit du ${dateFr(x.date)}"></div>`).join('')
@@ -428,12 +446,16 @@ export function initFrais() {
   // v0.70 (R178) : pays du J.1 changé à la main : gardé (paysManuel), sur tous les vols du jour
   $('#fe-pays').addEventListener('change', async () => {
     const f = fraisCourant(), avant = $('#fe-pays').dataset.avant, p = lirePays($('#fe-pays'));
-    if (p && f && f.type === 'j1' && (p !== avant || !f.paysManuel)) await ecrireFrais({ ...f, pays: p, paysManuel: true, le: new Date().toISOString() });
+    if (!p || !f || f.type !== 'j1' || (p === avant && f.paysManuel)) return;
+    // v0.70 (R178) : choisi à la main : gardé (paysManuel), sur tous les vols du jour cochés J.1 (en attente, R183)
+    const le = new Date().toISOString(), date = dateCourante();
+    mettreEnAttente(volsAvecNouveau().filter(v => v.date === date && ((v.id === (ctx.id || NOUVEAU)) || (v.frais && v.frais.type === 'j1'))).map(v => ({ ...v, frais: { ...(v.id === NOUVEAU ? fraisNouveau : v.frais), pays: p, paysManuel: true, le } })));
   });
   $('#fe-voir').addEventListener('click', () => { const det = detachementDe(donneesFrais().detachements, dateCourante()); if (det) ouvrirDetachement(det); });
   $('#dt-no').addEventListener('click', () => { $('#dt-modal').hidden = true; dt = null; dtApres = null; });
   $('#dt-ok').addEventListener('click', enregistrerDetachement);
   $('#dt-del').addEventListener('click', supprimerDetachement);
+  enchainerDates($('#dt-du'), $('#dt-au')); // v0.71 (R184)
   for (const k of ['du', 'au']) $(`#dt-${k}`).addEventListener('change', () => { if (!dt) return; dt[k] = $(`#dt-${k}`).value; $('#dt-err').textContent = ''; rendreDetachement(); });
   // (rien n'est redessiné si le pays ne change pas : sinon la nuit qu'on vient de toucher serait remplacée)
   $('#dt-pays').addEventListener('change', () => { if (!dt) return; const p = lirePays($('#dt-pays')); if (!p || p === dt.pays) return; dt.pays = p; rendreDetachement(); });

@@ -1,5 +1,38 @@
 # Journal des versions
 
+## v0.71 — 28/11/2026
+
+Remarques R179 à R184. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,
+PDF, CSV, anomalies identiques).
+
+**R179 : un seul titre par mois sur l'accueil.** Vraie cause : la liste s'affiche par paquets ; quand elle se redessine à la place où
+on était (appui sur le rond « reporté » d'une carte loin dans la liste, synchro, « Voir dans le carnet »), elle repart du vol visible et
+ajoute ensuite au-dessus les vols plus récents. Les titres ajoutés en bas n'avaient pas leur repère de mois : le titre du même mois
+n'était pas reconnu ni retiré, d'où « MARS 2025 » au milieu du mois, même entre deux vols du même jour. Deuxième cause, plus rare : le
+mois était pris sur la date UTC alors que la carte montre la date locale (vol de soirée en heure locale). Corrigé pour la liste
+complète, les filtres, la recherche et « vols à vérifier » (même code).
+
+**R180 : décocher un vol seul.** Cocher une case coche les vols du même jour (sans case, ou avec la case qu'avait ce vol) ; décocher
+ne décoche que ce vol, qui n'est plus recoché tout seul. La ligne de frais ne prend que les vols cochés ; plus aucun : plus de ligne.
+Reprise automatique : chaque vol reçoit la case de sa journée (v0.70), mêmes montants.
+
+**R181 : J.1 coche J.2 le lendemain** sur les vols sans case (pas ceux qui ont une autre case, ni ceux décochés à la main). Chacun se
+décoche seul ; plus aucun J.1 ce jour-là : les J.2 mis tout seuls sont retirés (pas ceux cochés à la main).
+
+**R182 : bandeau du vol fixe** en haut pendant le défilement ; boutons ronds brillants dessinés par l'app : Fermer rouge (croix),
+crayon bleu, Valider vert (coche) avec le titre « Modifier le vol » ; Valider enregistre et revient au vol en lecture. Fermer pendant
+une modification au crayon : « Abandonner la saisie ? ».
+
+**R183 : modifications sans le crayon** (cases des frais d'escale, pays de la nuit) : le crayon devient aussitôt Valider ; rien n'est
+enregistré avant Valider ; Fermer les abandonne sans question. Rond « reporté » de l'accueil toujours instantané.
+
+**R184 : « Du » complète -> curseur dans « Au »** (JJ/MM/AAAA valide, année à 4 chiffres ; sinon le curseur reste) : filtre de dates
+de l'accueil, Totaux (Dates), export PDF EASA (Dates), fenêtre Détachement. Défaut corrigé en route : dans « Détachement », une date
+en cours de frappe (année 0020) faisait calculer des siècles de nuits (appli figée) ; calcul limité à un an.
+
+**Tests** : `tests/unitaires/v071.test.js`, `tests/navigateur/v071.mjs` (619 vols inventés) ; v019, v044, v068, v069, v070 adaptés
+(Fermer rond rouge, Valider, J.2 automatique, décocher un vol seul) ; test complet ; contrôle local avec le vrai fichier (titres de mois compris).
+
 ## v0.70 — 28/11/2026
 
 Remarques R171 à R178. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,

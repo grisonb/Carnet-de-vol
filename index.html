@@ -71,10 +71,11 @@
   <!-- ========== SAISIE ========== -->
   <section id="v-saisie" hidden>
     <div class="formhead">
-      <button class="ghost annuler" id="cancel" type="button">Annuler</button>
+      <!-- v0.71 (R182) : bandeau fixé en haut ; boutons ronds brillants dessinés par l'app (Fermer rouge, crayon bleu, Valider vert) -->
+      <button class="brillant b-rouge" id="cancel" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg><span class="vh">Fermer</span></button>
       <div style="text-align:center"><h2 id="f-title" style="font-size:18px">Nouveau vol</h2><div class="hint" id="f-sub"></div></div>
       <!-- v0.44 (R112) : vol ouvert en lecture seule ; le crayon passe la fiche en « Modifier le vol » -->
-      <span class="fh-droite"><button type="button" class="f-edit" id="f-edit" hidden aria-label="Modifier le vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg></button></span>
+      <span class="fh-droite"><button type="button" class="brillant b-bleu f-edit" id="f-edit" hidden aria-label="Modifier le vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z" fill="#fff"/></svg></button><button type="button" class="brillant b-vert" id="f-ok" hidden aria-label="Valider"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="vh">Valider</span></button></span>
     </div>
     <!-- v0.35 (R85) : vol de simulation (NPF-Q400-RUN) : ne compte dans aucun total -->
     <div class="sim-bandeau" id="f-sim" hidden role="note">SIMULATION VOL<small>Ne compte dans aucun total ni dans le PDF</small></div>

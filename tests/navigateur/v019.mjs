@@ -82,7 +82,9 @@ try {
     await p.screenshot({ path: join(CAPT, `v019-01-bandeau-${theme}.png`) });
     await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])');
     await verifierBouton('#save', VERT, '« Enregistrer le vol »');
-    await annuler('#cancel', 'de la saisie');
+    // v0.71 (R182) : « Fermer » de la saisie = rond rouge brillant (croix blanche), au moins 48 px
+    const fx = await p.$eval('#cancel', e => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { f: s.backgroundImage, l: r.width, h: r.height, croix: getComputedStyle(e.querySelector('path')).stroke }; });
+    verifier(fx.f.includes('240, 58, 43') && fx.l >= 48 && fx.h >= 48 && fx.croix === 'rgb(255, 255, 255)', '« Fermer » de la saisie : rond rouge brillant, croix blanche');
     await p.screenshot({ path: join(CAPT, `v019-02-saisie-${theme}.png`) });
     await p.fill('#f-rem', 'ESSAI'); await p.goBack(); await p.waitForSelector('#ab-modal:not([hidden])');
     await verifierBouton('#ab-no', VERT, '« Continuer la saisie »');
@@ -124,7 +126,7 @@ try {
   await p.screenshot({ path: join(CAPT, 'v019-06-message-annuler.png') });
   await p.click('#toast .tbtn');
   // 10 boutons « Annuler » + celui du message « Vol supprimé » (v0.55 : celui des fiches avions n'existe plus)
-  verifier(new Set(rouges).size === 11, `${new Set(rouges).size} boutons « Annuler » différents vérifiés : ${[...new Set(rouges)].join(' ')}`);
+  verifier(new Set(rouges).size === 10, `${new Set(rouges).size} boutons « Annuler » différents vérifiés (v0.71 : celui de la saisie est le rond rouge « Fermer », vérifié à part) : ${[...new Set(rouges)].join(' ')}`);
 
   verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
   console.log('\nv0.19 réussie.');

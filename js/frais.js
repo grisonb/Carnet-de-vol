@@ -120,14 +120,55 @@ export function nuitsDe(d, { vols = [], paysDe = () => null } = {}) {
     return { date, pays: prec, code: a ? a.code : '', manuel: false };
   });
 }
-// v0.70 (R173) : la case vaut pour toute la journée : celle cochée le plus récemment parmi les vols du jour (frais.le)
+// v0.70 (R173) : la case valait pour toute la journée : celle cochée le plus récemment parmi les vols du jour (frais.le).
+// v0.71 : sert seulement à la reprise des données de la v0.70 (`fixerFraisParVol`) : chaque vol a maintenant SA case.
 export function fraisDuJour(vols, date) {
   let f = null;
   for (const v of vols) if (v.date === date && v.frais && (!f || (v.frais.le || '') > (f.le || ''))) f = v.frais;
   return f;
 }
-// Type affiché sur la fiche d'un vol : 'detachement' si sa date tombe dans un détachement, sinon la case de sa journée
-export const typeDuVol = (v, dets, vols = [v]) => (detachementDe(dets, v.date) ? 'detachement' : (fraisDuJour(vols.length ? vols : [v], v.date) || {}).type || null);
+// Type affiché sur la fiche d'un vol : 'detachement' si sa date tombe dans un détachement, sinon SA case (v0.71, R180)
+export const typeDuVol = (v, dets) => (detachementDe(dets, v.date) ? 'detachement' : (v.frais && v.frais.type) || null);
+
+// v0.71 : reprise de la v0.70 (case de la journée) : chaque vol reçoit la case de sa journée (même résultat, mêmes montants).
+// Renvoie les vols changés (copies ; « le » de la case gardé : même résultat sur tous les appareils).
+export function fixerFraisParVol(vols) {
+  const parJour = new Map(), changes = [];
+  for (const v of vols) if (v && v.date && !estSimulation(v)) { if (!parJour.has(v.date)) parJour.set(v.date, []); parJour.get(v.date).push(v); }
+  const cle = f => JSON.stringify([f ? f.type || null : null, f && f.pays || null, !!(f && f.paysManuel)]);
+  for (const [date, l] of parJour) {
+    const f = fraisDuJour(l, date);
+    if (!f) continue;
+    for (const v of l) if (cle(v.frais) !== cle(f)) changes.push({ ...v, frais: { ...f } });
+  }
+  return changes;
+}
+
+// v0.71 (R180 / R181) : appui sur la case t de la fiche du vol id. Renvoie les vols changés (copies).
+// - cocher : ce vol, et les vols du même jour sans case (ou avec la case qu'avait ce vol), sauf ceux décochés à la main ;
+//   J.1 : J.2 mis tout seul (auto) sur les vols du lendemain sans case (sauf ceux décochés à la main) ;
+// - décocher : CE vol seulement (marqué « décoché à la main » : plus recoché tout seul) ; plus aucun J.1 ce jour-là :
+//   les J.2 mis tout seuls le lendemain sont retirés (pas ceux cochés à la main).
+export function changerCase(vols, id, t, le = new Date().toISOString()) {
+  const v = vols.find(x => x.id === id);
+  if (!v) return [];
+  const reels = vols.filter(x => x && x.date && !estSimulation(x));
+  const garde = f => (f && f.paysManuel && f.pays ? { pays: f.pays, paysManuel: true } : {});
+  const typeDe = x => (x.frais && x.frais.type) || null, nouveau = new Map();
+  const mettre = (x, f) => nouveau.set(x.id, { ...x, frais: f });
+  const actuel = x => (nouveau.get(x.id) || x);
+  const avant = typeDe(v), d = v.date, lendemain = ajouterJours(d, 1);
+  if (t === avant || t === null) mettre(v, { type: null, ...garde(v.frais), decoche: true, le });
+  else {
+    mettre(v, { type: t, ...garde(v.frais), le });
+    for (const x of reels) if (x.id !== v.id && x.date === d && !(x.frais && x.frais.decoche) && (typeDe(x) === null || typeDe(x) === avant)) mettre(x, { type: t, ...garde(x.frais), le });
+    if (t === 'j1') for (const x of reels) if (x.date === lendemain && typeDe(x) === null && !(x.frais && x.frais.decoche)) mettre(x, { type: 'j2', auto: true, le });
+  }
+  if (avant === 'j1' && !reels.some(x => x.date === d && typeDe(actuel(x)) === 'j1')) {
+    for (const x of reels) if (x.date === lendemain && typeDe(actuel(x)) === 'j2' && actuel(x).frais.auto) mettre(actuel(x), { type: null, le });
+  }
+  return [...nouveau.values()];
+}
 // v0.69 (R168) : toutes les étapes des vols, enchaînées dans l'ordre (un terrain répété à la suite n'apparaît qu'une fois)
 export function etapesDe(vols) {
   const l = [];
@@ -168,7 +209,7 @@ export function lignesFrais({ vols, detachements = [], baremes = new Map(), pays
   const dets = detachementsActifs(detachements), lignes = [];
   const reels = (vols || []).filter(v => v && v.date && !estSimulation(v));
   const tri = l => [...l].sort((a, b) => (a.date + (a.hDep || '')).localeCompare(b.date + (b.hDep || '')));
-  const jour = date => { const vl = tri(parDate.get(date) || []); return { date, vols: vl, etapes: etapesDe(vl) }; };
+  const jour = (date, t) => { const vl = tri((parDate.get(date) || []).filter(v => v.frais && v.frais.type === t)); return { date, vols: vl, etapes: etapesDe(vl) }; };
   // Détachements (les vols de leurs dates n'y comptent qu'une fois, jamais ailleurs). v0.69 (R167) : à cheval sur deux années :
   // une ligne par année ; chaque nuit (jour en Monde) au barème de son année ; le 1,5 seulement sur la dernière nuit du détachement.
   for (const d of dets) {
@@ -195,11 +236,16 @@ export function lignesFrais({ vols, detachements = [], baremes = new Map(), pays
   const hors = reels.filter(v => !detachementDe(dets, v.date)), parType = { journee: [], j1: [], j2: [] }, fraisJ = new Map(), parDate = new Map();
   for (const v of hors) { if (!parDate.has(v.date)) parDate.set(v.date, []); parDate.get(v.date).push(v); }
   for (const date of [...parDate.keys()].sort()) {
-    const f = fraisDuJour(parDate.get(date), date);
-    if (f && parType[f.type]) { parType[f.type].push(date); fraisJ.set(date, f); }
+    // v0.71 (R180) : une ligne ne prend que les vols cochés (chaque vol a sa case)
+    for (const t of Object.keys(parType)) {
+      const l = parDate.get(date).filter(v => v.frais && v.frais.type === t);
+      if (!l.length) continue;
+      parType[t].push(date);
+      if (t === 'j1') fraisJ.set(date, l.filter(v => v.frais.paysManuel && v.frais.pays).sort((a, b) => (b.frais.le || '').localeCompare(a.frais.le || ''))[0]?.frais || l[0].frais);
+    }
   }
   for (const date of parType.journee) {
-    const b = baremeDe(baremes, date.slice(0, 4)), manquant = b.journee === null || b.journee === undefined, j = jour(date);
+    const b = baremeDe(baremes, date.slice(0, 4)), manquant = b.journee === null || b.journee === undefined, j = jour(date, 'journee');
     lignes.push({ id: `journee|${date}`, type: 'journee', sorte: 'journee', annee: date.slice(0, 4), du: date, au: date, jours: 1, nuits: [], vols: j.vols, jourVols: [j], etapes: j.etapes,
       montant: manquant ? 0 : b.journee, manquant, detail: '½ indemnité zone euro', incomplet: false });
   }
@@ -211,20 +257,20 @@ export function lignesFrais({ vols, detachements = [], baremes = new Map(), pays
       pris.add(s);
       const f = fraisJ.get(d), auto = paysAuto(parDate.get(d) || [], d, paysDe);
       const pays = f.paysManuel && f.pays ? nomBareme(baremes, a, f.pays) : nomAuto(baremes, a, auto && auto.pays);
-      const j1 = jour(d), jj2 = jour(s), vl = [...j1.vols, ...jj2.vols];
+      const j1 = jour(d, 'j1'), jj2 = jour(s, 'j2'), vl = [...j1.vols, ...jj2.vols];
       const base = { id: `j2|${d}`, type: 'j2', sorte: 'paire', annee: a, du: d, au: s, jours: 2, vols: vl, jourVols: [j1, jj2], etapes: etapesDe(vl), pays, incomplet: false };
       if (!pays) { lignes.push({ ...base, nuits: [{ date: d, pays: null, code: auto ? auto.code : '' }], montant: 0, manquant: true, detail: 'Pays à choisir sur le J.1' }); continue; }
       const zone = zoneDe(baremes, [a], pays), nuits = [{ date: d, pays, code: auto ? auto.code : '' }];
       lignes.push({ ...base, zone, nuits, ...calculerTermes(termesSejour(zone, nuits, [d, s]), baremes, zone) });
     } else {
-      const j = jour(d);
+      const j = jour(d, 'j1');
       lignes.push({ id: `j1i|${d}`, type: 'j2', sorte: 'j1', annee: d.slice(0, 4), du: d, au: d, jours: 1, nuits: [], vols: j.vols, jourVols: [j], etapes: j.etapes, montant: 0, manquant: false,
         detail: 'Coche aussi le J.2 du lendemain', incomplet: true });
     }
   }
   for (const s of parType.j2) {
     if (pris.has(s)) continue;
-    const j = jour(s);
+    const j = jour(s, 'j2');
     lignes.push({ id: `j2i|${s}`, type: 'j2', sorte: 'j2', annee: s.slice(0, 4), du: s, au: s, jours: 1, nuits: [], vols: j.vols, jourVols: [j], etapes: j.etapes, montant: 0, manquant: false,
       detail: 'Coche aussi le J.1 de la veille', incomplet: true });
   }

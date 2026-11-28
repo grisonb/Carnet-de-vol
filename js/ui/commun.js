@@ -97,3 +97,24 @@ export function ouvrirOutil(titre, html) {
 export function fermerOutil() { $('#outil').hidden = true; $('#ou-c').innerHTML = ''; }
 
 export const pause = () => new Promise(r => setTimeout(r, 0));
+
+// v0.71 (R184) : deux dates « Du / Au » qui se suivent : dès que « Du » est complète et valide (JJ/MM/AAAA, année à 4 chiffres),
+// le curseur passe tout seul dans « Au » (clavier ouvert ; champ date du téléphone : son calendrier s'ouvre). Date incomplète ou
+// invalide (ex. 01/01/20) : le curseur reste. Seulement quand on tape ou choisit dans « Du » : on peut toujours y revenir corriger.
+export function dateDuComplete(el) {
+  const v = el.value || '';
+  const iso = el.type === 'date' ? v : /^\d{2}\/\d{2}\/\d{4}$/.test(v) ? `${v.slice(6)}-${v.slice(3, 5)}-${v.slice(0, 2)}` : '';
+  if (!/^(19|20)\d{2}-\d{2}-\d{2}$/.test(iso)) return false;
+  const [y, m, j] = iso.split('-').map(Number), d = new Date(Date.UTC(y, m - 1, j));
+  return d.getUTCFullYear() === y && d.getUTCMonth() === m - 1 && d.getUTCDate() === j;
+}
+export function enchainerDates(du, au) {
+  if (!du || !au) return;
+  const suivre = e => {
+    if (!e.isTrusted || !dateDuComplete(du)) return;
+    au.focus();
+    if (au.type === 'date' && matchMedia('(pointer: coarse)').matches) try { au.showPicker(); } catch { /* calendrier refusé : le curseur est quand même dans « Au » */ }
+  };
+  du.addEventListener('input', suivre);
+  if (du.type === 'date') du.addEventListener('change', e => { if (document.activeElement === du || document.activeElement === document.body) suivre(e); });
+}

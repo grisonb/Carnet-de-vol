@@ -10,7 +10,7 @@ import { REGLAGES_PRIVES } from './sauvegarde.js';
 import { indexPersonnes, nomAffiche, personneDuTexte } from './personnes.js';
 import { estReglagePartage } from './synchro.js';
 import { listeCompteurs } from './compteurs.js';
-import { reprendreJ2 } from './frais.js';
+import { reprendreJ2, fixerFraisParVol } from './frais.js';
 
 export const etat = {
   vols: [],            // du plus récent au plus ancien
@@ -62,6 +62,17 @@ async function migrer() {
     }
     etat.reglages.migrationFraisJ1 = new Date().toISOString();
     await db.ecrireReglage('migrationFraisJ1', etat.reglages.migrationFraisJ1);
+  }
+  // v0.71 (R180) : chaque vol a sa propre case : la case de la journée (v0.70) est posée sur chacun de ses vols (mêmes montants)
+  if (!etat.reglages.migrationFraisVol) {
+    const changes = fixerFraisParVol(etat.vols);
+    if (changes.length) {
+      await db.enregistrer({ vols: changes });
+      const parId = new Map(changes.map(v => [v.id, v]));
+      etat.vols = etat.vols.map(v => parId.get(v.id) || v);
+    }
+    etat.reglages.migrationFraisVol = new Date().toISOString();
+    await db.ecrireReglage('migrationFraisVol', etat.reglages.migrationFraisVol);
   }
   if (!etat.reglages.migrationV04) {
     const modifies = migrerAvionsV04([...etat.avions.values()]);

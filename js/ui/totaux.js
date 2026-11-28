@@ -2,7 +2,7 @@
 // v0.55 (R143) : sections repliables (réglage PRIVÉ « totauxOuverts » : celles laissées ouvertes, sur cet appareil) ;
 // section « Trigrammes » (personnes qui ont un trigramme : vols et heures ensemble, dernier vol ; simulateur exclu).
 
-import { $, esc, segs } from './commun.js';
+import { $, esc, segs, enchainerDates } from './commun.js';
 import { etat, reglage, ecrireReglageDiscret, avionDe, listeDesCompteurs } from '../etat.js';
 import { totauxTrigrammes } from '../personnes.js';
 import { volsReels } from '../modele.js';
@@ -85,4 +85,5 @@ export function initTotaux() {
   });
   $('#per-a').addEventListener('change', () => { periode = { genre: 'annee', annee: $('#per-a').value }; rafraichirTotaux(); });
   for (const s of ['#per-du', '#per-au']) $(s).addEventListener('change', rafraichirTotaux);
+  enchainerDates($('#per-du'), $('#per-au')); // v0.71 (R184)
 }

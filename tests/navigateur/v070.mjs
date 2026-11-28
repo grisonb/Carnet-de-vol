@@ -111,7 +111,9 @@ const vols = p => p.evaluate(async () => Object.fromEntries((await import('./js/
 const ouvrir = async (p, id) => { await onglet(p, 'carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); };
 const fermer = async p => { await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); };
 const cases = p => p.$$eval('#fe-zone [data-fe]', l => Object.fromEntries(l.map(b => [b.dataset.fe, b.getAttribute('aria-checked') === 'true'])));
-const cocher = async (p, id, t) => { await ouvrir(p, id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(250); return { c: await cases(p), info: await p.textContent('#fe-info') }; };
+// v0.71 (R183) : la case changée dans la fiche s'enregistre avec « Valider »
+const valider = async p => { await p.click('#f-ok'); await p.waitForTimeout(250); };
+const cocher = async (p, id, t) => { await ouvrir(p, id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(150); await valider(p); return { c: await cases(p), info: await p.textContent('#fe-info') }; };
 const annee = async (p, a) => { await onglet(p, 'plus'); await p.click('#pl-frais'); await p.waitForSelector('#fr-l'); await p.click(`#fr-l [data-an="${a}"]`); await p.waitForSelector('#fa-l'); };
 const lignes = p => p.$$eval('#fa-l .lv', l => l.map(x => x.innerText.replace(/\s+/g, ' ').replace(/ /g, ' ').trim()));
 const carte = (p, id) => p.$eval(`#fa-l [data-ligne="${id}"]`, x => ({ h: [...x.querySelectorAll('.lv-h')].map(e => e.innerText.replace(/\s+/g, ' ').replace(/ /g, ' ').trim()),
@@ -145,13 +147,13 @@ try {
 
   console.log('R177 : J.1 le 17 (2 vols) + J.2 le 18 (4 vols)');
   await p.click('#fe-zone [data-fe="j1"]'); await p.waitForTimeout(250);
-  verifier((await cases(p)).j1 && await p.inputValue('#fe-pays') === 'France' && (await p.textContent('#fe-info')) === 'J.1 incomplet : coche aussi le J.2 du lendemain', 'J.1 : pays de la nuit France (LFPB, dernier atterrissage), « incomplet » tant que le J.2 n\'est pas coché');
+  // v0.71 (R181) : J.1 coche tout seul J.2 sur les vols du lendemain
+  verifier((await cases(p)).j1 && await p.inputValue('#fe-pays') === 'France' && (await p.textContent('#fe-info')) === 'Avec le J.2 du 18/11 : 2 jours, nuit France, 1,5 × 174,00 € = 261,00 €',
+    `J.1 : pays de la nuit France (LFPB, dernier atterrissage) ; « ${await p.textContent('#fe-info')} »`);
+  await valider(p);
   v = await vols(p);
-  verifier(v.a1.frais.type === 'j1' && v.a2.frais.type === 'j1' && v.a1.modifieLe === H, 'R173 : coché sur les deux vols du 17, « Modifié le » inchangé');
-  await fermer(p);
-  let r = await cocher(p, 'b3', 'j2');
-  verifier(r.c.j2 && r.info === 'Avec le J.1 du 17/11 : 2 jours, nuit France, 1,5 × 174,00 € = 261,00 €', `J.2 : « ${r.info} »`);
-  v = await vols(p); verifier(['b1', 'b2', 'b3', 'b4'].every(id => v[id].frais.type === 'j2'), 'coché sur les quatre vols du 18');
+  verifier(v.a1.frais.type === 'j1' && v.a2.frais.type === 'j1' && ['b1', 'b2', 'b3', 'b4'].every(id => v[id].frais.type === 'j2') && v.a1.modifieLe === H,
+    'coché sur les deux vols du 17, J.2 sur les quatre vols du 18 ; « Modifié le » inchangé');
   await fermer(p);
   await annee(p, '2025');
   let k = await carte(p, 'j2|2025-11-17');
@@ -159,35 +161,35 @@ try {
     `une carte, deux lignes avec leur trajet, un montant en haut, le calcul en bas (${k.h.join(' / ')})`);
   verifier(k.fs[0] === k.fs[1] && Number(k.tb.fw) >= 700 && k.tb.bg !== 'rgba(0, 0, 0, 0)' && k.tb.bl === '3px', 'en-têtes de la même taille ; trajet en gras dans une bande avec un trait à gauche');
   await p.click('#ou-x');
-  // J.1 seul / J.2 seul
-  r = await cocher(p, 'b1', 'j2'); await fermer(p); // décoche le 18
-  v = await vols(p); verifier(['b1', 'b2', 'b3', 'b4'].every(id => v[id].frais.type === null), 'décoché sur les quatre vols du 18');
+  // J.1 seul / J.2 seul (v0.71 : chaque vol se décoche seul)
+  for (const id of ['b1', 'b2', 'b3', 'b4']) { await cocher(p, id, 'j2'); await fermer(p); }
   await annee(p, '2025'); k = await carte(p, 'j1i|2025-11-17');
   verifier(k.h[0] === '17/11/2025 · J.1 incomplet 0,00 €' && k.bas.includes('Coche aussi le J.2 du lendemain'), 'J.1 seul : « J.1 incomplet », 0,00 €');
   await p.click('#ou-x');
-  await cocher(p, 'a2', 'j1'); await fermer(p); await cocher(p, 'b2', 'j2'); await fermer(p); // le 17 décoché, le 18 en J.2
+  for (const id of ['a1', 'a2']) { await cocher(p, id, 'j1'); await fermer(p); }
+  await cocher(p, 'b2', 'j2'); await fermer(p);
   await annee(p, '2025'); k = await carte(p, 'j2i|2025-11-18');
   verifier(k.h[0] === '18/11/2025 · J.2 incomplet 0,00 €' && k.bas.includes('Coche aussi le J.1 de la veille'), 'J.2 seul : « J.2 incomplet », 0,00 €');
   await p.click('#ou-x');
-  await cocher(p, 'a1', 'j1'); await fermer(p); // de nouveau la paire
+  for (const [id, t] of [['a1', 'j1'], ['a2', 'j1'], ['b1', 'j2'], ['b3', 'j2'], ['b4', 'j2']]) { await cocher(p, id, t); await fermer(p); } // de nouveau la paire
 
-  console.log('R173 : VOL JOURNÉE sur tous les vols du jour');
-  r = await cocher(p, 'c2', 'journee'); await fermer(p);
-  v = await vols(p); verifier(['c1', 'c2', 'c3'].every(id => v[id].frais.type === 'journee') && r.info.includes('les 3 vols du jour'), `coché sur un vol : les trois vols du 03/12 (« ${r.info} »)`);
+  console.log('R180 : VOL JOURNÉE sur tous les vols du jour ; décocher un vol seul');
+  let r = await cocher(p, 'c2', 'journee'); await fermer(p);
+  v = await vols(p); verifier(['c1', 'c2', 'c3'].every(id => v[id].frais.type === 'journee') && r.info.includes('3 vols cochés ce jour'), `coché sur un vol : les trois vols du 03/12 (« ${r.info} »)`);
   const rond = await p.$$eval('#list .flight', l => Object.fromEntries(l.map(c => [c.dataset.id, c.querySelector('.fl-rep').classList.contains('frais')])));
-  verifier(rond.c1 && rond.c2 && rond.c3 && rond.a1 && rond.b4 && !rond.e1, 'cercle noir sur tous les vols de la journée');
+  verifier(rond.c1 && rond.c2 && rond.c3 && rond.a1 && rond.b4 && !rond.e1, 'cercle noir sur tous les vols cochés');
   await annee(p, '2025'); k = await carte(p, 'journee|2025-12-03');
   verifier(k.h[0] === '03/12/2025 · Vol journée 87,00 €' && JSON.stringify(k.traj) === '["LFTW → LFTH → LFPB → LFTW"]' && k.bas === '3 vols · ½ indemnité zone euro', `« 03/12/2025 · Vol journée », trajet LFTW → LFTH → LFPB → LFTW (${k.bas})`);
   await p.click('#ou-x');
   await cocher(p, 'c3', 'journee'); await fermer(p);
-  v = await vols(p); verifier(['c1', 'c2', 'c3'].every(id => v[id].frais.type === null), 'décoché sur un autre vol : décoché sur les trois');
+  v = await vols(p); verifier(v.c1.frais.type === 'journee' && v.c2.frais.type === 'journee' && v.c3.frais.type === null, 'décoché sur un vol : les deux autres restent cochés');
   await cocher(p, 'c1', 'journee'); await fermer(p);
 
   console.log('R178 : pays de la nuit automatique');
   r = await cocher(p, 'e1', 'j1');
   verifier(await p.inputValue('#fe-pays') === 'Espagne', 'J.1 dont le dernier vol arrive à LEMD : Espagne');
-  await fermer(p); await cocher(p, 'e3', 'j2'); await fermer(p);
-  await ouvrir(p, 'e2'); await p.fill('#fe-pays', 'portugal'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250);
+  await fermer(p);
+  await ouvrir(p, 'e2'); await p.fill('#fe-pays', 'portugal'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250); await valider(p);
   v = await vols(p);
   verifier(v.e1.frais.pays === 'Portugal' && v.e1.frais.paysManuel && v.e2.frais.paysManuel && await p.evaluate(() => document.getElementById('fe-pays-z').classList.contains('manuel')), 'changé à la main : Portugal, sur les deux vols du jour');
   await fermer(p);
@@ -197,8 +199,8 @@ try {
   for (const [id, pays] of [['r1', 'La Réunion'], ['m1', 'Mayotte']]) { await cocher(p, id, 'j1'); verifier(await p.inputValue('#fe-pays') === pays, `${id === 'r1' ? 'FMEE' : 'FMCZ'} : ${pays}`); await fermer(p); }
   await cocher(p, 'z1', 'j1');
   verifier(await p.inputValue('#fe-pays') === '' && await p.getAttribute('#fe-pays', 'placeholder') === 'Pays à choisir', 'code inconnu : champ vide « Pays à choisir »');
-  await fermer(p); r = await cocher(p, 'z2', 'j2');
-  verifier(r.info === 'Pays de la nuit à choisir sur le J.1', `J.2 : « ${r.info} »`); await fermer(p);
+  await fermer(p); await ouvrir(p, 'z2'); r = { c: await cases(p), info: await p.textContent('#fe-info') };
+  verifier(r.c.j2 && r.info === 'Pays de la nuit à choisir sur le J.1', `J.2 (mis tout seul) : « ${r.info} »`); await fermer(p);
 
   console.log('R174 : détachement La Réunion, deux nuits à FIMP');
   await ouvrir(p, 'd1'); await p.click('#fe-zone [data-fe="detachement"]'); await p.waitForSelector('#dt-modal:not([hidden])');

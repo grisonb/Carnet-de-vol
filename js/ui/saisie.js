@@ -28,7 +28,7 @@ import { volsGroupesAvion, alerteTemps, dixiemesAvion } from '../vols-groupes.js
 import { anomaliesDe } from './anomalies.js';
 import { ignorer } from '../anomalies.js';
 import { anomaliesAvant, noterCorrection } from './anomalies-traitees.js';
-import { afficherFrais, fraisPourNouveauVol } from './frais.js';
+import { afficherFrais, fraisPourNouveauVol, fraisEnAttente, fraisAttenduPour, validerFrais, abandonnerFrais } from './frais.js';
 
 let F = null;          // brouillon du vol en cours
 let quitter = () => {};
@@ -884,7 +884,7 @@ export function ouvrirSaisie(vol, opts = {}) {
   $('#f-ancien').hidden = !(F.ancien && !brouillon);
   $('#f-sim').hidden = !F.simulation;
   rendreAnomalies(brouillon ? null : vol); // v0.61 (R155)
-  afficherFrais({ id: vol ? vol.id : null, date: () => (instants() || {}).dateUTC || $('#f-date').value }); // v0.68 (R166)
+  afficherFrais({ id: vol ? vol.id : null, date: () => (instants() || {}).dateUTC || $('#f-date').value, change: majBoutons }); // v0.68 (R166) ; v0.71 (R183) : Valider
   recap(); apercu();
   F.empreinte = empreinte();
   // carte du vol enregistré (sans jamais toucher aux heures) ; brouillon NPF : positions des feux reçues
@@ -918,7 +918,7 @@ async function ignorerAnomalies() {
 // le crayon, LF / LOC / UTC, la carte (flammes figées : voir carte.js), la fiche de l'avion (« i », sans son crayon) et
 // l'ouverture du détail des compteurs. Ni « Enregistrer » ni « Supprimer » (style).
 let lecture = false;
-const AUTORISES_LECTURE = '#cancel, #f-edit, .tz-groupe, #carte-zone, #ac-fiche, #an-cadre, #fe-zone'; // v0.68 : frais d'escale (pas une donnée du carnet) // v0.61 : « Ignorer » ne change aucune donnée // v0.56 : « Compteurs › » bloqué en lecture
+const AUTORISES_LECTURE = '#cancel, #f-edit, #f-ok, .tz-groupe, #carte-zone, #ac-fiche, #an-cadre, #fe-zone'; // v0.68 : frais d'escale (pas une donnée du carnet) // v0.61 : « Ignorer » ne change aucune donnée // v0.56 : « Compteurs › » bloqué en lecture
 export const enLecture = () => lecture;
 function fixerLecture(oui) {
   lecture = oui;
@@ -930,9 +930,27 @@ function fixerLecture(oui) {
     if (oui && !el.readOnly) { el.readOnly = true; el.dataset.lecture = '1'; }
     else if (!oui && el.dataset.lecture) { el.readOnly = false; delete el.dataset.lecture; }
   }
-  $('#cancel').textContent = oui ? 'Fermer' : 'Annuler';
-  $('#f-edit').hidden = !oui || enConsultation();
-  if (F && F.vol && !F.npf) $('#f-title').textContent = oui ? 'Vol' : 'Modifier le vol';
+  majBoutons();
+}
+// v0.71 (R182 / R183) : bandeau : Fermer (rouge) ; à droite le crayon (bleu, lecture) ou Valider (vert : modification avec le crayon,
+// ou changement fait dans la fiche sans le crayon : cases des frais d'escale, pays de la nuit). Titre « Modifier le vol » dans ce cas.
+function majBoutons() {
+  const attente = lecture && fraisEnAttente(), consult = enConsultation();
+  $('#f-edit').hidden = !lecture || attente || consult;
+  $('#f-ok').hidden = consult || !(attente || !lecture);
+  if (F && F.vol && !F.npf) $('#f-title').textContent = lecture && !attente ? 'Vol' : 'Modifier le vol';
+}
+// « Valider » : en lecture, enregistre les cases en attente (le vol reste ouvert en lecture) ; sinon enregistre le vol et revient en lecture
+async function valider() {
+  if (!F || enConsultation()) return;
+  if (lecture) {
+    if (await validerFrais() === false) return;
+    toast('Frais d\'escale enregistrés');
+    const v = F.vol && etat.vols.find(x => x.id === F.vol.id);
+    if (v) { const y = scrollY; ouvrirSaisie(v); scrollTo(0, y); } else majBoutons();
+    return;
+  }
+  await enregistrer({ retourLecture: true });
 }
 function bloquerEnLecture(e) {
   if (!lecture || !e.target.closest || e.target.closest(AUTORISES_LECTURE)) return;
@@ -948,10 +966,10 @@ function empreinte() {
     F.lignes.map(l => l.t), F.compteurs, F.ajoutes, F.s, F.ifr, F.ie, F.groupe]);
 }
 export const saisieModifiee = () => !!F && !lecture && F.empreinte !== undefined && empreinte() !== F.empreinte;
-export function abandonnerSaisie() { F = null; quitter(); }
+export function abandonnerSaisie() { F = null; abandonnerFrais(); quitter(); }
 
 // ---------- Enregistrement ----------
-async function enregistrer() {
+async function enregistrer({ retourLecture = false } = {}) {
   const err = m => { $('#f-err').textContent = m; toast(m, 2500); };
   const date = $('#f-date').value, dep = $('#f-dep').value.trim(), arr = $('#f-arr').value.trim();
   if (!dateValide(date)) return err('Choisis la date du vol.');
@@ -1038,6 +1056,8 @@ async function enregistrer() {
     // v0.68 (R166) : et la case « frais d'escale » (enregistrée dès l'appui)
     for (const k of ['aReporter', 'reporteLe', 'anomaliesIgnorees', 'frais']) if (k in actuel) v[k] = actuel[k]; else delete v[k];
   }
+  // v0.71 (R183) : case changée dans la fiche, en attente : enregistrée avec le vol
+  if (F.vol) { const fa = fraisAttenduPour(F.vol.id); if (fa !== undefined) { if (fa) v.frais = fa; else delete v.frais; } }
   if (npf) {
     v.npfId = npf.id; v.npfExporteLe = npf.exporteLe;
     // Flammes retouchées à la main : gardées, sauf si on a demandé de reprendre celles envoyées par NPF-Q400
@@ -1054,6 +1074,7 @@ async function enregistrer() {
   }
   const avantAn = anomaliesAvant(actuel && actuel.id); // v0.62 (R156) : « ! » affiché avant d'enregistrer
   await enregistrerVol(v);
+  await validerFrais({ sauf: v.id }); // v0.71 (R180 / R181 / R183) : cases des autres vols changées dans la fiche
   if (actuel) await noterCorrection(avantAn, actuel, v); // anomalie disparue : ligne « Corrigées » (le vol ne change pas)
   if (npf) volNpfEnregistre(npf.id);
   // nouvelle personne tapée sans passer par « + » : on l'ajoute à la liste
@@ -1064,7 +1085,10 @@ async function enregistrer() {
     await enregistrerPersonne(p);
   }
   toast(npf ? (F.vol ? 'Vol mis à jour' : F.simulation ? 'Vol de simulation enregistré (hors totaux)' : 'Vol NPF-Q400 enregistré') : F.vol ? 'Vol modifié' : 'Vol enregistré');
+  const reouvrir = retourLecture && F.vol && !npf ? v.id : null;
   F = null;
+  // v0.71 (R182) : « Valider » revient au vol, en lecture
+  if (reouvrir && etat.vols.some(x => x.id === reouvrir)) { const y = scrollY; ouvrirSaisie(etat.vols.find(x => x.id === reouvrir)); scrollTo(0, y); return; }
   quitter();
 }
 
@@ -1128,11 +1152,14 @@ export function initSaisie({ fermer }) {
   $('#tz-loc').addEventListener('click', () => changerMode('loc'));
   $('#tz-utc').addEventListener('click', () => changerMode('utc'));
   // v0.44 (R112) : « Fermer » (lecture) quitte ; « Annuler » d'un vol enregistré revient à la lecture seule sans rien changer
+  // v0.71 (R182 / R183) : « Fermer » quitte le vol ; ce qui a été changé dans la fiche sans le crayon (frais) est abandonné sans
+  // question ; une modification faite avec le crayon : « Abandonner la saisie ? » comme avec la flèche retour
   $('#cancel').addEventListener('click', () => {
-    if (F && F.vol && !F.npf && !lecture && etat.vols.some(v => v.id === F.vol.id)) { const y = scrollY; ouvrirSaisie(etat.vols.find(v => v.id === F.vol.id)); scrollTo(0, y); return; }
-    F = null; fixerLecture(false); quitter();
+    if (F && F.vol && !F.npf && !lecture && saisieModifiee()) { $('#ab-modal').hidden = false; return; }
+    F = null; abandonnerFrais(); fixerLecture(false); quitter();
   });
   $('#f-edit').addEventListener('click', () => { if (!F || !lecture || enConsultation()) return; fixerLecture(false); });
+  $('#f-ok').addEventListener('click', () => valider().catch(e => { $('#f-err').textContent = 'Erreur : ' + e.message; }));
   for (const t of ['click', 'dblclick', 'mousedown', 'pointerdown', 'keydown', 'beforeinput', 'input', 'change'])
     $('#v-saisie').addEventListener(t, bloquerEnLecture, true);
   $('#v-saisie').addEventListener('touchstart', bloquerEnLecture, { capture: true, passive: true });

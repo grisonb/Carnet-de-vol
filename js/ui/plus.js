@@ -2,7 +2,7 @@
 // v0.55 (R141 / R142) : « Importer des fiches avions », « Importer FlyLog » et « Compléter instructeur / examinateur »
 // retirés (aucune donnée ne change).
 
-import { $, esc, toast, proposerFichier, lireFichierTexte, ouvrirOutil, fermerOutil, pause } from './commun.js';
+import { $, esc, toast, proposerFichier, lireFichierTexte, ouvrirOutil, fermerOutil, pause, enchainerDates } from './commun.js';
 import { etat, reglage, enregistrerReglage, enregistrerImport, contenuComplet, restaurer, listeDesCompteurs } from '../etat.js';
 import { analyserFlyLog } from '../flylog.js';
 import { calculerTotaux, filtrerPeriode, bornesPeriode } from '../totaux.js';
@@ -46,6 +46,7 @@ function lirePeriode() {
   return { genre: 'tout' };
 }
 function brancherPeriode() {
+  enchainerDates($('#xp-du'), $('#xp-au')); // v0.71 (R184)
   $('#xp-per').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     document.querySelectorAll('#xp-per button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));

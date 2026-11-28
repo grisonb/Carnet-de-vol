@@ -234,8 +234,9 @@ async function lecture(nom, p) {
   verifier(e.lecture && e.titre === 'Vol' && e.sous === `du ${jj}/${mm}/${aa} · LFTW › LFTW` && e.fermer === 'Fermer' && !e.save && !e.suppr && e.crayon,
     `${nom} : vol ouvert en LECTURE SEULE : « ${e.titre} ${e.sous} », bouton « ${e.fermer} », crayon, ni Enregistrer ni Supprimer`);
   verifier(e.fond === 'rgb(237, 241, 245)', `${nom} : la fiche du vol garde son fond (${e.fond})`);
-  const crayon = await p.evaluate(() => { const s = getComputedStyle(document.querySelector('#f-edit')), r = document.querySelector('#f-edit').getBoundingClientRect(); return { c: s.color, droite: innerWidth - r.right }; });
-  verifier(crayon.c === 'rgb(31, 78, 121)' && crayon.droite < 30, `${nom} : crayon bleu foncé en haut à droite`);
+  // v0.71 (R182) : crayon = rond bleu brillant
+  const crayon = await p.evaluate(() => { const s = getComputedStyle(document.querySelector('#f-edit')), r = document.querySelector('#f-edit').getBoundingClientRect(); return { c: s.backgroundImage, droite: innerWidth - r.right }; });
+  verifier(crayon.c.includes('radial-gradient') && crayon.c.includes('47, 143, 224') && crayon.droite < 30, `${nom} : crayon bleu en haut à droite`);
   await p.screenshot({ path: join(CAPT, `v044-lecture-${nom.replace(/\W+/g, '-')}.png`), fullPage: true });
   await essaisLecture(nom, p);
   // LF / LOC / UTC restent utilisables (affichage seulement)
@@ -244,20 +245,21 @@ async function lecture(nom, p) {
   const lf0 = await p.getAttribute('#tz-lf', 'aria-pressed'); await p.click('#tz-lf'); const lf1 = await p.getAttribute('#tz-lf', 'aria-pressed'); await p.click('#tz-lf');
   verifier(t0loc !== t0 && lf1 !== lf0 && await p.getAttribute('#tz-loc', 'aria-pressed') === 'true', `${nom} : LOC / UTC utilisable (${t0} UTC -> ${t0loc} LOC), LF aussi`);
   await p.click('#tz-utc');
-  // crayon -> Modifier ; Annuler revient à la lecture sans rien changer
+  // crayon -> Modifier ; v0.71 : Fermer (avec la question « Abandonner la saisie ? ») ne change rien
   await p.click('#f-edit');
   e = await t();
-  verifier(!e.lecture && e.titre === 'Modifier le vol' && e.fermer === 'Annuler' && e.save && e.saveTxt === 'Enregistrer les modifications' && !e.crayon && e.suppr,
+  verifier(!e.lecture && e.titre === 'Modifier le vol' && e.fermer === 'Fermer' && await p.isVisible('#f-ok') && e.save && e.saveTxt === 'Enregistrer les modifications' && !e.crayon && e.suppr,
     `${nom} : crayon : « ${e.titre} », « ${e.fermer} », « ${e.saveTxt} »`);
   await p.fill('#f-rem', 'CHANGEMENT ESSAI'); await p.fill('#f-dep', 'LFMT');
   verifier(await p.inputValue('#f-rem') === 'CHANGEMENT ESSAI', `${nom} : en modification, les champs se modifient`);
   await p.click('#ac-fiche'); await p.waitForSelector('#fiche:not([hidden])');
   verifier(await p.isVisible('#fi-ed'), `${nom} : en modification, la fiche de l'avion retrouve son crayon`);
   await p.click('#fi-x'); await p.waitForSelector('#fiche', { state: 'hidden' });
-  await p.click('#cancel'); await p.waitForTimeout(200);
+  await p.click('#cancel'); await p.waitForSelector('#ab-modal:not([hidden])'); await p.click('#ab-yes'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('.flight[data-id="v-feu"]'); await p.waitForSelector('#v-saisie:not([hidden])');
   e = await t();
-  verifier(e.lecture && e.titre === 'Vol' && await p.isVisible('#v-saisie') && await p.inputValue('#f-rem') === 'REMARQUE ESSAI' && await p.inputValue('#f-dep') === 'LFTW'
-    && (await lireVol(p, 'v-feu')).remarques === 'REMARQUE ESSAI', `${nom} : Annuler : retour à la lecture seule, rien n'a changé (écran et carnet)`);
+  verifier(e.lecture && e.titre === 'Vol' && await p.inputValue('#f-rem') === 'REMARQUE ESSAI' && await p.inputValue('#f-dep') === 'LFTW'
+    && (await lireVol(p, 'v-feu')).remarques === 'REMARQUE ESSAI', `${nom} : Fermer puis « Abandonner » : rien n'a changé (écran et carnet)`);
   // en modification, la flamme redevient modifiable (bulle avec « Supprimer ce feu »)
   await p.click('#f-edit');
   await p.click('#carte-mini'); await p.waitForSelector('#carte-grande .carte-feu', { timeout: 15000 }); await p.waitForTimeout(400);
@@ -272,7 +274,7 @@ async function lecture(nom, p) {
   await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])');
   e = await t();
   await p.fill('#f-rem', 'NOUVEAU');
-  verifier(!e.lecture && e.titre === 'Nouveau vol' && e.fermer === 'Annuler' && e.save && !e.crayon && await p.inputValue('#f-rem') === 'NOUVEAU',
+  verifier(!e.lecture && e.titre === 'Nouveau vol' && e.fermer === 'Fermer' && e.save && !e.crayon && await p.inputValue('#f-rem') === 'NOUVEAU',
     `${nom} : nouveau vol (+) : directement en modification (« ${e.titre} », « ${e.saveTxt} »)`);
   await p.click('#cancel'); await p.click('#ab-yes', { timeout: 2000 }).catch(() => {}); await p.waitForSelector('#v-carnet:not([hidden])');
   // recherche puis « Voir dans le carnet » : en lecture seule

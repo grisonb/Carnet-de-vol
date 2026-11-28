@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { lignesFrais, anneeFrais, reprendreJ2, typeDuVol, titreLigne, typeLigne, lieuLigne, montantLigne, nuitsAilleurs, fraisDuJour, paysAuto, nuitsDe, LIBELLES } from '../../js/frais.js';
+import { lignesFrais, anneeFrais, reprendreJ2, typeDuVol, titreLigne, typeLigne, lieuLigne, montantLigne, nuitsAilleurs, fraisDuJour, fixerFraisParVol, paysAuto, nuitsDe, LIBELLES } from '../../js/frais.js';
 import { definirTerrains, terrain } from '../../js/terrains.js';
 import { nomPays } from '../../js/pays.js';
 import { volVide } from '../../js/modele.js';
@@ -45,16 +45,18 @@ test('R177 : J.1 seul et J.2 seul : « incomplet », 0 €, hors total', () => {
   assert.equal(l.filter(x => x.incomplet).length, 2);
 });
 
-test('R173 : une journée = tous ses vols ; la case cochée le plus récemment vaut pour la journée', () => {
+// v0.71 (R180) : chaque vol a sa case ; les données de la v0.70 (case de la journée) sont reprises par fixerFraisParVol
+test('R173 (repris en v0.71) : une journée cochée = tous ses vols cochés ; la ligne prend tous les vols cochés du jour', () => {
   const a = vol('2025-12-03', 'LFTW', 'LFTH', { type: 'journee', le: '2025-12-03T18:00:00Z' }, '07:00'), b = vol('2025-12-03', 'LFTH', 'LFPB', null, '10:00'),
     c = vol('2025-12-03', 'LFPB', 'LFTW', { type: null, le: '2025-12-01T10:00:00Z' }, '14:00');
-  const l = L([a, b, c]);
+  const ch = fixerFraisParVol([a, b, c]), par = new Map(ch.map(v => [v.id, v])), apres = [a, b, c].map(v => par.get(v.id) || v);
+  assert.deepEqual(ch.map(v => v.id).sort(), [b.id, c.id].sort(), 'v0.70 -> v0.71 : les vols sans la case du jour la reçoivent');
+  const l = L(apres);
   assert.equal(l.length, 1); assert.equal(titreLigne(l[0]), '03/12/2025 · Vol journée'); assert.equal(l[0].vols.length, 3);
-  assert.equal(l[0].etapes, 'LFTW → LFTH → LFPB → LFTW'); assert.equal(montantLigne(l[0]).replace(/ /g, ' '), '87,00 €');
-  assert.equal(typeDuVol(b, [], [a, b, c]), 'journee', 'vol sans case : prend celle de sa journée');
-  // décochée plus tard sur un autre vol du jour : plus rien
-  const c2 = { ...c, frais: { type: null, le: '2025-12-04T08:00:00Z' } };
-  assert.equal(L([a, b, c2]).length, 0); assert.equal(fraisDuJour([a, b, c2], '2025-12-03').type, null);
+  assert.equal(l[0].etapes, 'LFTW → LFTH → LFPB → LFTW'); assert.equal(montantLigne(l[0]).replace(/\u202f/g, ' '), '87,00 €');
+  assert.equal(typeDuVol(apres[1], []), 'journee');
+  assert.equal(fixerFraisParVol(apres).length, 0, 'déjà repris : rien ne change');
+  assert.equal(fraisDuJour([a, b, c], '2025-12-03').type, 'journee');
   // un vol journée d'un vol « LFTW → LFTW » garde ses deux terrains
   assert.equal(L([vol('2025-12-05', 'LFTW', 'LFTW', { type: 'journee' })])[0].etapes, 'LFTW → LFTW');
 });
