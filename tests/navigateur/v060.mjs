@@ -385,8 +385,8 @@ try {
   verifier(await traceDe(A, 'v4') === 'sans altitude' && await conflitsDe(A) === 0, 'fermé sans modification : la version reçue s\'applique à la synchro suivante, aucun conflit à choisir');
   // vraie modification des deux côtés : le conflit reste à choisir (rien n'est écrasé)
   await A.ctx.setOffline(true);
-  await ouvrirVol(A.p, 'v2'); await A.p.click('#f-edit'); await A.p.fill('#f-rem', 'REMARQUE TELEPHONE'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
-  await ouvrirVol(T.p, 'v2'); await T.p.click('#f-edit'); await T.p.fill('#f-rem', 'REMARQUE IPAD'); await T.p.click('#save'); await T.p.waitForSelector('#v-carnet:not([hidden])'); await actualiser(T);
+  await ouvrirVol(A.p, 'v2'); await A.p.click('#f-edit'); await A.p.fill('#f-rem', 'REMARQUE TELEPHONE'); await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
+  await ouvrirVol(T.p, 'v2'); await T.p.click('#f-edit'); await T.p.fill('#f-rem', 'REMARQUE IPAD'); await T.p.click('#f-ok'); await T.p.waitForSelector('#v-carnet:not([hidden])'); await actualiser(T);
   await A.ctx.setOffline(false); await actualiser(A);
   verifier((await volDe(A.p, 'v2')).remarques === 'REMARQUE TELEPHONE' && await conflitsDe(A) === 1, 'vraie modification des deux côtés : rien n\'est écrasé, le conflit reste à choisir (inchangé)');
 

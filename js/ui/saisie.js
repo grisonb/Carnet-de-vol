@@ -745,8 +745,7 @@ function appliquerNpf(n, vol) {
   F.npf.reprendreFeux = false;
   majBoutonFeuxNpf();
   $('#f-title').textContent = vol ? 'Mettre à jour le vol' : 'Vol NPF-Q400 à vérifier';
-  $('#f-sub').textContent = 'Brouillon : rien n\'est enregistré tant que tu n\'appuies pas sur Enregistrer.';
-  $('#save').textContent = vol ? 'Enregistrer la mise à jour' : 'Enregistrer le vol';
+  $('#f-sub').textContent = 'Brouillon : rien n\'est enregistré tant que tu n\'appuies pas sur Valider.';
   $('#npf-zone').hidden = false;
   const sansCode = b.escales.filter(e => !e.code).length, aVerifier = b.escales.some(e => e.aVerifier);
   $('#npf-txt').textContent = `Vol envoyé par NPF-Q400${b.npf.nbFeux ? ` · ${b.npf.nbFeux} feu${b.npf.nbFeux > 1 ? 'x' : ''}` : ''}`
@@ -813,7 +812,6 @@ export function ouvrirSaisie(vol, opts = {}) {
     $('#f-title').textContent = enConsultation() ? 'Vol' : 'Modifier le vol';
     $('#f-sub').textContent = `du ${dateFr(vol.date)} · ${[vol.dep, ...F.escales.map(e => e.code), vol.arr].join(' › ')}`
       + (enConsultation() ? ' · se modifie sur le téléphone' : '');
-    $('#save').textContent = 'Enregistrer les modifications';
     $('#del-zone').hidden = false; $('#del-confirm').hidden = true;
     let date = vol.date, t0 = vol.hDep, t1 = vol.hArr;
     if (F.mode === 'loc' && vol.hDep) {
@@ -829,7 +827,6 @@ export function ouvrirSaisie(vol, opts = {}) {
     $('#f-rem').value = vol.remarques || '';
   } else {
     $('#f-title').textContent = 'Nouveau vol'; $('#f-sub').textContent = '';
-    $('#save').textContent = 'Enregistrer le vol';
     $('#del-zone').hidden = true;
     $('#f-date').value = aujourdhui();
     // R46 / R58 : départ = arrivée du dernier vol enregistré (sinon la base) ; arrivée = LFTW, ou FMEP si le départ
@@ -943,14 +940,15 @@ function majBoutons() {
 // « Valider » : en lecture, enregistre les cases en attente (le vol reste ouvert en lecture) ; sinon enregistre le vol et revient en lecture
 async function valider() {
   if (!F || enConsultation()) return;
+  // v0.72 (R185) : Valider enregistre puis ferme la fiche (retour à l'accueil, à la même place) ; enregistrement refusé : la fiche
+  // reste ouverte avec le message
   if (lecture) {
     if (await validerFrais() === false) return;
     toast('Frais d\'escale enregistrés');
-    const v = F.vol && etat.vols.find(x => x.id === F.vol.id);
-    if (v) { const y = scrollY; ouvrirSaisie(v); scrollTo(0, y); } else majBoutons();
+    F = null; fixerLecture(false); quitter();
     return;
   }
-  await enregistrer({ retourLecture: true });
+  await enregistrer();
 }
 function bloquerEnLecture(e) {
   if (!lecture || !e.target.closest || e.target.closest(AUTORISES_LECTURE)) return;
@@ -969,7 +967,7 @@ export const saisieModifiee = () => !!F && !lecture && F.empreinte !== undefined
 export function abandonnerSaisie() { F = null; abandonnerFrais(); quitter(); }
 
 // ---------- Enregistrement ----------
-async function enregistrer({ retourLecture = false } = {}) {
+async function enregistrer() {
   const err = m => { $('#f-err').textContent = m; toast(m, 2500); };
   const date = $('#f-date').value, dep = $('#f-dep').value.trim(), arr = $('#f-arr').value.trim();
   if (!dateValide(date)) return err('Choisis la date du vol.');
@@ -1085,10 +1083,7 @@ async function enregistrer({ retourLecture = false } = {}) {
     await enregistrerPersonne(p);
   }
   toast(npf ? (F.vol ? 'Vol mis à jour' : F.simulation ? 'Vol de simulation enregistré (hors totaux)' : 'Vol NPF-Q400 enregistré') : F.vol ? 'Vol modifié' : 'Vol enregistré');
-  const reouvrir = retourLecture && F.vol && !npf ? v.id : null;
   F = null;
-  // v0.71 (R182) : « Valider » revient au vol, en lecture
-  if (reouvrir && etat.vols.some(x => x.id === reouvrir)) { const y = scrollY; ouvrirSaisie(etat.vols.find(x => x.id === reouvrir)); scrollTo(0, y); return; }
   quitter();
 }
 
@@ -1381,7 +1376,7 @@ export function initSaisie({ fermer }) {
   $('#del').addEventListener('click', () => { $('#del-confirm').hidden = false; });
   $('#del-no').addEventListener('click', () => { $('#del-confirm').hidden = true; });
   $('#del-yes').addEventListener('click', async () => { const v = F.vol; F = null; quitter(); await supprimerVolAvecAnnuler(v); });
-  $('#save').addEventListener('click', () => enregistrer().catch(e => { $('#f-err').textContent = 'Erreur : ' + e.message; }));
+  // v0.72 (R186) : plus de grand bouton « Enregistrer » en bas : seul le bouton vert Valider du bandeau enregistre
 }
 
 export const saisieEnCours = () => F !== null;

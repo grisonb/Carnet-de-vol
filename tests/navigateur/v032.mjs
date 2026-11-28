@@ -155,7 +155,7 @@ try {
   let f = await valeurs(T);
   verifier(f.t0 === '10h00' && f.t1 === '11h00' && f.bloc === '1h00', `départ 10h00 -> arrivée calculée ${f.t1}, temps de vol ${f.bloc} (inchangé)`);
   await T.screenshot({ path: join(CAPT, 'v032-01-tel-ancien-vol-heures.png') });
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const apresAncien = await volEnregistre(T, 'v-ancien');
   verifier(apresAncien.hDep && apresAncien.hArr && apresAncien.tempsTotal === 60 && memeVol(avantAncien, apresAncien, ['hDep', 'hArr', 'date']),
     `enregistré : heures ${apresAncien.hDep} → ${apresAncien.hArr} UTC ; temps, nuit, IFR, atterrissages inchangés`);
@@ -179,7 +179,7 @@ try {
   await T.click('#nuit-appl');
   f = await valeurs(T);
   verifier(f.nuit === '1h00' && !f.msg, 'bouton « Appliquer » : la nuit calculée remplace 0h00 (seulement à la demande)');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const vn = await volEnregistre(T, 'v-ancien-nuit');
   verifier(vn.tempsNuit === 60 && vn.tempsTotal === 60 && vn.tempsIFR === 30 && vn.attJour === 1 && vn.attNuit === 0, 'enregistré : nuit 1h00 choisie, temps, IFR et atterrissages inchangés');
   console.log('R76 : vol récent (comportement inchangé)');
@@ -244,7 +244,7 @@ try {
   await T.click('#fn-oui');
   verifier((await T.inputValue('#ml input')) === 'FEU n°62 COMMUNE-ESSAI-C' && (await T.textContent('#fire-next')) === '(n°62)', 'Valider : la ligne de mission prend le n°62');
   await taper(T, '#f-t0', '1400'); await taper(T, '#f-t1', '1500');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const vf = await T.evaluate(async () => (await import('./js/etat.js')).etat.vols.find(v => (v.missions || []).some(m => m.includes('COMMUNE-ESSAI-C'))));
   verifier(vf && vf.missions[0] === 'FEU n°62 COMMUNE-ESSAI-C' && vf.feux === 1, 'vol enregistré avec FEU n°62');
   await T.click('#fab'); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 200);
@@ -257,7 +257,7 @@ try {
   await T.click('#feu-num'); await T.waitForSelector('#fn-modal:not([hidden])');
   verifier(await T.inputValue('#fn-n') === '54', 'vol du 01/10/2026 : son n°54');
   await T.click('#fn-p'); await T.click('#fn-oui');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const v55 = await volEnregistre(T, 'v-f54');
   verifier(v55.missions[0] === 'FEU n°55 COMMUNE-ESSAI-B' && v55.feux === 1, 'mission du vol modifié : FEU n°55');
 

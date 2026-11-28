@@ -278,7 +278,7 @@ try {
   await T.waitForSelector('#npf-bandeau:not([hidden])', { timeout: 15000 }); await T.click('#npf-bandeau'); await T.waitForSelector('#npf-l');
   await T.click('#npf-l [data-npf="npf-feux"]'); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 300);
   await T.click('[data-c="largCdbDash"][data-d="1"]'); await T.click('[data-c="largCdbDash"][data-d="1"]');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const v0 = await volEnregistre(T, "v.npfId === 'npf-feux'");
   verifier(v0 && v0.feuxPositions.length === 2 && v0.feux === 2 && v0.compteurs.largCdbDash === 2, 'vol enregistré : 2 flammes, 2 feux, 2 largages');
 
@@ -353,7 +353,7 @@ try {
   verifier(memes(v1, v0) && v1.feuxPositions.length === 1 && (await T.$$('#carte-grande .carte-feu')).length === 1, 'feu supprimé : 1 flamme ; heures, compteurs et mission inchangés');
   await T.click('#cp-x'); await attendre(T, 300);
   verifier((await T.$$('#carte-mini .carte-feu')).length === 1, 'petite carte de la saisie à jour (1 flamme)');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   v1 = await volEnregistre(T, `v.id === '${v0.id}'`);
   verifier(v1.feuxPositions.length === 1 && v1.feuxRetouches, '« Enregistrer » du vol ouvert ne remet pas l\'ancienne flamme');
 
@@ -388,7 +388,7 @@ try {
   verifier(/Positions des feux[\s\S]*déplacées ou supprimées à la main[\s\S]*gardées/.test(diff), '« Ce qui change » : tes positions des feux sont gardées');
   await T.click('#nu-ok'); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 300);
   verifier(await T.isVisible('#npf-feux') && (await T.textContent('#npf-txt')).includes('tes positions sont gardées'), 'brouillon : message et bouton « Reprendre les positions des feux envoyées par NPF-Q400 »');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   let v2 = await volEnregistre(T, `v.id === '${v0.id}'`);
   verifier(v2.feuxPositions.length === 1 && v2.feuxPositions[0].lat === v1.feuxPositions[0].lat && v2.feuxRetouches && v2.npfExporteLe === '2026-11-10T08:00:00Z',
     'mise à jour enregistrée SANS remettre les flammes de NPF (déplacée gardée, supprimée pas revenue)');
@@ -398,7 +398,7 @@ try {
   await T.click('#npf-l [data-npf="npf-feux"]'); await T.waitForSelector('#nu-ok'); await T.click('#nu-ok'); await T.waitForSelector('#v-saisie:not([hidden])'); await attendre(T, 300);
   await T.click('#npf-feux');
   verifier(await T.textContent('#npf-feux') === 'Garder mes positions des feux', 'choix « Reprendre » (et retour possible « Garder mes positions »)');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   v2 = await volEnregistre(T, `v.id === '${v0.id}'`);
   verifier(v2.feuxPositions.length === 2 && v2.feuxPositions[0].lat === 43.80 && !v2.feuxRetouches, 'seulement si on le demande : les positions de NPF-Q400 reviennent');
 

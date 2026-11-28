@@ -151,7 +151,7 @@ try {
   console.log('Nouveau vol saisi : à reporter');
   await A.p.click('#fab'); await A.p.waitForSelector('#v-saisie:not([hidden])'); await A.p.click('#tz-utc');
   await A.p.fill('#f-t0', ''); await A.p.type('#f-t0', '1400'); await A.p.type('#f-t1', '1500');
-  await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(400);
+  await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(400);
   const nouveau = (await vols(A.p)).find(v => !v.id.startsWith('v'));
   verifier(nouveau && nouveau.aReporter === true, 'vol enregistré avec « à reporter »');
   verifier(await rond(A.p, nouveau.id).getAttribute('aria-checked') === 'false', 'rond vide sur sa carte');
@@ -172,7 +172,7 @@ try {
   await rejoindre(A.p, 'ref'); await actualiser(A.p);
   await A.p.waitForSelector('#npf-bandeau:not([hidden])', { timeout: 15000 });
   await A.p.click('#npf-bandeau'); await A.p.waitForSelector('#npf-l'); await A.p.click('#npf-l .npfv >> nth=0'); await A.p.waitForSelector('#v-saisie:not([hidden])'); await A.p.waitForTimeout(400);
-  await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(500);
+  await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(500);
   const vNpf = (await vols(A.p)).find(v => v.npfId === npf.id);
   verifier(vNpf && vNpf.aReporter === true && await rond(A.p, vNpf.id).getAttribute('aria-checked') === 'false', 'vol NPF-Q400 enregistré : rond vide');
   verifier(await aReporter(A.p) === 2 && await sansLigne(A.p), '2 vols à reporter (v0.66, R162 : ligne et filtre « À reporter » supprimés)');

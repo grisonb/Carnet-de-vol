@@ -57,7 +57,7 @@ const barre = p => p.evaluate(() => {
   return { tailles: t.map(b => parseFloat(getComputedStyle(b).fontSize)), uneLigne: t.every(b => b.scrollWidth <= b.clientWidth + 1 && b.getBoundingClientRect().height < 60),
     fab: { l: Math.round(r.width), h: Math.round(r.height), fond: getComputedStyle(f).backgroundColor, droite: r.left > t[2].getBoundingClientRect().right, dansBarre: !!f.closest('.tabs'),
       svg: !!f.querySelector('svg path'), visible: !!f.offsetParent }, flottant: !!document.querySelector('.fab:not(.tabs .fab)'),
-    vertSave: getComputedStyle(document.getElementById('save')).getPropertyValue('--vert-fond') || getComputedStyle(document.documentElement).getPropertyValue('--vert-fond').trim() };
+    vertSave: getComputedStyle(document.documentElement).getPropertyValue('--vert-fond').trim() }; // v0.72 : plus de #save
 });
 
 try {
@@ -98,8 +98,9 @@ try {
   await T.click('#fab'); await T.waitForSelector('#v-saisie:not([hidden])');
   await T.fill('#f-rem', 'EN COURS');
   await T.screenshot({ path: join(CAPT, 'v028-02-tel-saisie-barre.png') });
-  const save = await T.evaluate(() => { const s = document.getElementById('save').getBoundingClientRect(), t = document.querySelector('.tabs').getBoundingClientRect(); return s.bottom <= t.top + 0.5; });
-  verifier(save, '« Enregistrer le vol » ne recouvre ni la barre ni le « + »');
+  // v0.72 (R186) : plus de grand bouton « Enregistrer » en bas ; Valider est dans le bandeau du haut
+  const save = await T.evaluate(() => { const s = document.getElementById('f-ok').getBoundingClientRect(), t = document.querySelector('.tabs').getBoundingClientRect(); return !document.getElementById('save') && s.bottom <= t.top + 0.5; });
+  verifier(save, '« Valider » (bandeau du haut) ne recouvre ni la barre ni le « + » ; plus de grand bouton en bas');
   await T.click('#fab'); await T.waitForSelector('#ab-modal:not([hidden])');
   verifier(true, 'saisie en cours : « + » demande « Abandonner la saisie ? »');
   await T.click('#ab-no');

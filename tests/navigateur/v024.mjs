@@ -135,7 +135,7 @@ try {
   await P.waitForSelector('#v-saisie:not([hidden])');
   await P.click('#f-edit'); // v0.44 (R112) : lecture seule -> crayon
   const idSaisi = await P.evaluate(async () => document.getElementById('f-title').textContent);
-  await P.fill('#f-rem', 'MODIFIE SUR LE PC'); await P.click('#save'); await P.waitForSelector('#v-carnet:not([hidden])');
+  await P.fill('#f-rem', 'MODIFIE SUR LE PC'); await P.click('#f-ok'); await P.waitForSelector('#v-carnet:not([hidden])');
   const idPcModifie = await P.evaluate(async () => (await import('./js/etat.js')).etat.vols.find(v => v.remarques === 'MODIFIE SUR LE PC').id);
   await ajouter(P, { ...vols[0], id: 'pc-ajout-1', date: '2026-11-08', remarques: 'AJOUT PC' });
   await ajouter(T, { ...vols[1], id: 'tel-ajout-1', date: '2026-11-08', remarques: 'AJOUT TEL', hDep: '06:00' });

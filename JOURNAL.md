@@ -1,5 +1,21 @@
 # Journal des versions
 
+## v0.72 — 28/11/2026
+
+Remarques R185 et R186. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,
+PDF, CSV, anomalies identiques).
+
+**R185 : Valider ferme la fiche.** Le bouton vert Valider du bandeau enregistre puis ferme la fiche : retour à l'accueil, à la même
+place dans la liste (un seul titre par mois). Enregistrement refusé (heures incomplètes, champ invalide…) : la fiche reste ouverte avec
+le message. Aussi pour les cases des frais d'escale changées sans le crayon.
+
+**R186 : plus de grand bouton « Enregistrer les modifications »** en bas de la fiche (il restait collé en bas de l'écran et cachait
+Trace du vol, Importer…). Valider fait tout ce qu'il faisait (alerte du temps de vol, personne nouvelle, vol NPF-Q400…). Nouveau vol et
+brouillon NPF-Q400 : Valider tout de suite à la place du crayon.
+
+**Tests** : `tests/navigateur/v072.mjs` ; les anciens tests appuient sur Valider au lieu du grand bouton (v013, v019, v023, v025, v028,
+v044, parcours… ; v068 à v071 : Valider ferme la fiche) ; test complet ; contrôle local avec le vrai fichier.
+
 ## v0.71 — 28/11/2026
 
 Remarques R179 à R184. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,

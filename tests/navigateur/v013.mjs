@@ -84,7 +84,7 @@ try {
   await p.click(`.flight[data-id="${cible}"]`); await p.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(p);
   const champ = await p.$('#f-rem, textarea');
   if (champ) { await champ.fill('ESSAI MODIFIÉ'); }
-  await p.click('.save');
+  await p.click('#f-ok'); // v0.72 (R186) : Valider
   await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(400);
   const apres4 = await visible();
   verifier(apres4.id === ici.id && Math.abs(apres4.haut - ici.haut) <= 2, 'vol modifié et enregistré : même place');

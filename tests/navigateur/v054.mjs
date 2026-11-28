@@ -69,7 +69,7 @@ async function ouvrir(id) {
 }
 const heures = async (t0, t1) => { await p.fill('#f-t0', t0); await p.fill('#f-t1', t1); await p.waitForTimeout(100); };
 const enregistrer = async () => {
-  await p.click('#save');
+  await p.click('#f-ok');
   // v0.58 (R150) : temps de vol changé -> alerte, « Enregistrer quand même »
   await p.waitForSelector('#v-carnet:not([hidden]), #tv-modal:not([hidden])'); if (await p.isVisible('#tv-modal')) await p.click('#tv-ok');
   await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(250);

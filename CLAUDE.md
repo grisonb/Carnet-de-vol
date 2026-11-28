@@ -272,6 +272,8 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   vols cochés seulement ; migration `fixerFraisParVol` (drapeau `migrationFraisVol`) ; `aDesFrais(v)` pour le cercle. R183 ui/frais.js :
   changements EN ATTENTE (`attente`, `fraisEnAttente`, `validerFrais`, `abandonnerFrais`) ; saisie.js `majBoutons` / `valider` ;
   bandeau `.formhead` sticky, boutons `.brillant` (#cancel rouge, #f-edit bleu, #f-ok vert). R184 commun.js `enchainerDates(du, au)`.
+- v0.72 : plus de `#save` (R186) : `#f-ok` (Valider) = seul enregistrement ; `valider()` enregistre puis FERME la fiche (R185) ;
+  dans les tests : `click('#f-ok')`.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

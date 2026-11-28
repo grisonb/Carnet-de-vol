@@ -175,7 +175,7 @@ try {
   const lignes = await p.$$eval('#npf-l .npfv', l => l.length);
   verifier(lignes === 4, `liste : ${lignes} vols, chacun une fois`);
   await p.click('#npf-l .npfv >> nth=0'); await p.waitForSelector('#v-saisie:not([hidden])'); await p.waitForTimeout(400);
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(500);
   const importe = (await volsCarnet())[0];
   depot(npf(importe, { date: nas.npf.get(importe)?.date || '2026-11-13' }));
   const depot2 = [...nas.npf.keys()].includes(importe);

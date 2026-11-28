@@ -182,7 +182,7 @@ try {
   const avantTout = await totaux(T);
   await ouvrirNpf(T, 'npf-reel-1');
   verifier(await T.isHidden('#f-sim') && (await T.textContent('#f-title')) === 'Vol NPF-Q400 à vérifier', 'vrai vol : brouillon habituel, sans bandeau');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const reel = await attendreVolNpf(T, 'npf-reel-1');
   verifier(!('simulation' in reel) && reel.missions[0] === 'FEU n°41 VILLE-ESSAI-R' && reel.feuxPositions.length === 1, `vrai vol enregistré sans marque (${reel.missions[0]})`);
   const apresReel = await totaux(T);
@@ -203,7 +203,7 @@ try {
   verifier(cs.visible && cs.sousTitre && cs.nonCache && cs.feux === 2, `Carte du vol : bandeau « SIMULATION VOL » (ne cache ni la carte ni Plan / Photo), ${cs.feux} feux`);
   await T.screenshot({ path: join(CAPT, 'v035-04-tel-carte-simulation.png') });
   await T.click('#cp-x');
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const sim = await attendreVolNpf(T, 'npf-sim-1');
   verifier(sim.simulation === true && sim.feuxPositions.length === 2 && sim.avionId === 'a2', 'vol de simulation enregistré avec sa marque et ses 2 positions de feu');
 

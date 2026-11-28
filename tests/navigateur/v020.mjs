@@ -65,7 +65,7 @@ try {
   verifier(nuit === '0h42' /* v0.64 (R160) : 0h40 ou 0h41 calculé, arrondi au dixième */, `  nuit ${nuit} (fin du crépuscule civil à 19h05 locale)`);
   verifier(attJ === '0' && attN === '1', `  atterrissage de nuit (Att. Jour ${attJ} / Nuit ${attN})`);
   await p.screenshot({ path: join(CAPT, 'v020-01-vol-fmep-nuit.png') });
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])');
   const enr = await p.evaluate(async () => {
     const db = await new Promise(ok => { const r = indexedDB.open('carnet-de-vol'); r.onsuccess = () => ok(r.result); });
     const v = await new Promise(ok => { const r = db.transaction('vols').objectStore('vols').getAll(); r.onsuccess = () => ok(r.result); }); db.close(); return v;

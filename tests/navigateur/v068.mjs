@@ -101,9 +101,10 @@ const remplir = async (p, vols) => {
 const ouvrir = async (p, id) => { await onglet(p, 'carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); };
 // v0.71 (R183) : les cases changées dans la fiche s'enregistrent avec « Valider » (ici : avant de fermer)
 const valider = async p => { if (await p.isVisible('#f-ok') && await p.evaluate(() => document.getElementById('v-saisie').classList.contains('lecture'))) { await p.click('#f-ok'); await p.waitForTimeout(250); } };
-const fermer = async p => { await valider(p); await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); };
+// v0.72 (R185) : Valider ferme la fiche
+const fermer = async p => { await valider(p); if (await p.isVisible('#v-saisie')) await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); };
 const cases = p => p.$$eval('#fe-zone [data-fe]', l => Object.fromEntries(l.map(b => [b.dataset.fe, b.getAttribute('aria-checked') === 'true'])));
-const cocher = async (p, id, t) => { await ouvrir(p, id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(250); await valider(p); const c = await cases(p); const info = await p.textContent('#fe-info'); return { c, info }; };
+const cocher = async (p, id, t) => { await ouvrir(p, id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(250); await valider(p); await ouvrir(p, id); const c = await cases(p); const info = await p.textContent('#fe-info'); return { c, info }; };
 const carnetEASA = p => p.evaluate(async () => { const e = await import('./js/etat.js'), t = await import('./js/totaux.js'), s = await import('./js/sauvegarde.js'), d = await import('./js/pdf.js');
   const v = [...e.etat.vols].reverse(); return JSON.stringify([t.calculerTotaux(v, e.etat.avions, '2026-12-31'), s.texteTableur(v, e.etat.avions, e.listeDesCompteurs()), d.paginer(v, e.etat.avions).map(x => [x.totalPage, x.cumul])]); });
 const annee = async (p, a) => { await onglet(p, 'plus'); await p.click('#pl-frais'); await p.waitForSelector('#fr-l'); await p.click(`#fr-l [data-an="${a}"]`); await p.waitForSelector('#fa-l'); };

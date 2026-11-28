@@ -109,11 +109,11 @@ const remplir = async (p, vols) => {
 };
 const vols = p => p.evaluate(async () => Object.fromEntries((await import('./js/etat.js')).etat.vols.map(v => [v.id, v])));
 const ouvrir = async (p, id) => { await onglet(p, 'carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); };
-const fermer = async p => { await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); };
+const fermer = async p => { if (await p.isVisible('#v-saisie')) await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); }; // v0.72 : Valider ferme déjà la fiche
 const cases = p => p.$$eval('#fe-zone [data-fe]', l => Object.fromEntries(l.map(b => [b.dataset.fe, b.getAttribute('aria-checked') === 'true'])));
 // v0.71 (R183) : la case changée dans la fiche s'enregistre avec « Valider »
 const valider = async p => { await p.click('#f-ok'); await p.waitForTimeout(250); };
-const cocher = async (p, id, t) => { await ouvrir(p, id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(150); await valider(p); return { c: await cases(p), info: await p.textContent('#fe-info') }; };
+const cocher = async (p, id, t) => { await ouvrir(p, id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(150); await valider(p); await ouvrir(p, id); return { c: await cases(p), info: await p.textContent('#fe-info') }; };
 const annee = async (p, a) => { await onglet(p, 'plus'); await p.click('#pl-frais'); await p.waitForSelector('#fr-l'); await p.click(`#fr-l [data-an="${a}"]`); await p.waitForSelector('#fa-l'); };
 const lignes = p => p.$$eval('#fa-l .lv', l => l.map(x => x.innerText.replace(/\s+/g, ' ').replace(/ /g, ' ').trim()));
 const carte = (p, id) => p.$eval(`#fa-l [data-ligne="${id}"]`, x => ({ h: [...x.querySelectorAll('.lv-h')].map(e => e.innerText.replace(/\s+/g, ' ').replace(/ /g, ' ').trim()),
@@ -189,7 +189,7 @@ try {
   r = await cocher(p, 'e1', 'j1');
   verifier(await p.inputValue('#fe-pays') === 'Espagne', 'J.1 dont le dernier vol arrive à LEMD : Espagne');
   await fermer(p);
-  await ouvrir(p, 'e2'); await p.fill('#fe-pays', 'portugal'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250); await valider(p);
+  await ouvrir(p, 'e2'); await p.fill('#fe-pays', 'portugal'); await p.dispatchEvent('#fe-pays', 'change'); await p.waitForTimeout(250); await valider(p); await ouvrir(p, 'e2');
   v = await vols(p);
   verifier(v.e1.frais.pays === 'Portugal' && v.e1.frais.paysManuel && v.e2.frais.paysManuel && await p.evaluate(() => document.getElementById('fe-pays-z').classList.contains('manuel')), 'changé à la main : Portugal, sur les deux vols du jour');
   await fermer(p);

@@ -81,7 +81,9 @@ try {
     await verifierBouton('#npf-bandeau', VERT, 'bandeau « 1 vol à importer depuis NPF-Q400 »');
     await p.screenshot({ path: join(CAPT, `v019-01-bandeau-${theme}.png`) });
     await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])');
-    await verifierBouton('#save', VERT, '« Enregistrer le vol »');
+    // v0.72 (R186) : plus de grand bouton « Enregistrer » : Valider = rond vert brillant du bandeau
+    const vx = await p.$eval('#f-ok', e => ({ f: getComputedStyle(e).backgroundImage, l: e.getBoundingClientRect().width }));
+    verifier(!(await p.$('#save')) && vx.f.includes('63, 194, 43') && vx.l >= 48, '« Valider » du nouveau vol : rond vert brillant ; plus de grand bouton « Enregistrer »');
     // v0.71 (R182) : « Fermer » de la saisie = rond rouge brillant (croix blanche), au moins 48 px
     const fx = await p.$eval('#cancel', e => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { f: s.backgroundImage, l: r.width, h: r.height, croix: getComputedStyle(e.querySelector('path')).stroke }; });
     verifier(fx.f.includes('240, 58, 43') && fx.l >= 48 && fx.h >= 48 && fx.croix === 'rgb(255, 255, 255)', '« Fermer » de la saisie : rond rouge brillant, croix blanche');

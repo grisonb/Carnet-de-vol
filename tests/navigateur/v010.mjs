@@ -219,7 +219,7 @@ try {
   console.log('Restaurer depuis le NAS');
   // un vol de plus (saisi dans l'app) : la copie suivante en a un de plus que la première
   await onglet('carnet'); await p.click('#fab');
-  await p.fill('#f-t0', '1000'); await p.fill('#f-t1', '1100'); await p.click('#save');
+  await p.fill('#f-t0', '1000'); await p.fill('#f-t1', '1100'); await p.click('#f-ok');
   await attendreCopies(n1 + 2, 10000);
   verifier(nas.copies.at(-1).vols === volsDepart + 1, `vol ajouté : nouvelle copie avec ${volsDepart + 1} vols`);
   await onglet('plus'); await p.click('#pl-restore'); await p.click('#rs-nas');

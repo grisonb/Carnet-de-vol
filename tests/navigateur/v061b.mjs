@@ -186,7 +186,7 @@ try {
   const pos = await A.p.evaluate(() => document.getElementById('an-cadre').getBoundingClientRect().top < document.querySelector('#v-saisie .c-vol').getBoundingClientRect().top);
   verifier(pos, 'en haut de la fiche du vol');
   await A.p.screenshot({ path: join(CAPT, 'v061b-cadre.png') });
-  await A.p.click('#f-edit'); await A.p.fill('#c-nuit', '0h30'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
+  await A.p.click('#f-edit'); await A.p.fill('#c-nuit', '0h30'); await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
   verifier(!(await triangles(A.p)).includes('c') && await A.p.isHidden('#tv-modal'), 'vol corrigé (nuit 0h30) : le « ! » disparaît de lui-même');
   await ouvrir(A.p, 'ar'); verifier(await A.p.isHidden('#an-cadre'), 'vol correct : pas de cadre'); await fermer(A.p);
 
@@ -201,9 +201,9 @@ try {
     '« ! » enlevé ; données du vol identiques (même « Modifié le »)');
   verifier((await bouton(A.p)).texte === `${attendus.length - 2} vols à vérifier`, `bouton : « ${(await bouton(A.p)).texte} »`);
   await ouvrir(A.p, 'd'); verifier(await A.p.isHidden('#an-cadre'), 'rouvert : plus de cadre (l\'anomalie ignorée ne revient pas)');
-  await A.p.click('#f-edit'); await A.p.fill('#f-rem', 'REMARQUE SEULE'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
+  await A.p.click('#f-edit'); await A.p.fill('#f-rem', 'REMARQUE SEULE'); await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
   verifier(!(await triangles(A.p)).includes('d'), 'remarque seule modifiée : toujours ignorée');
-  await ouvrir(A.p, 'd'); await A.p.click('#f-edit'); await A.p.fill('#c-ifr', '2h00'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
+  await ouvrir(A.p, 'd'); await A.p.click('#f-edit'); await A.p.fill('#c-ifr', '2h00'); await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
   verifier((await triangles(A.p)).includes('d'), 'vol modifié ensuite (IFR 2h00 > 1h30) : le « ! » revient');
   await ouvrir(A.p, 'd');
   const cadreD = await A.p.$$eval('#an-l li', l => l.map(x => x.textContent));

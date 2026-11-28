@@ -125,7 +125,7 @@ const jourFr = () => { const d = new Date(), z = n => String(n).padStart(2, '0')
 
 const cartes = async (p, o) => { await choisir(p, o); return lignes(p); };
 const ouvrir = async (p, id) => { await onglet(p, 'carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); };
-const enregistrerFiche = async p => { await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(300); };
+const enregistrerFiche = async p => { await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(300); };
 const appr = async (p, n) => { for (let i = 0; i < Math.abs(n); i++) await p.click(`[data-s="approches"][data-d="${n > 0 ? 1 : -1}"]`); };
 const resume = c => c.map(x => `${x.vol}|${x.barre.map(b => b[0]).join('/')}>${x.vert.map(v => v[0]).join('/')}`).join(' ; ');
 

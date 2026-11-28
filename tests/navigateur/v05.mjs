@@ -135,7 +135,7 @@ try {
   // recalcul : un nouveau vol enregistré, les suggestions sont recalculées à partir des vols
   await p.fill('#m-q', 'aut'); await p.tap('#m-res .swfront');
   await p.fill('#f-t0', '1000'); await p.fill('#f-t1', '1100');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])');
   await ouvrirSaisie();
   verifier(!(await sugg()).includes('ENT, ESSAI'), 'après recalcul (nouveau vol enregistré) : toujours masquée');
   await p.click('#cancel');

@@ -100,7 +100,7 @@ async function modifier(p, id, action) {
   await p.click('.tabs button[data-v="carnet"]'); await p.click(`.flight[data-id="${id}"]`); await p.waitForSelector('#v-saisie:not([hidden])');
   await p.click('#f-edit'); await p.waitForTimeout(150);
   await action();
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(250);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(250);
 }
 const fini = (p, sel) => p.waitForFunction(s => { const e = document.querySelector(s); return e && e.textContent.trim() && !/en cours|Envoi :|Réception :|prêt \?/.test(e.textContent); }, sel, { timeout: 60000 });
 async function rejoindre(p, role) {
@@ -124,7 +124,7 @@ try {
   verifier(await A.p.isVisible('#ie-z') && await A.p.getAttribute('#ie-inst', 'aria-pressed') === 'true' && await A.p.isHidden('#ie-add'), 'la ligne s\'ouvre (« Inst » choisi), le lien disparaît');
   await A.p.fill('#ie-nom', 'ZZB');
   await A.p.screenshot({ path: join(CAPT, 'v053-saisie.png'), fullPage: false });
-  await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(250);
+  await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(250);
   let b = await bulles(A.p, 'v1');
   verifier(b.slice(0, 3).map(x => x.t).join(' | ') === 'CdB | Copi ZZA | Inst ZZB', `bulles : ${b.map(x => x.t).join(' | ')} (dans cet ordre ; « CdB » et non « CDB »)`);
   verifier(b[2].fond === b[1].fond && b[2].encre === b[1].encre && b[2].bord === b[1].bord && b[2].fond === 'rgb(236, 246, 237)' && b[2].encre === 'rgb(67, 160, 71)',

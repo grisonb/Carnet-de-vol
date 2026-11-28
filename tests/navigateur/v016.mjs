@@ -123,7 +123,7 @@ try {
   await p.fill('#vm-icao', 'LFMV'); await p.click('#vm-ok');
   const via4 = await p.$$eval('#via-list .viachip', l => l.map(x => x.innerText.replace(/\s+/g, ' ').trim())[3]);
   verifier(via4.startsWith('LFMV') && via4.includes('1 nuit') && !(await p.$('#via-list .viachip.sans-code')), 'code complété : LFMV, ses atterrissages gardés : ' + via4);
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
   let vols = await tout('vols');
   const vp = vols.find(v => v.npfId === 'npf-p');
   verifier(vols.length === volsDepart + 1 && vp.avionId === m73.id && vp.escales.map(e => e.code).join(' ') === 'LFHO LFLU LFHO LFMV'
@@ -139,7 +139,7 @@ try {
   verifier(q.copi === 'ZZK' && q.add, 'copilote ZZK retrouvé dans mes personnes, placé comme Copi');
   await p.screenshot({ path: join(CAPT, 'v016-04-deux-avions-meme-nom.png') });
   await p.click('#ac-res [data-ac] >> nth=1');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
   const vq = (await tout('vols')).find(v => v.npfId === 'npf-q');
   verifier(vq && ['M75', 'm 75'].includes(avions.find(a => a.id === vq.avionId)?.nom) && vq.nomCopi === 'ZZK', 'enregistré avec l\'avion choisi et le copi ZZK');
 
@@ -169,7 +169,7 @@ try {
   await p.screenshot({ path: join(CAPT, 'v016-05-ce-qui-change.png') });
   await p.click('#nu-ok'); await p.waitForSelector('#v-saisie:not([hidden])');
   await p.click('#ac-res [data-ac] >> nth=0');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
   vols = await tout('vols');
   const vp2 = vols.filter(v => v.npfId === 'npf-p');
   verifier(vp2.length === 1 && vp2[0].escales.length === 2 && vp2[0].nomCopi === 'ZZK', 'mis à jour (pas de second vol) : 2 escales, copi ZZK');

@@ -87,7 +87,7 @@ try {
   await taperArrivee('ZZZZ');
   s = await etatSaisie();
   verifier(s.n === '1', 'code inconnu de la table (ZZZZ) : la position GPS sert encore');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(400);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(400);
   const vp = (await tout('vols')).find(v => v.npfId === 'npf-pos');
   verifier(vp && vp.arr === 'ZZZZ' && vp.attNuit === 1 && vp.arriveePosition && vp.arriveePosition.lat === REUNION.lat, 'enregistré : arrivée ZZZZ, 1 att. de nuit, position gardée pour la carte');
 

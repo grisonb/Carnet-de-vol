@@ -55,7 +55,7 @@ async function essai(nom, options, lf) {
     await p.click('#vm-ok'); await p.waitForTimeout(150);
     return { ...r, ferme: await p.isHidden('#via-modal') };
   };
-  const enregistrer = async () => { await p.click('#save'); await p.waitForTimeout(300); if (await p.isVisible('#tv-modal')) throw new Error('alerte R150 inattendue'); await p.waitForSelector('#v-carnet:not([hidden])'); };
+  const enregistrer = async () => { await p.click('#f-ok'); await p.waitForTimeout(300); if (await p.isVisible('#tv-modal')) throw new Error('alerte R150 inattendue'); await p.waitForSelector('#v-carnet:not([hidden])'); };
 
   await ouvrir(fl.id);
   let r = await terrainSansCode(0, 3, 1);

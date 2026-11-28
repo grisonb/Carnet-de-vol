@@ -48,7 +48,7 @@ const onglet = v => p.click(`.tabs button[data-v="${v}"]`);
 const vols = () => p.evaluate(async () => Object.fromEntries((await import('./js/etat.js')).etat.vols.map(v => [v.id, v])));
 const types = async ids => { const v = await vols(); return Object.fromEntries(ids.map(id => [id, (v[id].frais && v[id].frais.type) || null])); };
 const ouvrir = async id => { await onglet('carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); };
-const fermer = async () => { await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); };
+const fermer = async () => { if (await p.isVisible('#v-saisie')) await p.click('#cancel'); await p.waitForSelector('#v-carnet:not([hidden])'); }; // v0.72 : Valider ferme déjà la fiche
 const valider = async () => { await p.click('#f-ok'); await p.waitForTimeout(250); };
 const cocher = async (id, t) => { await ouvrir(id); await p.click(`#fe-zone [data-fe="${t}"]`); await p.waitForTimeout(150); await valider(); await fermer(); };
 const lignesFrais = () => p.evaluate(async () => (await import('./js/ui/frais.js')).lignesActuelles().map(x => ({ id: x.id, vols: x.vols.map(v => v.id) })));
@@ -151,9 +151,8 @@ try {
     verifier(!e.lecture && !e.crayon.vis && e.ok.vis && e.ok.rond && e.ok.l >= 48 && e.ok.fond.includes('63, 194, 43') && e.titre === 'Modifier le vol', `${largeur} px : crayon -> rond vert avec une coche, titre « Modifier le vol »`);
     await p.screenshot({ path: join(CAPT, `v071-bandeau-modifier-${largeur}.png`) });
     await p.fill('#f-rem', `FICHE ${largeur}`); await valider();
-    const apres = await bandeau();
-    verifier(apres.lecture && apres.titre === 'Vol' && apres.crayon.vis && await p.isVisible('#v-saisie') && (await vols()).f1.remarques === `FICHE ${largeur}`, `${largeur} px : Valider : enregistré, retour au vol en lecture`);
-    await fermer();
+    // v0.72 (R185) : Valider enregistre et ferme la fiche
+    verifier(await p.isVisible('#v-carnet') && (await vols()).f1.remarques === `FICHE ${largeur}`, `${largeur} px : Valider : enregistré, fiche fermée`);
   }
   await p.setViewportSize({ width: 393, height: 852 });
   await ouvrir('f1'); await p.click('#f-edit'); await p.fill('#f-rem', 'NE PAS GARDER'); await p.click('#cancel');
@@ -170,9 +169,7 @@ try {
   await ouvrir('f1'); verifier(!(await p.$eval('#fe-zone [data-fe="journee"]', x => x.getAttribute('aria-checked') === 'true')), 'rouvert : case pas cochée');
   const modif0 = (await vols()).f1.modifieLe;
   await p.click('#fe-zone [data-fe="journee"]'); await valider();
-  b = await bandeau();
-  verifier((await vols()).f1.frais.type === 'journee' && b.lecture && b.crayon.vis && !b.ok.vis && (await vols()).f1.modifieLe === modif0, 'Valider : enregistré (« Modifié le » inchangé), retour au crayon');
-  await fermer();
+  verifier((await vols()).f1.frais.type === 'journee' && await p.isVisible('#v-carnet') && (await vols()).f1.modifieLe === modif0, 'Valider : enregistré (« Modifié le » inchangé), fiche fermée');
   await p.evaluate(() => scrollTo(0, 0));
   const id0 = await p.$eval('#list .flight', c => c.dataset.id);
   const r0 = !!(await vols())[id0].aReporter;

@@ -130,7 +130,7 @@ async function ouvrirVol(p, id, modifier = true) {
   if (modifier && await p.isVisible('#f-edit')) await p.click('#f-edit');
 }
 const fermerVol = async p => { for (let i = 0; i < 3 && await p.isVisible('#v-saisie'); i++) { await p.click('#cancel'); await p.waitForTimeout(80); if (await p.isVisible('#ab-yes')) await p.click('#ab-yes'); } await p.waitForSelector('#v-carnet:not([hidden])'); };
-const enregistrerVol = async p => { await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(250); };
+const enregistrerVol = async p => { await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await p.waitForTimeout(250); };
 // compteurs affichés dans la saisie, dans l'ordre (« Feux » compris)
 const affiches = p => p.$$eval('#ctrs .step:not([hidden])', l => l.map(s => (s.id === 'feu-row' ? 'Feux' : s.firstElementChild.textContent.trim())));
 const listeFenetre = p => p.$$eval('#cptm-list .cbox', l => l.map(b => [b.textContent.trim(), b.getAttribute('aria-checked')]));

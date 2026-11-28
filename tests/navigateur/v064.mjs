@@ -44,7 +44,7 @@ p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR
 const onglet = v => p.click(`.tabs button[data-v="${v}"]`);
 const vol = id => p.evaluate(async id => (await import('./js/etat.js')).etat.vols.find(v => v.id === id), id);
 const ouvrir = async id => { await onglet('carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); await p.click('#f-edit'); };
-const enregistrer = async (tempsChange = false) => { await p.click('#save'); await p.waitForTimeout(300);
+const enregistrer = async (tempsChange = false) => { await p.click('#f-ok'); await p.waitForTimeout(300);
   if (await p.isVisible('#tv-modal')) { if (!tempsChange) throw new Error('alerte « Temps de vol modifié » inattendue'); await p.click('#tv-ok'); } await p.waitForSelector('#v-carnet:not([hidden])'); };
 const etatCarnet = () => p.evaluate(async () => { const e = await import('./js/etat.js'), t = await import('./js/totaux.js'), s = await import('./js/sauvegarde.js'), d = await import('./js/pdf.js');
   const v = e.etat.vols; return JSON.stringify([t.calculerTotaux(v, e.etat.avions, '2026-12-31'), s.texteTableur([...v].reverse(), e.etat.avions, e.listeDesCompteurs()), d.totauxPDF([...v].reverse(), e.etat.avions)]); });

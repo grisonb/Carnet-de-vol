@@ -188,11 +188,11 @@ try {
   console.log('Vol avec « ! » corrigé dans la nouvelle version ; vol sans « ! » modifié');
   const v3 = await volDu(A.p, '2026-08-01'), v4 = await volDu(A.p, '2026-09-09');
   const ouvrir = async id => { await onglet(A.p, 'carnet'); await A.p.click(`.flight[data-id="${id}"] .fl-route`); await A.p.waitForSelector('#v-saisie:not([hidden])'); };
-  await ouvrir(v4.id); await A.p.click('#f-edit'); await A.p.fill('#f-rem', 'REMARQUE INVENTEE'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
+  await ouvrir(v4.id); await A.p.click('#f-edit'); await A.p.fill('#f-rem', 'REMARQUE INVENTEE'); await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
   verifier((await reg(A.p, 'anomaliesCorrigees')).length === 2, 'vol sans « ! » modifié : aucune ligne');
   await ouvrir(v3.id);
   verifier(await A.p.isVisible('#an-cadre'), 'vol du 01/08 : cadre « Anomalie détectée »');
-  await A.p.click('#f-edit'); await A.p.fill('#c-fn', '1h00'); await A.p.click('#save'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
+  await A.p.click('#f-edit'); await A.p.fill('#c-fn', '1h00'); await A.p.click('#f-ok'); await A.p.waitForSelector('#v-carnet:not([hidden])'); await A.p.waitForTimeout(300);
   verifier(await A.p.isHidden('#tv-modal'), 'pas d\'alerte « Temps de vol modifié »');
   await ouvrirAT(A.p); l = await lignes(A.p);
   verifier(l[0].vol === v3.id && l[0].texte.includes('Temps des fonctions différent du temps de vol') && l[0].barre[0][0] === 'Temps CdB : 0h40' && l[0].vert[0][0] === 'Temps CdB : 1h00'

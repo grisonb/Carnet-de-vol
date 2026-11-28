@@ -114,7 +114,7 @@ try {
   verifier((await volsBase()).length === depart && await bandeau() === '3 vols à importer depuis NPF-Q400 ›' && !nas.retraits.length,
     'Annuler : rien n\'est enregistré, le vol reste en attente');
   await ouvrirListe(); await p.click('#npf-l [data-npf="npf-a"]'); await p.waitForSelector('#v-saisie:not([hidden])');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
   let vols = await volsBase();
   const va = vols.find(v => v.npfId === 'npf-a');
   verifier(vols.length === depart + 1 && va && va.hDep === '13:05' && va.hArr === '15:40' && va.date === '2025-08-14' && va.dep === 'LFMN',
@@ -164,7 +164,7 @@ try {
   await p.screenshot({ path: join(CAPT, 'v015-05-mise-a-jour.png') });
   await p.click('#nu-ok'); await p.waitForSelector('#v-saisie:not([hidden])');
   verifier(await p.textContent('#f-title') === 'Mettre à jour le vol' && (await p.$$('#ml input')).length === 1, 'saisie « Mettre à jour le vol », la ligne de feu ajoutée');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
   vols = await volsBase();
   const va2 = vols.filter(v => v.npfId === 'npf-a');
   verifier(vols.length === depart + 1 && va2.length === 1 && va2[0].hArr === '16:10' && va2[0].feux === 1 && va2[0].feuxPositions.length === 1,
@@ -174,7 +174,7 @@ try {
   console.log('Vol enregistré sans réseau pour le retrait : retiré plus tard, sans le reproposer');
   nas.retraitEnPanne = true;
   await ouvrirListe(); await p.click('#npf-l [data-npf="npf-c"]'); await p.waitForSelector('#v-saisie:not([hidden])');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); await attendre(500);
   verifier(nas.vols.has('npf-c') && !(await bandeau()), 'enregistré, mais le NAS n\'a pas pu le retirer : il n\'est plus proposé');
   nas.retraitEnPanne = false;
   await p.reload(); await p.waitForSelector('body[data-pret="1"]'); await attendre(2500);

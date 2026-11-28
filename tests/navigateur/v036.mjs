@@ -117,7 +117,7 @@ async function importer(p, n, attendu, nom) {
   verifier(JSON.stringify(l) === JSON.stringify(attendu), `${nom} : ${l.join(', ')}`);
   return l;
 }
-const enregistrer = async (p, id) => { await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])'); return attendreVolNpf(p, id); };
+const enregistrer = async (p, id) => { await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])'); return attendreVolNpf(p, id); };
 
 try {
   console.log('Téléphone 390 px');

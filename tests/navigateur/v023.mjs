@@ -152,7 +152,7 @@ try {
   await P.screenshot({ path: join(CAPT, 'v023-04-pc-carnet.png') });
   await P.click('#list .flight'); await P.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(P);
   verifier(await P.textContent('#f-title') === 'Vol' && (await P.textContent('#f-sub')).endsWith('se modifie sur le téléphone') && await P.isHidden('#f-edit'), 'vol ouvert : « Vol … · se modifie sur le téléphone », sans crayon (v0.44)');
-  verifier(!(await P.isVisible('#save')) && !(await P.isVisible('#del-zone')), 'ni « Enregistrer » ni « Supprimer »');
+  verifier(!(await P.isVisible('#f-ok')) && !(await P.isVisible('#del-zone')), 'ni « Valider » ni « Supprimer »');
   verifier(await P.$eval('#v-saisie .c-vol', e => getComputedStyle(e).pointerEvents) === 'none', 'cases du vol inactives');
   await P.screenshot({ path: join(CAPT, 'v023-05-pc-vol.png') });
   await P.click('#cancel');
@@ -172,7 +172,7 @@ try {
   await T.click('.tabs button[data-v="carnet"]');
   await T.click('#list .flight'); await T.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(T);
   const idModifie = await T.evaluate(async () => (await import('./js/etat.js')).etat.vols[0].id);
-  await T.fill('#f-rem', 'MODIFIE SUR LE TELEPHONE'); await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.fill('#f-rem', 'MODIFIE SUR LE TELEPHONE'); await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const idSupprime = await T.evaluate(async () => { const e = await import('./js/etat.js'); const id = e.etat.vols.at(-1).id; await e.supprimerVol(id); await e.enregistrerReglage('titulaire', 'Pilote Essai Deux'); return id; });
   const n0 = nas.envois.length;
   await attendre(T, 8000);

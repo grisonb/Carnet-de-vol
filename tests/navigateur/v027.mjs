@@ -98,14 +98,14 @@ try {
   console.log('R64 : deux vols NPF-Q400 importés à la suite');
   await ouvrirNpf('npf-r64-1');
   await saisirAMain();
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const v1 = await volEnregistre(T, "v.npfId === 'npf-r64-1'");
   verifier(v1 && v1.tempsIFR === 96 && v1.regleIFR && v1.approches === 2, '1er vol enregistré IFR 1h36, 2 approches');
   await ouvrirNpf('npf-r64-2');
   let f = await etatFormulaire(T);
   verifier(propre(f), `2e vol (VFR) : s'ouvre propre (IFR ${f.cIfr}, nuit ${f.cNuit}, approches ${f.appr}, remarque « ${f.rem} »)`);
   await T.screenshot({ path: join(CAPT, 'v027-01-tel-2e-vol-propre.png') });
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const v2 = await volEnregistre(T, "v.npfId === 'npf-r64-2'");
   verifier(v2 && v2.tempsIFR === 0 && !v2.regleIFR && v2.approches === 0 && !v2.remarques && v2.tempsNuit === 0, '2e vol enregistré SANS IFR, sans approche, sans remarque');
 
@@ -144,7 +144,7 @@ try {
   verifier(await T.textContent('#s-approches') === '1', 'compteur « Appr » principal = arrivée seulement (1)');
   verifier((await T.textContent('#rec-x')).includes('4 (arrivée 1 + terrains intermédiaires 3)'), 'récapitulatif : total 4');
   await T.screenshot({ path: join(CAPT, 'v027-03-tel-saisie-escales.png'), fullPage: true });
-  await T.click('#save'); await T.waitForSelector('#v-carnet:not([hidden])');
+  await T.click('#f-ok'); await T.waitForSelector('#v-carnet:not([hidden])');
   const v3 = await volEnregistre(T, "(v.escales || []).length === 2");
   verifier(v3 && v3.approches === 4 && JSON.stringify(v3.escales.map(e => e.approches)) === '[2,1]', 'enregistré : total 4, terrains intermédiaires 2 et 1');
   const pdfCsv = await T.evaluate(async id => {
@@ -188,7 +188,7 @@ try {
   await P.click('#via-list .viachip'); await P.waitForSelector('#via-modal:not([hidden])');
   verifier(await P.textContent('#vm-approches') === '2', 'PC : terrain intermédiaire rouvert avec ses 2 approches');
   await P.click('[data-vm="approches"][data-d="1"]'); await P.click('#vm-ok');
-  await P.click('#save'); await P.waitForSelector('#v-carnet:not([hidden])');
+  await P.click('#f-ok'); await P.waitForSelector('#v-carnet:not([hidden])');
   await P.evaluate(async () => (await import('./js/ui/synchro.js')).synchroniser());
   await T.evaluate(async () => (await import('./js/ui/synchro.js')).synchroniser());
   const retour = await volEnregistre(T, `v.id === '${v3.id}'`);

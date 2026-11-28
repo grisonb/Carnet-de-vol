@@ -223,7 +223,7 @@ try {
   verifier(await vue() === 'carnet', '« Abandonner » : retour à la liste');
   verifier((await tout('vols')).find(v => v.id === 't-a').remarques === 'ESSAI DATE A', '  le vol n\'a pas été modifié');
   verifier((await pile()).poussees === 0, '  historique propre (aucune entrée fantôme)');
-  await p.click('.flight[data-id="t-a"]'); await modifierVol(p); await p.fill('#f-rem', 'ESSAI DATE A BIS'); await p.click('#save'); await p.waitForTimeout(400);
+  await p.click('.flight[data-id="t-a"]'); await modifierVol(p); await p.fill('#f-rem', 'ESSAI DATE A BIS'); await p.click('#f-ok'); await p.waitForTimeout(400);
   verifier(await vue() === 'carnet' && (await pile()).poussees === 0, 'vol enregistré : retour à la liste, historique propre');
 
   console.log('Ligne de mission : × rouge');

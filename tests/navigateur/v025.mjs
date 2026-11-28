@@ -146,10 +146,10 @@ try {
   await I.tap(`#list .flight[data-id="${idIpad}"]`).catch(() => I.tap('#list .flight'));
   await I.waitForSelector('#v-saisie:not([hidden])'); await modifierVol(I); await attendre(I, 400);
   const idOuvert = await I.evaluate(async () => { const t = document.getElementById('f-sub').textContent; return t; });
-  m = await miseEnPage(['#save', '#cancel', '#f-dep', '#f-arr', '#f-t0', '#f-t1']);
+  m = await miseEnPage(['#f-ok', '#cancel', '#f-dep', '#f-arr', '#f-t0', '#f-t1']);
   verifier(!m.trop && !m.petits.length, `saisie (paysage) : rien ne dépasse, cases et boutons ≥ 44 px ${m.petits.join(' ')}`);
   await I.screenshot({ path: join(CAPT, 'v025-02-ipad-paysage-saisie.png') });
-  await I.fill('#f-rem', 'MODIFIE SUR L IPAD'); await I.tap('#save'); await I.waitForSelector('#v-carnet:not([hidden])');
+  await I.fill('#f-rem', 'MODIFIE SUR L IPAD'); await I.tap('#f-ok'); await I.waitForSelector('#v-carnet:not([hidden])');
   const idModifie = await I.evaluate(async () => (await import('./js/etat.js')).etat.vols.find(v => v.remarques === 'MODIFIE SUR L IPAD').id);
   await sync(I); await sync(T); await sync(P);
   verifier((await volDe(T, idModifie)).remarques === 'MODIFIE SUR L IPAD' && (await volDe(P, idModifie)).remarques === 'MODIFIE SUR L IPAD', `reçu par le téléphone et le PC (${idOuvert.slice(0, 20)}…)`);

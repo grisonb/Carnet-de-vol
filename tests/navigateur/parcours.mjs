@@ -172,7 +172,7 @@ try {
   verifier((await p.textContent('#rec-x')).includes('XYZ'), 'temps du carnet : nom de l\'instructeur');
   verifier((await p.textContent('#r-col-l')) === 'Mono-pilote SE', 'temps du carnet : colonne avion');
   await cap('05-saisie-complete');
-  await p.click('#save');
+  await p.click('#f-ok');
   await p.waitForSelector('#v-carnet:not([hidden])');
   const nouvelle = p.locator('.flight').first();
   const txt = await nouvelle.textContent();
@@ -189,7 +189,7 @@ try {
   console.log('Modification et suppression');
   await nouvelle.click();
   // v0.44 (R112) : un vol s'ouvre en lecture seule ; le crayon le passe en modification
-  verifier(await p.textContent('#f-title') === 'Vol' && await p.isHidden('#save') && await p.isHidden('#del-zone'), 'le vol s\'ouvre en lecture seule');
+  verifier(await p.textContent('#f-title') === 'Vol' && await p.isHidden('#f-ok') && await p.isHidden('#del-zone'), 'le vol s\'ouvre en lecture seule');
   await p.click('#f-edit');
   verifier(await p.textContent('#f-title') === 'Modifier le vol', 'crayon : le vol passe en modification');
   verifier(await p.inputValue('#c-nuit') === '1h15' && await p.textContent('#f-bloc') === '1h15', 'valeurs enregistrées affichées');

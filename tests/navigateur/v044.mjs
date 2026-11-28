@@ -227,8 +227,8 @@ async function essaisLecture(nom, p) {
 async function lecture(nom, p) {
   await p.click('.flight[data-id="v-feu"]'); await p.waitForSelector('#v-saisie:not([hidden])');
   const t = () => p.evaluate(() => ({ titre: document.querySelector('#f-title').textContent, sous: document.querySelector('#f-sub').textContent, fermer: document.querySelector('#cancel').textContent,
-    save: !!document.querySelector('#save').offsetParent, suppr: !!document.querySelector('#del-zone').offsetParent, crayon: !!document.querySelector('#f-edit').offsetParent,
-    lecture: document.querySelector('#v-saisie').classList.contains('lecture'), saveTxt: document.querySelector('#save').textContent, fond: getComputedStyle(document.body).backgroundColor }));
+    save: !!document.querySelector('#f-ok').offsetParent, suppr: !!document.querySelector('#del-zone').offsetParent, crayon: !!document.querySelector('#f-edit').offsetParent,
+    lecture: document.querySelector('#v-saisie').classList.contains('lecture'), saveTxt: document.querySelector('#f-ok').getAttribute('aria-label'), fond: getComputedStyle(document.body).backgroundColor }));
   let e = await t();
   const [aa, mm, jj] = VOLS[0].date.split('-');
   verifier(e.lecture && e.titre === 'Vol' && e.sous === `du ${jj}/${mm}/${aa} · LFTW › LFTW` && e.fermer === 'Fermer' && !e.save && !e.suppr && e.crayon,
@@ -248,7 +248,7 @@ async function lecture(nom, p) {
   // crayon -> Modifier ; v0.71 : Fermer (avec la question « Abandonner la saisie ? ») ne change rien
   await p.click('#f-edit');
   e = await t();
-  verifier(!e.lecture && e.titre === 'Modifier le vol' && e.fermer === 'Fermer' && await p.isVisible('#f-ok') && e.save && e.saveTxt === 'Enregistrer les modifications' && !e.crayon && e.suppr,
+  verifier(!e.lecture && e.titre === 'Modifier le vol' && e.fermer === 'Fermer' && await p.isVisible('#f-ok') && e.save && e.saveTxt === 'Valider' && !e.crayon && e.suppr,
     `${nom} : crayon : « ${e.titre} », « ${e.fermer} », « ${e.saveTxt} »`);
   await p.fill('#f-rem', 'CHANGEMENT ESSAI'); await p.fill('#f-dep', 'LFMT');
   verifier(await p.inputValue('#f-rem') === 'CHANGEMENT ESSAI', `${nom} : en modification, les champs se modifient`);
@@ -268,7 +268,7 @@ async function lecture(nom, p) {
   await p.click('#cp-x'); await p.waitForSelector('#carte-plein', { state: 'hidden' });
   // crayon -> Enregistrer
   await p.fill('#f-rem', 'REMARQUE MODIFIEE');
-  await p.click('#save'); await p.waitForSelector('#v-carnet:not([hidden])');
+  await p.click('#f-ok'); await p.waitForSelector('#v-carnet:not([hidden])');
   verifier((await lireVol(p, 'v-feu')).remarques === 'REMARQUE MODIFIEE', `${nom} : crayon puis Enregistrer : modification enregistrée`);
   // nouveau vol : directement en modification
   await p.click('#fab'); await p.waitForSelector('#v-saisie:not([hidden])');

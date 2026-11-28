@@ -107,7 +107,7 @@ const remplir = async (p, vols, reglages = []) => {
   await p.reload(); await p.waitForSelector('body[data-pret="1"]');
 };
 const ouvrir = async (p, id) => { await onglet(p, 'carnet'); await p.click(`.flight[data-id="${id}"] .fl-route`); await p.waitForSelector('#v-saisie:not([hidden])'); };
-const enregistrer = async (p, alerte = false) => { await p.click('#save'); await p.waitForTimeout(300); if (await p.isVisible('#tv-modal')) { if (!alerte) throw new Error('alerte R150 inattendue'); await p.click('#tv-ok'); } await p.waitForSelector('#v-carnet:not([hidden])'); };
+const enregistrer = async (p, alerte = false) => { await p.click('#f-ok'); await p.waitForTimeout(300); if (await p.isVisible('#tv-modal')) { if (!alerte) throw new Error('alerte R150 inattendue'); await p.click('#tv-ok'); } await p.waitForSelector('#v-carnet:not([hidden])'); };
 const sorties = p => p.evaluate(async () => { const e = await import('./js/etat.js'), s = await import('./js/sauvegarde.js'), d = await import('./js/pdf.js'), t = await import('./js/totaux.js');
   const v = [...e.etat.vols].reverse(); return JSON.stringify({ csv: s.texteTableur(v, e.etat.avions, e.listeDesCompteurs()).split('\n').map(l => l.split(';').slice(0, -2).join(';')),
     pdf: d.paginer(v, e.etat.avions).map(pg => [pg.totalPage, pg.cumul]), tot: t.calculerTotaux(v, e.etat.avions, '2026-12-31'), haut: document.getElementById('h-total').textContent }); });
@@ -167,7 +167,7 @@ try {
   verifier((await volDe(p, 'nuit14')).tempsNuit === 18, '« 0,3 » (virgule du clavier) : 18 min');
   await ouvrir(p, 'groupe'); await p.click('#f-edit');
   verifier(await p.inputValue('#f-bloc-in') === '1.5', 'vol groupé : temps saisi affiché 1.5');
-  await p.fill('#f-bloc-in', '1.4'); await p.waitForTimeout(100); await p.click('#save'); await p.waitForTimeout(300);
+  await p.fill('#f-bloc-in', '1.4'); await p.waitForTimeout(100); await p.click('#f-ok'); await p.waitForTimeout(300);
   const alerte = (await p.textContent('#tv-txt')).trim();
   verifier(alerte.startsWith('Temps de vol modifié : 1h30 → 1h24 (−0h06). Ton total HdV passe de'), `alerte R150 en heures et minutes : « ${alerte} »`);
   await p.click('#tv-ok'); await p.waitForSelector('#v-carnet:not([hidden])');
