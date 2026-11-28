@@ -259,6 +259,14 @@ Pas d'étape de compilation : les fichiers du dépôt sont servis tels quels.
   (`poserPays` / `lirePays`). R167 détachement coupé au 31/12 (`partie` 'debut' | 'suite', id `det|<id>|<année>`, 1,5 sur la dernière
   nuit du détachement entier). R168 `etapesDe(vols)` (liste, PDF, résumé). R170 carnet.js : `.fl-rep.frais` (anneau SVG `.fe-anneau` +
   `.fe-fond`, rond = `.rond`), `detachementsActuels()` (ui/frais.js, cache par révision). Lecture seule : `#fe-zone` exclu du readOnly.
+- v0.70 : vol `frais.type` 'journee' | 'j1' | 'j2' | null (+ `pays`, `paysManuel` sur le J.1). LA CASE VAUT POUR LA JOURNÉE :
+  `fraisDuJour(vols, date)` = case la plus récente (`le`) des vols du jour ; ui/frais.js `ecrireFrais` écrit sur tous les vols du jour
+  (`enregistrerVolsFrais`, etat.js, « Modifié le » gardé) ; `typeDuJour(date)` (cache) pour le cercle de l'accueil. Lignes : 'journee'
+  et 'j2' (`sorte` 'paire' | 'j1' | 'j2' ; ids `journee|d`, `j2|d`, `j1i|d`, `j2i|d`), `jourVols` [{ date, vols, etapes }].
+  Migration `reprendreJ2` (etat.js `migrer`, drapeau `migrationFraisJ1`, dans les sauvegardes mais pas synchronisé). R178 : `paysDe(code)`
+  = `nomPays(terrain(code).pays)` (js/pays.js : ISO -> nom du barème, outre-mer à part) ; `paysAuto`, `nuitsDe(d, { vols, paysDe })`
+  (manuel > dernier atterrissage > nuit d'avant), `nomAuto` (seulement s'il est dans le barème). Textes : `typeLigne`, `titreLigne`
+  (« date · type »), `nuitsAilleurs`, ui `blocsLigne` (liste et PDF : `.traj`, `.nu`). R171 barème replié `#fb-plier` / `#fb-plie`.
 - v0.52 : R126 `.chip.fn.fn-cdb|fn-copi` (carnet.js `fnClasse`) ; contours : bord 1 px (déjà là, transparent) en `currentColor`
   ou `--bord-plein` (feu, ent, gaar, nuit) + liseré 0,5 px, sélecteurs `:root .flight .chips …` (plus précis que les règles
   de couleur). R127 `NOMS_AFFICHES` / `nomAffiche` (bande.js) : « Dash 8 Q400 » affiché « Dash 8 », clés inchangées.

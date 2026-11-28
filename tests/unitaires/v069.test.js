@@ -54,7 +54,7 @@ test('R167 : détachement du 30/12/2025 au 02/01/2026 coupé en deux lignes (Eur
   const vols = [vol('a', '2025-12-30'), vol('b', '2026-01-02')];
   let l = lignesFrais({ vols, detachements: [{ id: 'x', du: '2025-12-30', au: '2026-01-02', pays: 'France', nuits: {} }], baremes });
   const p25 = l.find(x => x.annee === '2025'), p26 = l.find(x => x.annee === '2026');
-  assert.equal(p25.montant, 34800); assert.equal(p25.detail, '1 + 1 indemnité × 174,00 €'); assert.equal(titreLigne(p25), 'Détachement 4 jours (partie 2025)'); assert.equal(p25.partie, 'debut');
+  assert.equal(p25.montant, 34800); assert.equal(p25.detail, '1 + 1 indemnité × 174,00 €'); assert.equal(titreLigne(p25), '30/12/2025 · Détachement 4 jours (partie 2025)'); assert.equal(p25.partie, 'debut');
   assert.equal(p26.montant, 27000); assert.equal(p26.detail, '1,5 indemnité × 180,00 €'); assert.equal(p26.partie, 'suite');
   assert.deepEqual([p25.vols.map(v => v.id), p26.vols.map(v => v.id)], [['a'], ['b']]);
   assert.equal(p25.detachementId, p26.detachementId);
@@ -65,7 +65,7 @@ test('R167 : détachement du 30/12/2025 au 02/01/2026 coupé en deux lignes (Eur
 });
 
 test('R168 : toutes les étapes, dans l\'ordre, sans répéter un terrain à la suite', () => {
-  const a = vol('a', '2026-06-02', { type: 'j2' }, { dep: 'LFTW', arr: 'LFQQ', escales: [{ code: 'LFML', attJour: 1 }] });
+  const a = vol('a', '2026-06-02', { type: 'j1', pays: 'France', paysManuel: true }, { dep: 'LFTW', arr: 'LFQQ', escales: [{ code: 'LFML', attJour: 1 }] });
   const b = vol('b', '2026-06-03', { type: 'j2' }, { dep: 'LFQQ', arr: 'LFTW', escales: [{ code: 'LFML', attJour: 1 }] });
   assert.equal(etapesDe([a, b]), 'LFTW → LFML → LFQQ → LFML → LFTW');
   const l = lignesFrais({ vols: [b, a], baremes: new Map() });

@@ -75,10 +75,10 @@ const basculer = (p, retirer) => p.evaluate(retirer => {
 }, retirer);
 
 // Encre d'un élément (au pixel) : groupes de colonnes (texte, puis l'icône à droite) et hauteur
-async function encre(p, sel, marge = 3) {
+async function encre(p, sel, marge = 3, colle = 8) {
   const r = await p.locator(sel).boundingBox();
   const png = (await p.screenshot({ clip: { x: r.x, y: r.y, width: r.width, height: r.height } })).toString('base64');
-  return p.evaluate(async ([b64, w, marge]) => {
+  return p.evaluate(async ([b64, w, marge, colle]) => {
     const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
     const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
     const D = g.getImageData(0, 0, cv.width, cv.height).data, W = cv.width, Hh = cv.height, k = W / w, m = Math.round(marge * k);
@@ -88,9 +88,9 @@ async function encre(p, sel, marge = 3) {
     for (let x = m; x < W - m; x++) for (let y = m; y < Hh - m; y++) if (ink(x, y)) { cols.push(x); break; }
     for (let y = m; y < Hh - m; y++) for (let x = m; x < W - m; x++) if (ink(x, y)) { lignes.push(y); break; }
     const groupes = [];
-    for (const x of cols) { const gr = groupes.at(-1); if (gr && x - gr[1] <= 8 * k) gr[1] = x; else groupes.push([x, x]); }
+    for (const x of cols) { const gr = groupes.at(-1); if (gr && x - gr[1] <= colle * k) gr[1] = x; else groupes.push([x, x]); }
     return { groupes: groupes.map(([a, b]) => [a / k, b / k]), haut: lignes.length ? lignes[0] / k : -1, bas: lignes.length ? lignes.at(-1) / k : -1, hauteur: Hh / k };
-  }, [png, r.width, marge]);
+  }, [png, r.width, marge, colle]);
 }
 // Le même texte dessiné à part (même police), pour comparer la largeur d'encre
 async function encreReference(p, sel, texte) {
@@ -125,7 +125,8 @@ async function controlerFiche(nom, p, mode) {
   const [aa, mm, jj] = (await p.inputValue('#f-date')).split('-');
   for (const [sel, texte] of [['#f-date', `${jj}/${mm}/${aa}`], ['#f-copi', await p.inputValue('#f-copi')]]) {
     await p.locator(sel).evaluate(e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(60);
-    const e = await encre(p, sel), ref = await encreReference(p, sel, texte);
+    // v0.70 : date : texte et icône du calendrier séparés dès 4 px (selon la date du jour, l'espace peut faire moins de 8 px)
+    const e = await encre(p, sel, 3, sel === '#f-date' ? 4 : 8), ref = await encreReference(p, sel, texte);
     const l = largeurTexte(e), lr = largeurTexte(ref);
     // coupé = encre plus étroite (ou moins haute) que le même texte dessiné à part ; Chrome espace un peu les champs date
     verifier(l >= lr - 2 && l <= lr + 8 && (e.bas - e.haut) >= (ref.bas - ref.haut) - 1.5 && e.haut > 0.5 && e.bas < e.hauteur - 0.5,

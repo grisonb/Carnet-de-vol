@@ -56,7 +56,7 @@ try {
   await p.goto(srv.url); await p.waitForSelector('body[data-pret="1"]');
   await p.evaluate(async ([avs, vs, rs]) => {
     const db = await new Promise(ok => { const r = indexedDB.open('carnet-de-vol'); r.onsuccess = () => ok(r.result); });
-    const t = db.transaction(['avions', 'vols', 'reglages'], 'readwrite'); for (const a of avs) t.objectStore('avions').put(a); for (const v of vs) t.objectStore('vols').put(v); for (const r of rs) t.objectStore('reglages').put(r);
+    const t = db.transaction(['avions', 'vols', 'reglages'], 'readwrite'); for (const a of avs) t.objectStore('avions').put(a); for (const v of vs) t.objectStore('vols').put(v); for (const r of rs) t.objectStore('reglages').put(r); t.objectStore('reglages').delete('migrationFraisJ1'); // v0.70 : comme avant la mise à jour
     await new Promise(ok => { t.oncomplete = ok; }); db.close();
   }, [AVIONS, VOLS, REGLAGES]);
   await p.reload(); await p.waitForSelector('body[data-pret="1"]');
@@ -64,7 +64,7 @@ try {
   const carnet0 = await carnet();
 
   console.log('R169 : barème 2025 du bulletin dans la fenêtre « Barème »');
-  await annee('2025');
+  await annee('2025'); await p.click('#fb-plier'); // v0.70 (R171) : liste des pays repliée
   let x = await ligneBareme('France');
   verifier(x && x.m === '174,00' && x.z === 'euro' && x.tag === 'bulletin', 'France 174,00 Euro-Europe (bulletin)');
   verifier(JSON.stringify(await ligneBareme('Tunisie')).includes('"m":"125,00","z":"euro"'), 'Tunisie 125,00 Euro-Europe');
@@ -91,21 +91,22 @@ try {
 
   console.log('R167 : détachement du 30/12/2025 au 02/01/2026');
   let l = await lignes();
-  verifier(l.some(t => t.startsWith('Détachement 4 jours (partie 2025) 348,00 €') && t.includes('30/12 → 31/12/2025')), 'partie 2025 : 2 × 174,00 = 348,00 €');
-  verifier(l.some(t => t.startsWith('Vol journée 90,00 €')), 'vol journée 2025 au montant saisi (90,00 €)');
+  verifier(l.some(t => t.startsWith('30/12/2025 · Détachement 4 jours (partie 2025) 348,00 €') && t.includes('30/12 → 31/12/2025')), 'partie 2025 : 2 × 174,00 = 348,00 €');
+  verifier(l.some(t => t.startsWith('14/06/2025 · Vol journée 90,00 €')), 'vol journée 2025 au montant saisi (90,00 €)');
 
   console.log('R168 : toutes les étapes');
-  verifier(l.some(t => t.startsWith('J+2') && t.includes('LFTW → LFML → LFQQ → LFML → LFTW')), 'J+2 : « LFTW → LFML → LFQQ → LFML → LFTW »');
+  // v0.70 : les deux J+2 sont repris en J.1 (pays gardé) + J.2 ; une ligne par journée avec son trajet (R176)
+  verifier(l.some(t => t.startsWith('02/07/2025 · J.1 261,00 € LFTW → LFML → LFQQ 03/07/2025 · J.2 LFQQ → LFML → LFTW')), 'J.1 + J.2 : « LFTW → LFML → LFQQ » puis « LFQQ → LFML → LFTW »');
   const m = await p.evaluate(async () => (await import('./js/ui/frais.js')).modelePdf('2025'));
-  verifier(m.etapes.some(r => r[1] === 'LFTW → LFML → LFQQ → LFML → LFTW') && m.lignes.some(r => r.etapes === 'LFTW → LFML → LFQQ → LFML → LFTW'), 'PDF : étapes dans le résumé et sous la ligne');
+  verifier(m.etapes.some(r => r[1] === 'LFTW → LFML → LFQQ / LFQQ → LFML → LFTW') && m.lignes.some(r => r.jours.map(j => j.etapes).join(' / ') === 'LFTW → LFML → LFQQ / LFQQ → LFML → LFTW'), 'PDF : étapes dans le résumé et sous la ligne');
   const debut = m.lignes.find(r => r.titre.includes('(partie 2025)'));
-  verifier(debut && debut.titre.includes('— début (détachement du 30/12/2025 au 02/01/2026)') && debut.vols.length === 1, 'PDF 2025 : « début », avec les vols de sa partie');
+  verifier(debut && debut.detail.includes('Début du détachement du 30/12/2025 au 02/01/2026') && debut.vols.length === 1, 'PDF 2025 : « début », avec les vols de sa partie');
   await p.click('#fa-ret'); await p.click('#fr-l [data-an="2026"]'); await p.waitForSelector('#fa-l');
   l = await lignes();
-  verifier(l.some(t => t.startsWith('Détachement 4 jours (partie 2026) 270,00 €') && t.includes('01/01 → 02/01/2026')), 'partie 2026 : 1,5 × 180,00 (barème 2026 saisi) = 270,00 €');
+  verifier(l.some(t => t.startsWith('01/01/2026 · Détachement 4 jours (partie 2026) 270,00 €') && t.includes('01/01 → 02/01/2026')), 'partie 2026 : 1,5 × 180,00 (barème 2026 saisi) = 270,00 €');
   verifier(await p.inputValue('#fb-pays .fb-row:first-child .fb-nom') === 'France' && (await p.$$('#fb-pays .fb-row')).length === 1 && !(await p.$('#fb-pays .fb-tag')), '2026 : barème à la main comme avant (pas de bulletin)');
   const m26 = await p.evaluate(async () => (await import('./js/ui/frais.js')).modelePdf('2026'));
-  verifier(m26.lignes.some(r => r.titre.includes('(partie 2026) — suite')), 'PDF 2026 : « suite »');
+  verifier(m26.lignes.some(r => r.titre.includes('(partie 2026)') && r.detail.includes('Suite du détachement')), 'PDF 2026 : « suite »');
   await p.click('#fa-l [data-ligne^="det|x"]'); await p.waitForSelector('#dt-modal:not([hidden])');
   verifier(await p.inputValue('#dt-du') === '2025-12-30', 'les deux parties ouvrent le même détachement');
   await p.click('#dt-no'); await p.click('#ou-x');
@@ -125,7 +126,7 @@ try {
     return [c.dataset.id, { frais: r.classList.contains('frais'), visible: !!a && getComputedStyle(a).display !== 'none', on: r.classList.contains('on') }]; })));
   let r = await ronds();
   verifier(r.jr.frais && r.jr.visible && r.jr.on && r.jn.frais && !r.jn.on, 'vol journée : cercle, reporté (vert) et pas encore reporté (blanc)');
-  verifier(r.j2a.frais && r.j2b.frais && r.de.frais && r.de2.frais && !r.sans.frais && !r.sans.visible, 'J+2 (les deux vols), vols du détachement : cercle ; vol sans frais : rond inchangé');
+  verifier(r.j2a.frais && r.j2b.frais && r.de.frais && r.de2.frais && !r.sans.frais && !r.sans.visible, 'J.1 et J.2, vols du détachement : cercle ; vol sans frais : rond inchangé');
   for (const largeur of [360, 393]) {
     await p.setViewportSize({ width: largeur, height: 852 }); await p.waitForTimeout(200);
     const mes = await p.$$eval('#list .flight', l => l.map(c => {

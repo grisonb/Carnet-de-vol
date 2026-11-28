@@ -15,8 +15,7 @@ import { demanderSuppression, initSuppression } from './suppression.js';
 import { BANDE_GENERAL, choixParType, valeurBande, basculerChoix, deplacerChoix, normaliserBande } from '../bande.js';
 import { hm, heureH, dateFr, aujourdhui, MOIS, arriveeLendemain, dateValide, dureeAffichee } from '../temps.js';
 import { dixiemesAvion } from '../vols-groupes.js';
-import { typeDuVol } from '../frais.js';
-import { detachementsActuels } from './frais.js';
+import { typeDuJour } from './frais.js';
 import { heuresLocales } from '../fuseaux.js';
 import { fuseau } from '../terrains.js';
 import { FONCTIONS, COMPTEURS, identiteAvion, estSimulation } from '../modele.js';
@@ -199,7 +198,7 @@ export function carteVol(v, voir = false) {
 const COCHE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle class="fe-fond" cx="8" cy="8" r="9"/><circle class="fe-anneau" cx="8" cy="8" r="11"/><circle class="rond" cx="8" cy="8" r="7.25"/><path d="M4.6 8.3l2.3 2.3 4.5-4.9"/></svg>';
 function rondReport(v) {
   if (estSimulation(v)) return '';
-  const fait = !estAReporter(v), frais = !!typeDuVol(v, detachementsActuels()); // v0.69 (R170)
+  const fait = !estAReporter(v), frais = !estSimulation(v) && !!typeDuJour(v.date); // v0.69 (R170), v0.70 (R173) : case de la journée
   return `<span class="fl-rep${fait ? ' on' : ''}${frais ? ' frais' : ''}" role="checkbox" aria-checked="${fait}" aria-label="${fait ? 'Reporté sur le carnet papier' : 'À reporter sur le carnet papier'}" data-rep="${esc(v.id)}">${COCHE}</span>`;
 }
 // v0.61 (R155) : bouton jaune « N vols à vérifier » (vols avec « ! ») ; appui : seulement ces vols, nouvel appui : tous.

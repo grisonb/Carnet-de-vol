@@ -29,12 +29,13 @@ test('vol journée : 87,00 € ; deux vols le même jour : une seule ligne ; bar
   assert.equal(montantLigne(l[0]), 'Montant manquant'); assert.equal(anneeFrais(l, 2021).total, 0);
 });
 
-test('J+2 : deux jours qui se suivent = une ligne (1,5 × 174 = 261) ; seul : incomplet, 0 € ; Monde : 2 indemnités', () => {
-  let l = L([vol('a', '2026-06-02', { type: 'j2', pays: 'France' }), vol('b', '2026-06-03', { type: 'j2' }), vol('c', '2026-06-20', { type: 'j2' })]);
+// v0.70 : J+2 devient J.1 (pays de la nuit) puis J.2 le lendemain
+test('J.1 + J.2 : deux jours qui se suivent = une ligne (1,5 × 174 = 261) ; seul : incomplet, 0 € ; Monde : 2 indemnités', () => {
+  let l = L([vol('a', '2026-06-02', { type: 'j1', pays: 'France', paysManuel: true }), vol('b', '2026-06-03', { type: 'j2' }), vol('c', '2026-06-20', { type: 'j2' })]);
   const p = l.find(x => x.id === 'j2|2026-06-02'), i = l.find(x => x.incomplet);
   assert.equal(p.montant, 26100); assert.equal(p.detail, '1,5 indemnité × 174,00 €'); assert.equal(p.nuits.length, 1);
-  assert.equal(titreLigne(i), 'J+2 incomplet'); assert.equal(anneeFrais(l, 2026).total, 26100);
-  l = L([vol('a', '2026-06-02', { type: 'j2', pays: 'Canada' }), vol('b', '2026-06-03', { type: 'j2' })]);
+  assert.equal(titreLigne(i), '20/06/2026 · J.2 incomplet'); assert.equal(anneeFrais(l, 2026).total, 26100);
+  l = L([vol('a', '2026-06-02', { type: 'j1', pays: 'Canada', paysManuel: true }), vol('b', '2026-06-03', { type: 'j2' })]);
   assert.equal(l[0].montant, 40750);
 });
 
@@ -44,7 +45,7 @@ test('détachement Euro : 1 + 1 + 1,5 (nuits modifiables) ; les vols de ses date
   const l = L(vols, [d]);
   const det = l.find(x => x.type === 'detachement');
   assert.equal(det.montant, 60900); assert.equal(det.detail, '1 + 1 + 1,5 indemnité × 174,00 €');
-  assert.deepEqual(nuitsDe(d).map(n => n.pays), ['Espagne', 'Portugal', 'Espagne']);
+  assert.deepEqual(nuitsDe(d).map(n => n.pays), ['Espagne', 'Portugal', 'Portugal'], 'v0.70 (R178) : jour sans vol : pays de la nuit d\'avant');
   assert.deepEqual(det.vols.map(v => v.id), ['a', 'b']);
   assert.equal(l.filter(x => x.type === 'journee').length, 1, 'seul le vol du 10 compte en vol journée');
   assert.equal(typeDuVol(vols[0], [d]), 'detachement'); assert.equal(typeDuVol(vols[2], [d]), 'journee');

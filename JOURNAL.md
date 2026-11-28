@@ -1,5 +1,36 @@
 # Journal des versions
 
+## v0.70 — 28/11/2026
+
+Remarques R171 à R178. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,
+PDF, CSV, anomalies identiques).
+
+**R172 + R177 : quatre cases** sur deux lignes : VOL JOURNÉE | DÉTACHEMENT, puis J.1 | J.2 (une seule cochée à la fois). Un J.1 suivi le
+lendemain d'un J.2 = une ligne (2 jours, 1 nuit, 1,5 indemnité du pays de la nuit, choisi sur le J.1). J.1 sans J.2 : « J.1 incomplet » ;
+J.2 sans J.1 : « J.2 incomplet » ; 0 €. Reprise automatique des anciennes cases : deux J+2 qui se suivent -> J.1 (le pays passe sur le
+J.1) puis J.2 ; un J+2 seul -> J.2 (aussi pour une ancienne sauvegarde restaurée).
+
+**R173 : la case vaut pour toute la journée** : cocher ou décocher sur un vol le fait sur tous les vols du jour ; la ligne prend tous
+les vols du jour (ex. LFTW → LFTH → LFPB).
+
+**R175 + R176 : nouvelle présentation** (liste et PDF) : en tête « 03/12/2025 · Vol journée » et le montant ; trajet en gras dans une
+bande bleu clair avec un trait à gauche ; J.1 / J.2 : une carte, deux lignes (date · type et son trajet), un montant, le calcul en bas.
+
+**R174 : détachement** : le pays du détachement dans la bande ; pastilles « Nuit 06/01 : FIMP » seulement pour les nuits passées dans un
+autre pays ; le PDF garde les lignes du carnet sous chaque ligne.
+
+**R178 : pays de la nuit automatique** (J.1 et chaque nuit de détachement) : pays du terrain d'arrivée du dernier vol du jour (même
+correspondance que les drapeaux, nom écrit comme dans le barème de l'année ; La Réunion, Mayotte, Guadeloupe, Martinique, Guyane à
+part : js/pays.js). Jour sans vol : nuit d'avant. Choix à la main gardé, jamais remplacé. Code inconnu (ou pays absent du barème) :
+champ vide « Pays à choisir ».
+
+**R171 : barème replié** : « Pays (N) », « N modifiés par toi », « ▼ Afficher » ; un appui déplie (recherche comprise), un autre replie.
+« Vol journée » reste visible.
+
+**Tests** : `tests/unitaires/v070.test.js`, `tests/navigateur/v070.mjs` ; v068 et v069 adaptés (J.1 / J.2, présentation, barème replié,
+nuit sans vol = nuit d'avant) ; v046 : mesure de la date plus fine (selon la date du jour, le texte arrivait à moins de 8 px de
+l'icône du calendrier et la mesure les collait ; échouait aussi en v0.69) ; test complet ; contrôle local avec le vrai fichier.
+
 ## v0.69 — 27/11/2026
 
 Remarques R167 à R170. carnet.php v5, NPF-Q400 et format NPF-Q400 inchangés ; NAS et VPS non touchés ; carnet EASA inchangé (totaux,

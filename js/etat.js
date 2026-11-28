@@ -10,6 +10,7 @@ import { REGLAGES_PRIVES } from './sauvegarde.js';
 import { indexPersonnes, nomAffiche, personneDuTexte } from './personnes.js';
 import { estReglagePartage } from './synchro.js';
 import { listeCompteurs } from './compteurs.js';
+import { reprendreJ2 } from './frais.js';
 
 export const etat = {
   vols: [],            // du plus récent au plus ancien
@@ -50,6 +51,18 @@ export async function charger() {
 
 // Mises à jour des données enregistrées par une version précédente (une seule fois, rien n'est perdu)
 async function migrer() {
+  // v0.70 (R172 / R177) : cases « J+2 » -> J.1 / J.2 (une fois par appareil ; même résultat partout : rien à choisir à la synchro).
+  // Le drapeau n'est pas partagé : une ancienne sauvegarde restaurée (sans lui) est reprise à son tour.
+  if (!etat.reglages.migrationFraisJ1) {
+    const changes = reprendreJ2(etat.vols);
+    if (changes.length) {
+      await db.enregistrer({ vols: changes });
+      const parId = new Map(changes.map(v => [v.id, v]));
+      etat.vols = etat.vols.map(v => parId.get(v.id) || v);
+    }
+    etat.reglages.migrationFraisJ1 = new Date().toISOString();
+    await db.ecrireReglage('migrationFraisJ1', etat.reglages.migrationFraisJ1);
+  }
   if (!etat.reglages.migrationV04) {
     const modifies = migrerAvionsV04([...etat.avions.values()]);
     if (modifies.length) await db.enregistrer({ avions: modifies });
@@ -116,6 +129,16 @@ export async function enregistrerVol(vol, { garderDate = false } = {}) {
   const et = reglage('etiquettes');
   const nouvelles = (vol.etiquettes || []).filter(t => !et.includes(t));
   if (nouvelles.length) await enregistrerReglage('etiquettes', [...et, ...nouvelles]);
+  prevenir();
+}
+
+// v0.70 (R173) : plusieurs vols d'un coup (case des frais d'escale de toute une journée), « Modifié le » gardé, un seul rafraîchissement
+export async function enregistrerVolsFrais(liste) {
+  if (refuseEnConsultation()) return false;
+  if (!liste.length) return;
+  await db.enregistrer({ vols: liste });
+  const parId = new Map(liste.map(v => [v.id, v]));
+  etat.vols = etat.vols.map(v => parId.get(v.id) || v);
   prevenir();
 }
 

@@ -1,11 +1,14 @@
-// v0.68 (R166) : frais d'escale : zone de la fiche du vol (VOL JOURNÉE / J+2 / DÉTACHEMENT), fenêtre « Détachement »,
+// v0.68 (R166) : frais d'escale : zone de la fiche du vol (v0.70 : VOL JOURNÉE / DÉTACHEMENT / J.1 / J.2), fenêtre « Détachement »,
 // Plus › Frais d'escale (une ligne par année ; barème de l'année, liste, total, PDF). Calcul : js/frais.js.
 // Ce n'est pas une donnée du carnet EASA : cocher une case n'écrit que vol.frais (sans changer « Modifié le », sans alerte R150,
 // sans ligne « Anomalies traitées »).
 import { $, esc, toast, ouvrirOutil, proposerFichier } from './commun.js';
-import { etat, reglage, enregistrerReglage, enregistrerVol, enConsultation } from '../etat.js';
+import { etat, reglage, enregistrerReglage, enregistrerVolsFrais, enConsultation } from '../etat.js';
 import { lignesFrais, anneeFrais, anneesFrais, baremeDe, euros, lireMontant, detachementDe, detachementsActifs, nuitsDe, cleBareme, cleDetachement,
-  PREFIXE_DETACHEMENT, PREFIXE_BAREME, titreLigne, datesLigne, lieuLigne, montantLigne, paysDuBareme } from '../frais.js';
+  PREFIXE_DETACHEMENT, PREFIXE_BAREME, titreLigne, typeLigne, lieuLigne, montantLigne, paysDuBareme, fraisDuJour, paysAuto, nomBareme, nomAuto, nuitsAilleurs } from '../frais.js';
+import { estSimulation as estSimulationFrais } from '../modele.js';
+import { terrain } from '../terrains.js';
+import { nomPays } from '../pays.js';
 import { ajouterJours, dateFr, heureH, dureeAffichee, aujourdhui } from '../temps.js';
 const norm = t => String(t || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 import { dixiemesAvion } from '../vols-groupes.js';
@@ -21,8 +24,10 @@ export function donneesFrais() {
     if (k.startsWith(PREFIXE_DETACHEMENT)) detachements.push(v);
     else if (k.startsWith(PREFIXE_BAREME)) baremes.set(k.slice(PREFIXE_BAREME.length), v);
   }
-  return { vols: etat.vols, detachements, baremes };
+  return { vols: etat.vols, detachements, baremes, paysDe };
 }
+// v0.70 (R178) : code OACI -> nom du pays (même correspondance que les drapeaux ; outre-mer à part)
+export const paysDe = code => nomPays((terrain(code) || {}).pays);
 let cache = { cle: null, lignes: [] };
 export function lignesActuelles() {
   const cle = `${etat.revision}|${etat.vols.length}`;
@@ -35,7 +40,16 @@ export function detachementsActuels() {
   if (cacheDet.cle !== etat.revision) cacheDet = { cle: etat.revision, dets: donneesFrais().detachements };
   return cacheDet.dets;
 }
-const ligneDuVol = id => lignesActuelles().find(x => x.vols.some(v => v.id === id)) || null;
+// v0.70 (R173) : type de chaque journée (pour le cercle noir de l'accueil), recalculé seulement quand le carnet change
+let cacheJours = { cle: null, types: new Map() };
+export function typeDuJour(date) {
+  if (cacheJours.cle !== etat.revision || cacheJours.vols !== etat.vols) {
+    const types = new Map(), le = new Map();
+    for (const v of etat.vols) if (v.frais && v.date && !estSimulationFrais(v) && (!le.has(v.date) || (v.frais.le || '') > le.get(v.date))) { le.set(v.date, v.frais.le || ''); types.set(v.date, v.frais.type || null); }
+    cacheJours = { cle: etat.revision, vols: etat.vols, types };
+  }
+  return detachementDe(detachementsActuels(), date) ? 'detachement' : cacheJours.types.get(date) || null;
+}
 
 // ---------- Zone de la fiche du vol ----------
 // ctx : { id (vol enregistré) | null, date: () => 'AAAA-MM-JJ' } ; vol nouveau : la case est gardée ici et enregistrée avec le vol
@@ -43,8 +57,14 @@ let ctx = null, fraisNouveau = null;
 export function afficherFrais(c) { ctx = c; fraisNouveau = null; rendreFrais(); }
 export const fraisPourNouveauVol = () => fraisNouveau;
 const volEnregistre = () => (ctx && ctx.id ? etat.vols.find(v => v.id === ctx.id) || null : null);
-const fraisCourant = () => { const v = volEnregistre(); return v ? v.frais || null : fraisNouveau; };
 const dateCourante = () => { const v = volEnregistre(); return v ? v.date : (ctx && ctx.date()) || ''; };
+const volsDuJour = date => etat.vols.filter(v => v.date === date && !estSimulationFrais(v));
+// v0.70 (R173) : la case vaut pour toute la journée (celle cochée le plus récemment parmi ses vols) ; vol nouveau : son choix d'abord
+const fraisCourant = () => {
+  if (!volEnregistre() && fraisNouveau) return fraisNouveau;
+  const date = dateCourante();
+  return date ? fraisDuJour(volsDuJour(date), date) : null;
+};
 // v0.69 (R169) : choix du pays = champ avec la liste des pays du barème de l'année (recherche en tapant les premières lettres)
 function listePays(annee) {
   const id = `pays-${annee}`;
@@ -62,47 +82,63 @@ function lirePays(el) {
   el.value = el.dataset.avant || '';
   return null;
 }
+// v0.70 (R178) : pays de la nuit du J.1 : choisi à la main (gardé) ; sinon celui du dernier atterrissage du jour ; inconnu : vide
+function paysJ1(date, f) {
+  const a = date.slice(0, 4), b = donneesFrais().baremes;
+  if (f && f.paysManuel && f.pays) return { pays: nomBareme(b, a, f.pays), manuel: true };
+  const auto = paysAuto(volsDuJour(date), date, paysDe);
+  return { pays: auto ? nomAuto(b, a, auto.pays) : null, manuel: false, code: auto ? auto.code : '' };
+}
+const ligneDuJour = date => lignesActuelles().find(x => (x.jourVols || []).some(j => j.date === date)) || null;
 export function rendreFrais() {
   if (!ctx) return;
   const date = dateCourante(), d = donneesFrais(), det = date ? detachementDe(d.detachements, date) : null, f = fraisCourant();
   const type = det ? 'detachement' : (f && f.type) || null;
   document.querySelectorAll('#fe-zone [data-fe]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.fe === type)));
-  $('#fe-pays-z').hidden = type !== 'j2';
-  if (type === 'j2') poserPays($('#fe-pays'), date.slice(0, 4), (f && f.pays) || 'France');
+  $('#fe-pays-z').hidden = type !== 'j1';
+  if (type === 'j1') {
+    const p = paysJ1(date, f), el = $('#fe-pays');
+    poserPays(el, date.slice(0, 4), p.pays);
+    el.placeholder = 'Pays à choisir';
+    el.classList.toggle('manque', !p.pays);
+    $('#fe-pays-z').classList.toggle('manuel', p.manuel);
+  }
   $('#fe-voir').hidden = !det;
   let info = '';
-  const b = baremeDe(d.baremes, (date || aujourdhui()).slice(0, 4));
+  const b = baremeDe(d.baremes, (date || aujourdhui()).slice(0, 4)), n = date ? volsDuJour(date).length : 0;
+  const tous = n > 1 ? ` (les ${n} vols du jour)` : '';
+  const l = date ? ligneDuJour(date) : null;
   if (det) info = `Fait partie du détachement du ${dateFr(det.du)} au ${dateFr(det.au)}`;
-  else if (type === 'journee') info = b.journee === null || b.journee === undefined ? `Vol journée : montant à saisir (Plus › Frais d'escale › ${b.annee})` : `Vol journée : ½ indemnité zone euro = ${euros(b.journee)}`;
-  else if (type === 'j2') {
-    const l = volEnregistre() ? ligneDuVol(ctx.id) : null;
-    if (!volEnregistre()) info = 'J+2 : regroupé avec le vol J+2 de la veille ou du lendemain une fois enregistré';
-    else if (!l || l.incomplet) info = 'J+2 incomplet : coche aussi le vol de la veille ou du lendemain';
-    else {
-      const autre = l.vols.find(v => v.date !== date) || l.vols[0];
-      info = `Regroupé avec le vol J+2 du ${dateFr(autre.date).slice(0, 5)} : 2 jours, ${l.detail.replace(' indemnité', '')} = ${montantLigne(l)}`;
-    }
+  else if (type === 'journee') info = (b.journee === null || b.journee === undefined ? `Vol journée : montant à saisir (Plus › Frais d'escale › ${b.annee})` : `Vol journée${tous} : ½ indemnité zone euro = ${euros(b.journee)}`);
+  else if (type === 'j1' || type === 'j2') {
+    if (!l || l.incomplet) info = type === 'j1' ? 'J.1 incomplet : coche aussi le J.2 du lendemain' : 'J.2 incomplet : coche aussi le J.1 de la veille';
+    else if (l.manquant && !l.pays) info = 'Pays de la nuit à choisir sur le J.1';
+    else info = `${type === 'j1' ? `Avec le J.2 du ${dateFr(l.au).slice(0, 5)}` : `Avec le J.1 du ${dateFr(l.du).slice(0, 5)}`} : 2 jours, nuit ${l.pays}, ${l.detail.replace(' indemnité', '')} = ${montantLigne(l)}`;
   }
   $('#fe-info').textContent = info;
   $('#fe-info').hidden = !info;
 }
+// v0.70 (R173) : la case cochée (ou décochée) l'est sur TOUS les vols de la journée
 async function ecrireFrais(frais) {
   const v = volEnregistre();
   if (!v) { fraisNouveau = frais; rendreFrais(); return; }
-  if (await enregistrerVol({ ...v, frais }, { garderDate: true }) === false) return;
+  const liste = volsDuJour(v.date).map(x => ({ ...x, frais: { ...frais } }));
+  if (await enregistrerVolsFrais(liste) === false) return;
   rendreFrais();
 }
+// le pays choisi à la main pour le J.1 reste (même si on décoche puis recoche)
+const paysGarde = f => (f && f.paysManuel && f.pays ? { pays: f.pays, paysManuel: true } : {});
 async function choisirCase(t) {
   if (!ctx || enConsultation()) return;
   const date = dateCourante(), d = donneesFrais(), det = date ? detachementDe(d.detachements, date) : null;
   if (det) { ouvrirDetachement(det); return; } // le vol fait partie d'un détachement : on le modifie (ou le supprime) là
+  const f = fraisCourant(), le = new Date().toISOString();
   if (t === 'detachement') {
     if (!date) { toast('Choisis d\'abord la date du vol.'); return; }
-    ouvrirDetachement(null, { du: date, apres: () => ecrireFrais({ type: null, le: new Date().toISOString() }) });
+    ouvrirDetachement(null, { du: date, apres: () => ecrireFrais({ type: null, ...paysGarde(f), le }) });
     return;
   }
-  const f = fraisCourant(), le = new Date().toISOString();
-  await ecrireFrais(f && f.type === t ? { type: null, le } : { type: t, ...(t === 'j2' ? { pays: (f && f.pays) || 'France' } : {}), le });
+  await ecrireFrais({ type: f && f.type === t ? null : t, ...paysGarde(f), le });
 }
 
 // ---------- Fenêtre « Détachement » ----------
@@ -121,12 +157,14 @@ function rendreDetachement() {
   const annee = (dt.du || aujourdhui()).slice(0, 4);
   poserPays($('#dt-pays'), annee, dt.pays);
   const valide = dt.du && dt.au && dt.du <= dt.au;
-  const n = valide ? nuitsDe(dt) : [];
-  $('#dt-nuits').innerHTML = n.map(x => `<div class="dt-nuit${dt.nuits[x.date] ? ' modifie' : ''}"><span>Nuit du ${dateFr(x.date).slice(0, 5)}</span><input class="pays-in" data-nuit="${x.date}" autocomplete="off" aria-label="Nuit du ${dateFr(x.date)}"></div>`).join('')
+  const d0 = donneesFrais(), n = valide ? nuitsDe(dt, { vols: etat.vols.filter(v => v.date >= dt.du && v.date <= dt.au && !estSimulationFrais(v)), paysDe: c => nomAuto(d0.baremes, annee, paysDe(c)) }) : [];
+  // v0.70 (R178) : nuit = pays du dernier atterrissage du jour (code affiché) ; choisie à la main : gardée, en jaune
+  $('#dt-nuits').innerHTML = n.map(x => `<div class="dt-nuit${x.manuel ? ' modifie' : ''}"><span>Nuit du ${dateFr(x.date).slice(0, 5)}${x.code ? ` <small class="dt-code">${esc(x.code)}</small>` : ''}</span><input class="pays-in" data-nuit="${x.date}" autocomplete="off" aria-label="Nuit du ${dateFr(x.date)}"></div>`).join('')
     || '<p class="hint">Aucune nuit (un seul jour).</p>';
-  for (const el of document.querySelectorAll('#dt-nuits [data-nuit]')) poserPays(el, el.dataset.nuit.slice(0, 4), n.find(x => x.date === el.dataset.nuit).pays); // barème de l'année de la nuit
+  for (const el of document.querySelectorAll('#dt-nuits [data-nuit]')) { const p = n.find(x => x.date === el.dataset.nuit).pays; poserPays(el, el.dataset.nuit.slice(0, 4), p); el.dataset.avantNuit = p || ''; } // barème de l'année de la nuit
   const d = donneesFrais(), autres = d.detachements.filter(x => x.id !== dt.id);
-  const l = valide ? lignesFrais({ vols: etat.vols, detachements: [...autres, dt], baremes: d.baremes }).find(x => x.detachementId === dt.id) : null;
+  const ls = valide ? lignesFrais({ vols: etat.vols, detachements: [...autres, dt], baremes: d.baremes, paysDe }).filter(x => x.detachementId === dt.id) : [];
+  const l = ls.length > 1 ? { ...ls[0], montant: ls.reduce((s2, x) => s2 + x.montant, 0), manquant: ls.some(x => x.manquant), vols: ls.flatMap(x => x.vols), detail: ls.map(x => x.detail).join(' + ') } : ls[0] || null;
   const vols = l ? l.vols : [];
   $('#dt-vols').textContent = vols.length ? `Vols de la période : ${vols.map(v => dateFr(v.date).slice(0, 5)).join(', ')} (cochés « Détachement » tout seuls)` : 'Aucun vol à ces dates (les jours sans vol comptent aussi).';
   $('#dt-calc').textContent = l ? `${l.zone === 'monde' ? 'Zone Monde' : 'Zone euro'}, ${l.jours} jour${l.jours > 1 ? 's' : ''} : ${l.detail}` : '';
@@ -143,7 +181,7 @@ function erreurDetachement() {
 async function enregistrerDetachement() {
   const err = erreurDetachement();
   if (err) { $('#dt-err').textContent = err; return; }
-  const nuits = Object.fromEntries(Object.entries(dt.nuits).filter(([d, p]) => d >= dt.du && d < dt.au && p && p !== dt.pays));
+  const nuits = Object.fromEntries(Object.entries(dt.nuits).filter(([d, p]) => d >= dt.du && d < dt.au && p)); // v0.70 : un choix à la main est toujours gardé
   const { nouveau, ...val } = dt;
   if (await enregistrerReglage(cleDetachement(dt.id), { ...val, nuits, le: new Date().toISOString() }) === false) return;
   $('#dt-modal').hidden = true;
@@ -166,7 +204,7 @@ export function ecranFrais() {
   anneeOuverte = null;
   const lignes = lignesActuelles(), annees = anneesFrais(lignes);
   const c = ouvrirOutil('Frais d\'escale', `
-    <p class="hint" style="font-size:15px">Indemnités journalières (frais réels) : coche « Vol journée », « J+2 » ou « Détachement » dans la fiche d'un vol. Une ligne par année.</p>
+    <p class="hint" style="font-size:15px">Indemnités journalières (frais réels) : coche « Vol journée », « Détachement », « J.1 » ou « J.2 » dans la fiche d'un vol (la case vaut pour toute la journée). Une ligne par année.</p>
     <div class="flist" id="fr-l">${annees.map(a => `<button type="button" class="pitem fr-an" data-an="${a}"><b>${a}</b><span>${euros(anneeFrais(lignes, a).total)} ›</span></button>`).join('')
       || '<p class="hint">Aucun vol coché pour l\'instant.</p>'}</div>`);
   c.querySelector('#fr-l').addEventListener('click', e => { const b = e.target.closest('[data-an]'); if (b) ecranAnneeFrais(b.dataset.an); });
@@ -193,16 +231,22 @@ function htmlBareme(b) {
       ${b.officiel || info ? `<small class="fb-info">${b.officiel ? `<span class="fb-tag fb-t-${p.source}">${TAGS[p.source]}</span>` : ''}${esc(info)}</small>` : ''}</div>`;
   };
   const pays = [...b.pays].sort((x, y) => (x.nom.toUpperCase() === 'FRANCE' ? -1 : y.nom.toUpperCase() === 'FRANCE' ? 1 : 0));
+  const nm = nbModifies(b);
   return `<div class="sec fb"><h3>Barème ${esc(b.annee)}</h3>
       ${b.officiel ? `<p class="hint fb-src">Barème du bulletin intégré (${esc(b.source)}). Un montant saisi passe avant ; laissé vide : celui du bulletin.</p>` : ''}
       <div class="fb-j"><label for="fb-j">Vol journée${b.officiel ? ` <span class="fb-tag fb-t-${b.journeeModifiee ? 'modifie' : 'bulletin'}">${b.journeeModifiee ? 'modifié' : 'bulletin'}</span>` : ''}</label>
         <input id="fb-j" inputmode="decimal" placeholder="${b.journeeOfficielle !== null ? montantTexte(b.journeeOfficielle) : 'Montant'}" value="${montantTexte(b.journee)}"></div>
+      <button type="button" class="fb-plier" id="fb-plier" aria-expanded="false" aria-controls="fb-plie"><span><b>Pays (${pays.length})</b>${nm ? `<small class="fb-nm">${nm} modifié${nm > 1 ? 's' : ''} par toi</small>` : ''}</span><span class="fb-fl" id="fb-fl">▼ Afficher</span></button>
+      <div id="fb-plie" hidden>
       ${pays.length > 8 ? '<input class="search fb-q" id="fb-q" placeholder="Rechercher un pays" autocomplete="off" aria-label="Rechercher un pays">' : ''}
       <div id="fb-pays">${pays.map(ligne).join('')}</div>
       <button type="button" class="bigbtn second" id="fb-add">+ Pays</button>
+      </div>
       <p class="apname bad" id="fb-err"></p>
       <button type="button" class="bigbtn" id="fb-ok">Enregistrer le barème</button></div>`;
 }
+// v0.70 (R171) : nombre de lignes modifiées par toi (bulletin : modifiées ou ajoutées ; année sans bulletin : pays avec un montant)
+export const nbModifies = b => b.pays.filter(p => (b.officiel ? p.source === 'modifie' || p.source === 'ajoute' : p.montant !== null && p.montant !== undefined)).length;
 // Ce qui est gardé : seulement ce qui diffère du bulletin (montant ou zone), et les pays ajoutés
 function lireBareme(annee) {
   const b0 = baremeDe(donneesFrais().baremes, annee);
@@ -226,14 +270,21 @@ function lireBareme(annee) {
 export function ecranAnneeFrais(annee) {
   anneeOuverte = String(annee);
   const d = donneesFrais(), b = baremeDe(d.baremes, annee), a = anneeFrais(lignesActuelles(), annee);
-  const ligne = x => `<div class="lv fr-l${x.incomplet ? ' incomplet' : ''}" role="button" tabindex="0" data-ligne="${esc(x.id)}">
-      <div class="lv-h"><span>${esc(titreLigne(x))}</span><span class="fr-m${x.manquant ? ' manquant' : ''}">${esc(montantLigne(x))}</span></div>
-      <div class="lv-tr">${esc(datesLigne(x))}</div>${x.type !== 'journee' && x.etapes ? `<div class="lv-tr fr-et">${esc(x.etapes)}</div>` : ''}<div class="lv-q">${esc(lieuLigne(x))}</div>${x.detail && !x.incomplet ? `<div class="lv-q">${esc(x.detail)}</div>` : x.incomplet ? `<div class="lv-q">${esc(x.detail)}</div>` : ''}</div>`;
+  // v0.70 (R175 / R176 / R174) : en tête « date · type » et le montant ; trajet dans une bande ; J.1 + J.2 : deux lignes ; détachement :
+  // son pays et les nuits passées ailleurs ; calcul en bas
+  const ligne = x => { const b = blocsLigne(x); return `<div class="lv fr-l${x.incomplet ? ' incomplet' : ''}" role="button" tabindex="0" data-ligne="${esc(x.id)}">
+      ${b.jours.map((j, i) => `${i ? `<div class="lv-h fr-j2"><span>${esc(j.titre)}</span></div>` : `<div class="lv-h"><span>${esc(j.titre)}</span><span class="fr-m${x.manquant ? ' manquant' : ''}">${esc(b.montant)}</span></div>`}
+      ${j.etapes ? `<div class="traj">${esc(j.etapes)}</div>` : ''}`).join('')}
+      ${b.pastilles.length ? `<div class="fr-nus">${b.pastilles.map(t => `<span class="nu">${esc(t)}</span>`).join('')}</div>` : ''}
+      <div class="lv-q">${esc(b.bas)}</div></div>`; };
   const c = ouvrirOutil(`Frais d'escale ${anneeOuverte}`, `${htmlBareme(b)}
     <div id="fa-l">${a.lignes.map(ligne).join('') || '<p class="hint">Aucune ligne cette année.</p>'}</div>
     <div class="tline fr-tot"><span>Total ${anneeOuverte}</span><b id="fa-tot">${euros(a.total)}</b></div>
     <button type="button" class="bigbtn" id="fa-pdf">Exporter ${anneeOuverte} en PDF</button>
     <button type="button" class="bigbtn second" id="fa-ret">Toutes les années</button>`);
+  // v0.70 (R171) : liste des pays repliée ; un appui la déplie (recherche comprise), un autre la replie
+  const plier = ouvert => { $('#fb-plie').hidden = !ouvert; $('#fb-plier').setAttribute('aria-expanded', String(ouvert)); $('#fb-fl').textContent = ouvert ? '▲ Masquer' : '▼ Afficher'; };
+  c.querySelector('#fb-plier').addEventListener('click', () => plier($('#fb-plie').hidden));
   c.querySelector('#fb-add').addEventListener('click', () => {
     const div = document.createElement('div'); div.innerHTML = htmlBareme({ annee, journee: null, pays: [{ nom: '', montant: null, zone: 'euro' }, { nom: '', montant: null, zone: 'euro' }] });
     const r = div.querySelectorAll('.fb-row')[1]; r.dataset.i = String(document.querySelectorAll('#fb-pays .fb-row').length);
@@ -279,19 +330,28 @@ export function modelePdf(annee, donnees = donneesFrais()) {
   const chrono = [...a.lignes].reverse();
   return {
     titre: `Frais d'escale ${a.annee}`, bareme: `Barème ${a.annee} utilisé : ${bareme}`,
-    resume: [['Vols journée', String(r.journee.n), euros(r.journee.montant)], ['J+2', String(r.j2.n), euros(r.j2.montant)],
+    resume: [['Vols journée', String(r.journee.n), euros(r.journee.montant)], ['J.1 / J.2', String(r.j2.n), euros(r.j2.montant)],
       ['Détachements', r.detachement.n ? `${r.detachement.n} (${r.detachement.jours} jours, ${r.detachement.nuits} nuits)` : '0', euros(r.detachement.montant)],
       [`Total ${a.annee}`, '', euros(a.total)]],
     // v0.69 (R168) : toutes les étapes ; (R167) partie d'un détachement à cheval sur deux années : « début » / « suite »
-    etapes: chrono.map(x => [`${titreLigne(x)} · ${datesLigne(x)}`, x.etapes || '', montantLigne(x)]),
-    lignes: chrono.map(x => ({
-      titre: `${titreLigne(x)}${x.partie ? ` — ${x.partie === 'debut' ? 'début' : 'suite'} (détachement du ${dateFr(x.detachementDu)} au ${dateFr(x.detachementAu)})` : ''} · ${datesLigne(x)}`, montant: montantLigne(x),
-      etapes: x.etapes || '',
-      detail: [x.nuits.length ? `Nuit${x.nuits.length > 1 ? 's' : ''} : ${x.nuits.map(n => `${x.nuits.length > 1 ? dateFr(n.date).slice(0, 2) + ' ' : ''}${n.pays}`).join(' · ')}` : '',
-        x.detail ? `calcul : ${x.detail}` : ''].filter(Boolean).join(' — '),
-      vols: x.vols.map(vol),
-    })),
+    etapes: chrono.map(x => [titreLigne(x), x.jourVols && x.jourVols.length > 1 ? x.jourVols.map(j => j.etapes).join(' / ') : x.etapes || '', montantLigne(x)]),
+    // v0.70 (R175 / R176) : même présentation que la liste ; les vols du carnet restent sous chaque ligne
+    lignes: chrono.map(x => {
+      const b = blocsLigne(x);
+      return { titre: b.jours[0].titre, montant: b.montant, jours: b.jours, pastilles: b.pastilles, partie: b.partie,
+        detail: [x.type === 'detachement' && x.nuits.length ? `Nuits : ${x.nuits.map(n => `${dateFr(n.date).slice(0, 5)} ${n.pays}`).join(' · ')}` : '', b.bas].filter(Boolean).join(' — '),
+        vols: x.vols.map(vol) };
+    }),
   };
+}
+// Blocs d'une ligne (liste et PDF) : jours [{ titre, etapes }], montant, pastilles, texte du bas
+export function blocsLigne(x) {
+  const montant = montantLigne(x), pastilles = nuitsAilleurs(x);
+  const partie = x.partie ? `${x.partie === 'debut' ? 'Début' : 'Suite'} du détachement du ${dateFr(x.detachementDu)} au ${dateFr(x.detachementAu)}` : '';
+  const bas = [lieuLigne(x), x.detail].filter(Boolean).join(' · ');
+  if (x.type === 'detachement') return { jours: [{ titre: titreLigne(x), etapes: x.pays || '' }], montant, pastilles, partie, bas: partie ? `${partie} · ${bas}` : bas };
+  if (x.sorte === 'paire') return { jours: x.jourVols.map((j, i) => ({ titre: `${dateFr(j.date)} · ${i ? 'J.2' : 'J.1'}`, etapes: j.etapes })), montant, pastilles, partie, bas };
+  return { jours: [{ titre: titreLigne(x), etapes: x.etapes || '' }], montant, pastilles, partie, bas };
 }
 const COLS = [['Date', 17], ['Dép.', 13], ['Heure', 12], ['Arr.', 13], ['Heure', 12], ['Type', 13], ['Immat.', 17], ['Tps vol', 13], ['Fonction', 15], ['Remarque', 0]];
 export function dessinerPdf(jsPDF, m) {
@@ -322,9 +382,18 @@ export function dessinerPdf(jsPDF, m) {
     page(22);
     doc.setDrawColor(27, 36, 51); doc.setLineWidth(0.5); doc.line(G, y, G + L, y); doc.setLineWidth(0.2); doc.setDrawColor(150);
     y += 5; doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); txt(l.montant, G + L, y, { align: 'right' });
-    for (const t of doc.splitTextToSize(pdfTexte(l.titre), L - 40)) { txt(t, G, y); y += 4.5; }
+    // v0.70 (R175 / R176) : « date · type », puis le trajet en gras dans une bande bleu clair avec un trait à gauche
+    (l.jours || [{ titre: l.titre, etapes: l.etapes }]).forEach((j, i) => {
+      if (i) { page(6); y += 1.5; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+      for (const t of doc.splitTextToSize(pdfTexte(j.titre), L - 40)) { txt(t, G, y); y += 4.5; }
+      if (!j.etapes) return;
+      doc.setFontSize(9); const tl = doc.splitTextToSize(pdfTexte(j.etapes), L - 6), h = tl.length * 4 + 2.4;
+      page(h); doc.setFillColor(232, 241, 251); doc.rect(G, y - 1.2, L, h, 'F'); doc.setFillColor(43, 108, 176); doc.rect(G, y - 1.2, 1.2, h, 'F');
+      doc.setTextColor(27, 36, 51); tl.forEach((t, k) => txt(t, G + 4, y + 2.6 + k * 4)); doc.setTextColor(0); y += h + 1.2;
+    });
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-    if (l.etapes) for (const t of doc.splitTextToSize(pdfTexte(`Étapes : ${l.etapes}`), L)) { page(5); txt(t, G, y); y += 4; }
+    if (l.pastilles && l.pastilles.length) { page(5); txt(l.pastilles.join('   '), G, y + 1); y += 5; }
     doc.setTextColor(80);
     for (const d of doc.splitTextToSize(pdfTexte(l.detail), L)) { page(5); txt(d, G, y); y += 4; }
     doc.setTextColor(0);
@@ -356,18 +425,22 @@ function exporterPdf(annee) {
 export function initFrais() {
   $('#pl-frais').addEventListener('click', ecranFrais);
   $('#fe-zone').addEventListener('click', e => { const b = e.target.closest('[data-fe]'); if (b) choisirCase(b.dataset.fe); });
-  $('#fe-pays').addEventListener('change', async () => { const f = fraisCourant(), p = lirePays($('#fe-pays')); if (p && f && f.type === 'j2' && p !== f.pays) await ecrireFrais({ ...f, pays: p, le: new Date().toISOString() }); });
+  // v0.70 (R178) : pays du J.1 changé à la main : gardé (paysManuel), sur tous les vols du jour
+  $('#fe-pays').addEventListener('change', async () => {
+    const f = fraisCourant(), avant = $('#fe-pays').dataset.avant, p = lirePays($('#fe-pays'));
+    if (p && f && f.type === 'j1' && (p !== avant || !f.paysManuel)) await ecrireFrais({ ...f, pays: p, paysManuel: true, le: new Date().toISOString() });
+  });
   $('#fe-voir').addEventListener('click', () => { const det = detachementDe(donneesFrais().detachements, dateCourante()); if (det) ouvrirDetachement(det); });
   $('#dt-no').addEventListener('click', () => { $('#dt-modal').hidden = true; dt = null; dtApres = null; });
   $('#dt-ok').addEventListener('click', enregistrerDetachement);
   $('#dt-del').addEventListener('click', supprimerDetachement);
   for (const k of ['du', 'au']) $(`#dt-${k}`).addEventListener('change', () => { if (!dt) return; dt[k] = $(`#dt-${k}`).value; $('#dt-err').textContent = ''; rendreDetachement(); });
   // (rien n'est redessiné si le pays ne change pas : sinon la nuit qu'on vient de toucher serait remplacée)
-  $('#dt-pays').addEventListener('change', () => { if (!dt) return; const p = lirePays($('#dt-pays')); if (!p || p === dt.pays) return; dt.pays = p; for (const [d, x] of Object.entries(dt.nuits)) if (x === dt.pays) delete dt.nuits[d]; rendreDetachement(); });
+  $('#dt-pays').addEventListener('change', () => { if (!dt) return; const p = lirePays($('#dt-pays')); if (!p || p === dt.pays) return; dt.pays = p; rendreDetachement(); });
   $('#dt-nuits').addEventListener('change', e => {
     const s = e.target.closest('[data-nuit]'); if (!s || !dt) return;
-    const p = lirePays(s); if (!p || p === (dt.nuits[s.dataset.nuit] || dt.pays)) return;
-    if (p === dt.pays) delete dt.nuits[s.dataset.nuit]; else dt.nuits[s.dataset.nuit] = p;
+    const p = lirePays(s); if (!p || p === s.dataset.avantNuit) return;
+    dt.nuits[s.dataset.nuit] = p; // v0.70 (R178) : choisi à la main : gardé, jamais remplacé ensuite
     rendreDetachement();
   });
 }

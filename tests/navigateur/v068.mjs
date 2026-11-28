@@ -20,7 +20,7 @@ const vol = (id, date, champs = {}) => ({ id, date, hDep: '09:00', hArr: '10:24'
   compteurs: { ...C0 }, etiquettes: [], attJour: 1, attNuit: 0, approches: 0, tempsIFR: 0, tempsNuit: 0, simTemps: 0, source: 'saisie', ordre: Date.parse(`${date}T09:00Z`),
   creeLe: H, modifieLe: H, ...champs });
 const VOLS = [vol('j14', '2026-06-14', { escales: [{ code: 'LFML', attJour: 1, attNuit: 0 }], attJour: 2 }), vol('j2a', '2026-06-02', { arr: 'LFMN' }), vol('j2b', '2026-06-03', { dep: 'LFMN' }),
-  vol('j2s', '2026-06-20'), vol('de06', '2026-07-06', { arr: 'LEMD' }), vol('de09', '2026-07-09', { dep: 'LEMD' }), vol('ca', '2026-08-01'), vol('ma', '2026-09-01'),
+  vol('j2s', '2026-06-20'), vol('de06', '2026-07-06', { arr: 'LEMD' }), vol('de09', '2026-07-09', { dep: 'LEMD' }), vol('ca', '2026-08-01', { arr: 'CYUL' }), vol('ma', '2026-09-01', { arr: 'GMMN' }), // v0.70 (R178) : nuit = pays du dernier atterrissage
   vol('an20', '2025-12-20'), vol('an30', '2025-12-30')];
 
 // ---------- Faux NAS v5 (synchro + vols NPF) ----------
@@ -108,6 +108,7 @@ const annee = async (p, a) => { await onglet(p, 'plus'); await p.click('#pl-frai
 const lignes = p => p.$$eval('#fa-l .lv', l => l.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
 const total = p => p.textContent('#fa-tot').then(t => t.replace(/\s/g, ' ').replace(/ /g, ' '));
 async function bareme(p, journee, pays) {
+  if (await p.isHidden('#fb-plie')) await p.click('#fb-plier'); // v0.70 (R171) : liste des pays repliée
   await p.fill('#fb-j', journee);
   const rows = await p.$$('#fb-pays .fb-row');
   for (let i = 0; i < pays.length; i++) {
@@ -139,7 +140,7 @@ try {
   await ouvrir(p, 'j14');
   const ordre = await p.evaluate(() => { const z = document.getElementById('fe-zone'), r = document.getElementById('rules-open2'), t = document.querySelector('#v-saisie .c-tp');
     return !!(r.compareDocumentPosition(z) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(z.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING); });
-  verifier(ordre && JSON.stringify(await p.$$eval('#fe-zone [data-fe]', l => l.map(b => b.textContent))) === '["VOL JOURNÉE","J+2","DÉTACHEMENT"]', 'zone « FRAIS D\'ESCALE » entre « Règles des pastilles » et « Temps du carnet » : VOL JOURNÉE, J+2, DÉTACHEMENT');
+  verifier(ordre && JSON.stringify(await p.$$eval('#fe-zone [data-fe]', l => l.map(b => b.textContent))) === '["VOL JOURNÉE","DÉTACHEMENT","J.1","J.2"]', 'zone « FRAIS D\'ESCALE » entre « Règles des pastilles » et « Temps du carnet » : VOL JOURNÉE, DÉTACHEMENT, J.1, J.2');
   for (const largeur of [360, 393]) {
     await p.setViewportSize({ width: largeur, height: 852 }); await p.waitForTimeout(150);
     await p.locator('#fe-zone').scrollIntoViewIfNeeded();
@@ -160,22 +161,23 @@ try {
   verifier(await p.inputValue('#fb-pays .fb-row:first-child .fb-nom') === 'France', 'France présente d\'office (Euro-Europe)');
   await bareme(p, '87', [['France', '174,00', 'euro'], ['Espagne', '174,00', 'euro'], ['Portugal', '174,00', 'euro'], ['Canada', '203,75', 'monde'], ['Maroc', '', 'monde']]);
   let l = await lignes(p);
-  verifier(l.some(x => x.startsWith('Vol journée 87,00 €') && x.includes('14/06/2026') && x.includes('LFTW → LFML → LFTW')), `vol journée : 87,00 € (${l[0]})`);
+  verifier(l.some(x => x.startsWith('14/06/2026 · Vol journée 87,00 €') && x.includes('LFTW → LFML → LFTW')), `vol journée : 87,00 € (${l[0]})`);
   await p.screenshot({ path: join(CAPT, 'v068-bareme.png'), fullPage: true });
   await p.click('#ou-x');
 
-  console.log('J+2');
-  r = await cocher(p, 'j2a', 'j2'); await fermer(p);
-  verifier(r.c.j2 && await p.isHidden('#fe-pays-z') === true, 'J+2 coché');
+  console.log('J.1 / J.2 (v0.70)');
+  r = await cocher(p, 'j2a', 'j1');
+  verifier(r.c.j1 && await p.isVisible('#fe-pays-z') && await p.inputValue('#fe-pays') === 'France' && r.info === 'J.1 incomplet : coche aussi le J.2 du lendemain', `J.1 coché : « Pays de la nuit » France (LFMN) ; « ${r.info} »`);
+  await fermer(p);
   r = await cocher(p, 'j2b', 'j2');
-  verifier(await p.inputValue('#fe-pays') === 'France' && r.info === 'Regroupé avec le vol J+2 du 02/06 : 2 jours, 1,5 × 174,00 € = 261,00 €', `« Pays de la nuit » France ; « ${r.info} »`);
+  verifier(r.c.j2 && await p.isHidden('#fe-pays-z') && r.info === 'Avec le J.1 du 02/06 : 2 jours, nuit France, 1,5 × 174,00 € = 261,00 €', `J.2 : « ${r.info} »`);
   await fermer(p);
   r = await cocher(p, 'j2s', 'j2'); await fermer(p);
-  verifier(r.info === 'J+2 incomplet : coche aussi le vol de la veille ou du lendemain', 'J+2 seul : incomplet');
+  verifier(r.info === 'J.2 incomplet : coche aussi le J.1 de la veille', 'J.2 seul : incomplet');
 
   console.log('Une seule case à la fois');
   r = await cocher(p, 'j14', 'j2');
-  verifier(r.c.j2 && !r.c.journee, 'J+2 coché : VOL JOURNÉE décoché');
+  verifier(r.c.j2 && !r.c.journee, 'J.2 coché : VOL JOURNÉE décoché');
   await p.click('#fe-zone [data-fe="journee"]'); await p.waitForTimeout(200);
   verifier((await cases(p)).journee && !(await cases(p)).j2, 'VOL JOURNÉE de nouveau');
   await p.click('#fe-zone [data-fe="journee"]'); await p.waitForTimeout(200);
@@ -187,7 +189,7 @@ try {
   await ouvrir(p, 'de06'); await p.click('#fe-zone [data-fe="detachement"]'); await p.waitForSelector('#dt-modal:not([hidden])');
   const d1 = await detachement(p, '2026-07-06', '2026-07-09', 'Espagne', { '2026-07-07': 'Portugal' });
   verifier(d1.montant === '609,00 €' && d1.calc === 'Zone euro, 4 jours : 1 + 1 + 1,5 indemnité × 174,00 €' && d1.modifiees === 1 && d1.vols.includes('06/07, 09/07'),
-    `4 jours, nuits Espagne / Portugal / Espagne : « ${d1.calc} » = ${d1.montant} ; vols du 06 et du 09`);
+    `4 jours, nuits Espagne (LEMD) / Portugal (à la main) / Portugal (jour sans vol) : « ${d1.calc} » = ${d1.montant} ; vols du 06 et du 09`);
   for (const largeur of [360, 393]) { await p.setViewportSize({ width: largeur, height: 852 }); await p.waitForTimeout(150);
     verifier(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), `${largeur} px : fenêtre « Détachement » sans débordement`); }
   await p.screenshot({ path: join(CAPT, 'v068-detachement.png') });
@@ -212,8 +214,8 @@ try {
   console.log('Liste et total de l\'année ; changement d\'année au 1er janvier');
   await annee(p, '2026');
   l = await lignes(p);
-  verifier(l[0].startsWith('Détachement 2 jours Montant manquant') && l.some(x => x.startsWith('Détachement 4 jours 609,00 €') && x.includes('Espagne, Portugal · 3 nuits · 2 vols'))
-    && l.some(x => x.startsWith('J+2 261,00 €') && x.includes('02/06 → 03/06/2026')) && l.some(x => x.startsWith('J+2 incomplet 0,00 €')) && l.filter(x => x.startsWith('Vol journée')).length === 1,
+  verifier(l[0].startsWith('01/09/2026 · Détachement 2 jours Montant manquant') && l.some(x => x.startsWith('06/07/2026 · Détachement 4 jours 609,00 € Espagne Nuit 07/07 : Portugal Nuit 08/07 : Portugal') && x.includes('3 nuits · 2 vols'))
+    && l.some(x => x.startsWith('02/06/2026 · J.1 261,00 €') && x.includes('03/06/2026 · J.2')) && l.some(x => x.startsWith('20/06/2026 · J.2 incomplet 0,00 €')) && l.filter(x => x.includes('· Vol journée')).length === 1,
     `lignes, plus récente en haut : ${l.map(x => x.split(' ').slice(0, 3).join(' ')).join(' | ')}`);
   verifier((await total(p)) === '1 568,25 €', `total 2026 : ${await total(p)} (87,00 + 261,00 + 609,00 + 611,25)`);
   for (const largeur of [360, 393]) { await p.setViewportSize({ width: largeur, height: 852 }); await p.waitForTimeout(150);
@@ -231,7 +233,7 @@ try {
   await annee(p, '2025'); await bareme(p, '80', [['France', '160,00', 'euro']]);
   l = await lignes(p);
   // v0.69 (R167) : détachement à cheval sur deux années : nuits du 30 et du 31 en 2025 (2 × 160,00 saisi), nuit du 01 en 2026 (1,5 × 174,00)
-  verifier(l.some(x => x.startsWith('Détachement 4 jours (partie 2025) 320,00 €') && x.includes('30/12 → 31/12/2025')) && (await total(p)) === '400,00 €', 'détachement du 30/12 au 02/01 : partie 2025 = 320,00 € ; total 2025 400,00 €');
+  verifier(l.some(x => x.startsWith('30/12/2025 · Détachement 4 jours (partie 2025) 320,00 €') && x.includes('30/12 → 31/12/2025')) && (await total(p)) === '400,00 €', 'détachement du 30/12 au 02/01 : partie 2025 = 320,00 € ; total 2025 400,00 €');
   await p.click('#fa-ret'); await p.waitForSelector('#fr-l');
   const an = await p.$$eval('#fr-l [data-an]', l => l.map(b => b.innerText.replace(/\s+/g, ' ')));
   verifier(an.length === 2 && an[0].startsWith('2026') && an[0].includes('1 829,25 €') && an[1].includes('400,00 €'), `une ligne par année : ${an.join(' | ')}`);
@@ -240,14 +242,16 @@ try {
 
   console.log('PDF de l\'année');
   const m = await p.evaluate(async () => (await import('./js/ui/frais.js')).modelePdf('2026'));
-  verifier(JSON.stringify(m.resume.map(x => x.join(' | ').replace(/\u202f/g, ' '))) === JSON.stringify(['Vols journée | 1 | 87,00 €', 'J+2 | 1 | 261,00 €', 'Détachements | 4 (11 jours, 7 nuits) | 1 481,25 €', 'Total 2026 |  | 1 829,25 €']),
+  verifier(JSON.stringify(m.resume.map(x => x.join(' | ').replace(/\u202f/g, ' '))) === JSON.stringify(['Vols journée | 1 | 87,00 €', 'J.1 / J.2 | 1 | 261,00 €', 'Détachements | 4 (11 jours, 7 nuits) | 1 481,25 €', 'Total 2026 |  | 1 829,25 €']),
     `résumé : ${m.resume.map(x => x.join(' ')).join(' · ')}`);
   const titres = m.lignes.map(x => x.titre);
-  verifier(titres[0].startsWith('Détachement 4 jours (partie 2026) — suite') && titres[1].startsWith('J+2 · 02/06') && titres[2].startsWith('Vol journée · 14/06') && titres[3].startsWith('J+2 incomplet') && titres.at(-1).startsWith('Détachement 2 jours'), `ordre chronologique : ${titres.join(' | ')}`);
+  verifier(titres[0] === '01/01/2026 · Détachement 4 jours (partie 2026)' && m.lignes[0].detail.includes('Suite du détachement') && titres[1] === '02/06/2026 · J.1' && titres[2] === '14/06/2026 · Vol journée' && titres[3] === '20/06/2026 · J.2 incomplet' && titres.at(-1) === '01/09/2026 · Détachement 2 jours', `ordre chronologique : ${titres.join(' | ')}`);
   const j2 = m.lignes[1];
-  verifier(j2.vols.length === 2 && JSON.stringify(j2.vols[0].slice(0, 9)) === JSON.stringify(['02/06/26', 'LFTW', '09h00', 'LFMN', '10h24', 'DH8D', 'F-XZZA', '1.4', 'CdB']) && j2.detail === 'Nuit : France — calcul : 1,5 indemnité × 174,00 €',
+  verifier(j2.vols.length === 2 && JSON.stringify(j2.vols[0].slice(0, 9)) === JSON.stringify(['02/06/26', 'LFTW', '09h00', 'LFMN', '10h24', 'DH8D', 'F-XZZA', '1.4', 'CdB']) && j2.jours.map(j => j.titre).join(' | ') === '02/06/2026 · J.1 | 03/06/2026 · J.2' && j2.detail === 'Nuit France · 2 vols · 1,5 indemnité × 174,00 €',
     `lignes du carnet sous chaque ligne (Dash en dixièmes : ${j2.vols[0][7]}, heures de bloc ${j2.vols[0][2]})`);
-  verifier(m.lignes.find(x => x.titre.startsWith('Détachement 4 jours · 06/07')).detail === 'Nuits : 06 Espagne · 07 Portugal · 08 Espagne — calcul : 1 + 1 + 1,5 indemnité × 174,00 €', 'détail : nuits et calcul');
+  const d4 = m.lignes.find(x => x.titre === '06/07/2026 · Détachement 4 jours');
+  verifier(d4.detail === 'Nuits : 06/07 Espagne · 07/07 Portugal · 08/07 Portugal — 06/07 → 09/07/2026 · 3 nuits · 2 vols · 1 + 1 + 1,5 indemnité × 174,00 €' && d4.jours[0].etapes === 'Espagne'
+    && JSON.stringify(d4.pastilles) === '["Nuit 07/07 : Portugal","Nuit 08/07 : Portugal"]', `détail : nuits et calcul (« ${d4.detail} »)`);
   const pdf = await p.evaluate(async () => { const f = await import('./js/ui/frais.js'), d = f.dessinerPdf(window.jspdf.jsPDF, f.modelePdf('2026')), s = d.output();
     return { pages: d.getNumberOfPages(), euro: s.includes('1 829,25 \x80'), resume: s.includes('(RÉSUMÉ)') || s.includes('(R\xc9SUM\xc9)'), dix: s.includes('(1.4)') }; });
   verifier(pdf.pages >= 1 && pdf.euro && pdf.dix, `PDF dessiné (${pdf.pages} page) : « 1 829,25 € », temps « 1.4 »`);

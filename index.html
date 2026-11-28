@@ -176,13 +176,14 @@
       </div>
     </div>
 
-    <!-- v0.68 (R166) : frais d'escale (une seule case à la fois, ou aucune ; « Détachement » : dates du détachement) -->
+    <!-- v0.68 (R166) : frais d'escale (une seule case à la fois, ou aucune ; « Détachement » : dates du détachement). v0.70 : 4 cases sur 2 lignes, valables pour toute la journée -->
     <div class="sec fe-sec" id="fe-zone">
       <h3>Frais d'escale</h3>
       <div class="fe-choix" role="group" aria-label="Frais d'escale">
         <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="journee">VOL JOURNÉE</button>
-        <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="j2">J+2</button>
         <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="detachement">DÉTACHEMENT</button>
+        <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="j1">J.1</button>
+        <button type="button" class="cbox" role="checkbox" aria-checked="false" data-fe="j2">J.2</button>
       </div>
       <div class="fe-pays" id="fe-pays-z" hidden><label for="fe-pays">Pays de la nuit</label><input id="fe-pays" class="pays-in" autocomplete="off" autocapitalize="words" placeholder="Tape les premières lettres"></div>
       <p class="hint fe-info" id="fe-info"></p>
@@ -269,7 +270,7 @@
         <button type="button" class="prow2" id="pl-csv"><span class="pi pi-vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zm2 2v4h6V5zm8 0v4h6V5zM5 11v4h6v-4zm8 0v4h6v-4zM5 17v2h6v-2zm8 0v2h6v-2z"/></svg></span><span class="ptx"><b>Tableur (CSV)</b><small>Toutes les colonnes, mission comprise</small></span><span class="pch" aria-hidden="true">›</span></button>
         <button type="button" class="prow2" id="pl-tit"><span class="pi pi-vol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span><span class="ptx"><b>Titulaire du carnet</b><small id="pl-tit-s">Nom imprimé sur le PDF</small></span><span class="pch" aria-hidden="true">›</span></button>
         <!-- v0.68 (R166) : frais d'escale (indemnités journalières, frais réels) : une ligne par année, barème, liste, PDF -->
-        <button type="button" class="prow2" id="pl-frais"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zm2 2v8h14V8zm7 1.5a2.5 2.5 0 1 1-2.5 2.5A2.5 2.5 0 0 1 12 9.5zM6 9h2v2H6zm10 4h2v2h-2z"/></svg></span><span class="ptx"><b>Frais d'escale</b><small id="pl-frais-s">Vols journée, J+2, détachements : montants par année, PDF</small></span><span class="pch" aria-hidden="true">›</span></button>
+        <button type="button" class="prow2" id="pl-frais"><span class="pi pi-tp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zm2 2v8h14V8zm7 1.5a2.5 2.5 0 1 1-2.5 2.5A2.5 2.5 0 0 1 12 9.5zM6 9h2v2H6zm10 4h2v2h-2z"/></svg></span><span class="ptx"><b>Frais d'escale</b><small id="pl-frais-s">Vols journée, J.1 / J.2, détachements : montants par année, PDF</small></span><span class="pch" aria-hidden="true">›</span></button>
       </div>
       <h3 class="pgrp">Sauvegarde</h3>
       <div class="pcard">
